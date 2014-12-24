@@ -1,4 +1,4 @@
-nadea
+NaDeA
 =====
 
 Natural Deduction Assistant
