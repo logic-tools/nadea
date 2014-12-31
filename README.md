@@ -3,6 +3,9 @@ NaDeA - Natural Deduction Assistant
 
 Alpha version is available here: http://nadea.compute.dtu.dk/
 
+Contact: http://people.compute.dtu.dk/jovi/
+
+
 ---
 
 Firefox on Windows is the reference browser.
