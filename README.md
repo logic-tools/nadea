@@ -1,7 +1,7 @@
-NaDeA
-=====
+NaDeA - Natural Deduction Assistant
+===================================
 
-Natural Deduction Assistant
+Alpha version is available here: http://nadea.compute.dtu.dk/
 
 ---
 
