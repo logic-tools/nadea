@@ -3,7 +3,6 @@ NaDeA - Natural Deduction Assistant
 
 Contact: http://people.compute.dtu.dk/jovi/
 
-
 ---
 
 Firefox on Windows is the reference browser.
