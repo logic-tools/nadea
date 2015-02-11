@@ -1,7 +1,7 @@
 NaDeA - Natural Deduction Assistant
 ===================================
 
-Contact: http://people.compute.dtu.dk/jovi/
+Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/
 
 ---
 
