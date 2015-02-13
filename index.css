@@ -1,0 +1,582 @@
+/* NaDeA */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: sans-serif;
+    color: black;
+    background-color: white;
+}
+
+a {
+    cursor: pointer;
+}
+
+#header {
+    width: 100%;
+    flex-shrink: 1;
+}
+
+#headerContainer {
+    display: table;
+    width: 100%;
+    vertical-align: middle;
+    position: fixed;
+    background: white;
+}
+
+#headerContainer > * {
+    padding: 0.6vw;
+}
+
+#header #logo {
+    display: table-cell;
+    font-size: 2.0vw;
+    width: 30vw;
+}
+
+#header #logo span:nth-child(1) {
+    color: red;
+}
+
+#header #logo span:nth-child(2) {
+    color: green;
+}
+
+#header #logo span:nth-child(3) {
+    color: blue;
+}
+
+#header #buttons {
+    display: table-cell;
+    text-align: center;
+    font-size: 2.0vw;
+}
+
+#header #buttons > div {
+    width: 3.6vw;
+    text-align: center;
+}
+
+#header .load {
+    color: red;
+    border-color: red;
+}
+
+#header .load:hover {
+    color: white;
+    background: red;
+}
+
+#header .edit {
+    color: green;
+    border-color: green;
+}
+
+#header .edit:hover, #header .editHover {
+    color: white;
+    background: green;
+}
+
+#header .help {
+    color: blue;
+    border-color: blue;
+}
+
+#header .help:hover {
+    color: white;
+    background: blue;
+}
+
+#header #info {
+    display: table-cell;
+    font-size: 0.8vw;
+    width: 30vw;
+    vertical-align: middle;
+    text-align: right;
+}
+
+#header #info span:first-child {
+    font-weight: bold;
+}
+
+#frame {
+    padding: 0.6vw;
+    margin: 3vw 0 0 0;
+    font-size: 1.2vw;
+    flex-grow: 1;
+}
+
+.clear {
+    clear: both;
+}
+
+.line {    
+    padding: 0.1vw;
+    border: 0.1vw dashed white;
+}
+
+.line > * {   
+   vertical-align: top;
+}
+
+.line:hover {
+    cursor: default;
+}
+
+.line .lineNumber {
+    overflow: hidden;
+    width: 2%;
+    display: inline-block;
+    text-align: right;
+    padding-right: 1%;
+}
+
+.line .left {
+    overflow: hidden;
+    width: 50%;
+    display: inline-block;
+}
+
+.line .left.hidden {
+    display: none;
+}
+
+.line .middle {
+    overflow: hidden;
+    width: 13%;
+    display: inline-block;
+    text-align: center;
+}
+
+.line .middle.shrink {
+    width: 8% !important;
+}
+
+.line .right {
+    width: 34%;
+    display: inline-block;
+}
+
+.line .right.fill {
+    width: 89% !important;
+}
+
+.line .right > * {
+    display: inline-block;
+}
+
+.line a {
+    text-decoration: none;
+    color: red;
+}
+
+.line a:hover {
+    color: blue;
+}
+
+.line .synGoal { 
+    float: left;
+}
+
+.line .formalUnknown {
+    color: green;
+}
+
+.line > * {
+    line-height: 1.35vw;
+}
+
+.line .right .assumptions {
+    padding-right: 0.6vw;
+    display: inline;
+}
+
+.indentProof {
+    padding-left: 1.3vw;
+}
+
+.indentProof * {
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+
+.overlay {
+    padding: 0.5vw;
+    background-color: white;
+    border: 0.12vw solid black;
+    border-radius: 0.5vw;
+    overflow: hidden;
+    width: 17vw;
+}
+
+.overlay .formula {
+    font-size: 11pt;
+    font-size: 1.15vw;
+    border: 0.1vw dotted red;
+    padding: 0.2vw;
+    margin: 0.2vw;
+    text-align: center;
+}
+
+.overlay a {
+    text-decoration: none;
+}
+
+.overlay .headline {
+    font-weight: bold;
+    padding-bottom: 1.5vw;
+    vertical-align: top;
+}
+
+.textline {
+    padding-bottom: 0.45vw;
+}
+
+.textline.lessSpace {
+    padding-bottom: 0.25vw;
+}
+
+.textline.extraSpace {
+    padding-bottom: 1.30vw;
+}
+
+.centeredOverlayOuter {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(20, 20, 20, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.centeredOverlayOuter .overlay {
+    margin: 0.3vw;
+    margin-top: 3.5vw;
+    position: fixed;
+    width: auto;
+    top: 0; 
+    left: 0; 
+    bottom: 0; 
+    right: 0;
+    flex-grow: 1;
+}
+
+.closeOverlay, .closeCenteredOverlay {
+    float: right;
+    padding-right: 0.25vw;
+    cursor: pointer;
+    font-size: 1.15vw;
+}
+
+.closeCenteredOverlay {
+    margin-right: 0.8vw;
+}
+
+.closeOverlay div, .closeCenteredOverlay div {
+    position: absolute;
+}
+
+.helpContent {
+    margin-top: 0.5vw;
+    padding: 0px 3vw 1.2vw 0.6vw;
+    font-size: 1.15vw;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.helpContent > div {
+    position: absolute;
+    top: 0;
+    left: 1.2vw;
+    right: 0.6vw;
+}
+
+.helpContent .ndRule {
+    font-size: 1vw;
+    border-spacing: 0.1vw;
+    border-collapse: separate;
+    padding-bottom: 0.85vw;
+    padding-right: 1.0vw;
+    margin: 0 0.6vw 0.5vw 0;
+    border: none;
+    float: left;
+}
+
+.helpContent .ndRulesContainer {
+    clear: left;
+}
+
+.ndRulesContainer.first {
+    padding-top: 1vw;
+}
+
+.helpContent .ndRule .name {
+    width: 1px;
+}
+
+.helpContent .ndRule .goal, .helpContent .ndRule .premises td {
+    text-align: center;
+    padding: 0 0.75vw;
+}
+
+.helpContent .ndRule .premises td:first-child, .helpContent .ndRule .goal {
+    padding-left: 0.75vw;
+}
+
+.helpContent .ndRule .premises td:nth-last-child(2), .helpContent .ndRule .goal {
+    padding-right: 0.75vw;
+}
+
+.helpContent .code {
+    color: blue;
+}
+
+.helpContent .ndRule .thinline {
+    width: 100%;
+    height: 0%;
+    border-top: 0.12vw solid black;
+}
+
+.helpContent .leftParantheses, .helpContent .leftBracket {
+    padding-right: 0.135vw !important;
+}
+
+.helpContent .rightParantheses, .helpContent .rightBracket {
+    padding-left: 0.135vw !important;
+}
+
+.helpContent .floatRight {
+    float: right;
+    padding: 0.3vw 0.4vw;
+    margin: 1vw;
+    font-size: 1vw;
+}
+
+.helpContent .leftColumn {
+    margin-top: 1.5vw;
+    float: left;
+    width: 50%;
+}
+
+.helpContent .rightColumn {
+    margin-top: 1.5vw;
+    float: right;
+    width: 50%;
+}
+
+.helpContent .eqdef, .helpContent .headtail {
+    padding: 0 0.3vw;
+}
+
+.helpContent .disFm, .helpContent .conFm, .helpContent .impFm {
+    display: inline-block;
+    width: 1.9vw;
+}
+
+.helpContent .uniFm, .helpContent .exiFm {
+    display: inline-block;
+    width: 1.6vw;
+}
+
+.helpContent .qmark, .helpContent .exmark {
+    display: inline-block;
+    width: 0.5vw;
+}
+
+.helpContent .delimiter {
+    display: inline-block;
+    padding: 0 0.2vw;
+}
+
+.codeBlock {    
+    font-size: 1vw;
+}
+
+.noTopMargin {
+    margin-top: 0 !important;
+}
+
+.loadTextareaContainer {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 0 0.5vw;
+}
+
+.loadTextarea {
+    margin: 0;
+    padding: 0.25%;
+    width: 99.5%;
+    display: flex;
+    flex-grow: 1;
+    border: 0.1vw solid black;
+    font-size: 1.2vw;    
+    font-family: sans-serif;
+    outline: none;
+    resize: none;
+}
+
+.flexContentY {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+/* Buttons */
+.button {
+    margin: 0.2vw;
+    display: inline-block;
+    background: #fff;
+    border: 0.1vw solid black;
+    border-radius: 0.6vw;
+    padding: 0.15vw 0.6vw;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.button.small {
+    line-height: 1.15vw;
+    font-size: 11pt;
+    font-size: 1.15vw;
+}
+
+.button.small.exampleProof {
+    text-align: center;
+}
+
+.button.big {    
+    line-height: 1.6vw;
+    font-size: 1.6vw;
+}
+
+.button:hover {
+    cursor: pointer;
+    background: black;
+    color: white;
+}
+
+.buttonContainer {
+    height: 1.85vw;
+    overflow: hidden;
+    margin-bottom: 0.75vw;
+}
+
+.buttonContainer .buttonTable {
+    display: table;
+    width: 100%;
+}
+
+.buttonContainer .buttonTable .buttonRow {
+    display: table-row;
+}
+
+.btnLeft {
+    display: table-cell;
+    text-align: left;
+    width: 1%;
+}
+
+.btnMid {
+    display: table-cell;
+    text-align: center;
+    width: auto;
+}
+
+.btnRight {
+    display: table-cell;
+    text-align: right;
+    padding-right: 2.4vw;
+    width: 1%;
+}
+
+.btnLeft .button {
+    border-color: red;
+    color: red;
+}
+
+.btnLeft .button:hover {
+    background: red;
+    color: white;
+}
+
+.btnMid .button {
+    border-color: green;
+    color: green;
+}
+
+.btnMid .button:hover, .buttonMidHover {
+    background: green !important;
+    color: white !important;
+}
+
+.btnRight .button {
+    border-color: blue;
+    color: blue;
+}
+
+.btnRight .button:hover {
+    background: blue;
+    color: white;
+}
+
+/* Formula element classes */
+.ok, .leftParantheses, .rightParantheses, .leftBracket, .rightBracket, .imp, .con, .dis, .exi, .uni, .pre, .fun, .arg, .line .goal, .var, .id, .falsity, .news, .concat, .comma  {
+    display: inline;
+}
+
+.left .imp, 
+.left .con, 
+.left .dis, 
+.left .exi, 
+.left .uni, 
+.left .pre, 
+.left .fun, 
+.left .var, 
+.left .id, 
+.left .falsity {
+    white-space: nowrap;
+}
+
+.leftParantheses, .leftBracket {
+    padding-right: 0.18vw;
+}
+
+.rightParantheses, .rightBracket {
+    padding-left: 0.18vw;
+}
+
+.left .ok, 
+.left .imp, 
+.left .con, 
+.left .dis, 
+.left .exi, 
+.left .uni, 
+.left .pre, 
+.left .fun, 
+.left .arg, 
+.line .left .goal, 
+.left .var, 
+.left .id, 
+.left .news, 
+.left .concat,
+.comma {
+    padding-right: 0.4vw;
+}
+
+.right .con, .right .dis, .right .imp, .left .concat {
+    padding: 0 0.2vw;
+}
+
+.lastArg {
+    padding-right: 0 !important;
+}
