@@ -3,7 +3,7 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.0.5";
+var versionNumber = "0.1.0";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Unknown interface stores information about
