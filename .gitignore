@@ -2,3 +2,4 @@
 *.ico
 *.js
 *.d.ts
+output/

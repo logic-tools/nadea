@@ -1,0 +1,49 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{isabelle,isabellesym}
+
+\usepackage[cm]{fullpage}
+
+\usepackage{datetime}
+
+\newdateformat{mydate}{\THEDAY\ \monthname[\THEMONTH] \THEYEAR}
+
+\usepackage{pdfsetup}
+
+\urlstyle{rm}
+\isabellestyle{it}
+
+\def\isachardoublequote{"}
+\def\isachardoublequoteopen{"}
+\def\isachardoublequoteclose{"}
+
+\begin{document}
+
+\title{NaDeA (Natural Deduction Assistant) --- Formalization in Isabelle}
+
+\author{J{\o}rgen Villadsen, Alexander Birch Jensen \&\ Anders Schlichtkrull --- DTU Compute --- Denmark}
+
+\date{}
+
+\maketitle
+
+%\tableofcontents
+
+\parindent 0pt\parskip 0.5ex
+
+\input{session}
+
+%\bibliographystyle{abbrv}
+%\bibliography{root}
+
+\vfill
+
+\begin{center}
+\url{https://github.com/logic-tools/nadea} \\[1ex]
+\url{http://isabelle.in.tum.de/website-Isabelle2014/index.html} \\[1ex]
+\url{http://nadea.compute.dtu.dk/document.pdf} \\[1ex]
+\mydate\today
+\end{center}
+
+\end{document}
+
