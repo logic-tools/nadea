@@ -1,6 +1,8 @@
 NaDeA - Natural Deduction Assistant
 ===================================
 
+*With a Formalization in Isabelle*
+
 Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/
 
 ---
