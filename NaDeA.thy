@@ -129,9 +129,9 @@ apply (simp_all add: upd_lemma')
 apply metis+
 done
 
-lemma list_upd_lemma: "news n G \<Longrightarrow>
-  list_all (semantics e (f(n:=x)) g) G = list_all (semantics e f g) G"
-apply(induction G)
+lemma list_upd_lemma: "news n a \<Longrightarrow>
+  list_all (semantics e (f(n:=x)) g) a = list_all (semantics e f g) a"
+apply (induction a)
 apply (simp_all)
 apply (metis upd_lemma)
 done
