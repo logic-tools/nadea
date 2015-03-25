@@ -107,7 +107,7 @@ lemma generalize_upd: "(%n. if n=0 then z else e (n - 1)) = e\<langle>0:z\<rangl
 unfolding shift_def by auto
 
 lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Longrightarrow> news c a"
-using news.simps by (metis)+
+using news.simps by metis+
 
 lemma membership[simp]: "member x xs \<Longrightarrow> x \<in> set xs"
 apply (induction xs)
@@ -156,12 +156,12 @@ done
 lemma lift_lemma:
   "semantics_term (e\<langle>0:z\<rangle>) f (inc_term t) = semantics_term e f t"
   "semantics_list (e\<langle>0:z\<rangle>) f (inc_list ts) = semantics_list e f ts"
-by (induct t and ts) (simp_all add: shift_lt)
+by (induction t and ts) (simp_all add: shift_lt)
 
 lemma subst_lemma':
   "semantics_term e f (sub_term i u t) = semantics_term (e\<langle>i:semantics_term e f u\<rangle>) f t"
   "semantics_list e f (sub_list i u ts) = semantics_list (e\<langle>i:semantics_term e f u\<rangle>) f ts"
-by (induct t and ts) (simp_all add: shift_eq shift_gt shift_lt)
+by (induction t and ts) (simp_all add: shift_eq shift_gt shift_lt)
 
 lemma Exi_simp2: "semantics e f g (Exi p) = (? x. semantics (e\<langle>0:x\<rangle>) f g p)"
 unfolding shift_def by auto
@@ -171,7 +171,7 @@ unfolding shift_def by auto
 
 lemma subst_lemma:
   "\<And>e t i. semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
-proof (induct a)
+proof (induction a)
   case (Pre p ts)
   show ?case using subst_lemma'[of e] by auto
 next
@@ -197,7 +197,7 @@ next
   have "semantics (e\<langle>i:semantics_term e f t\<rangle>) f g (Exi a)
             = (\<exists>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)" using Exi_simp2 by simp
   also
-  have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i+1:semantics_term e f t\<rangle>) f g a)"
+  have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term e f t\<rangle>) f g a)"
     using shift_commute[of e] by auto
   also
   have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term (e\<langle>0:z\<rangle>) f (inc_term t)\<rangle>) f g a)"
@@ -215,7 +215,7 @@ lemma subst_lemma2:
 "semantics e f g (sub 0 t a) = semantics (%n. if n=0 then semantics_term e f t else e(n - 1)) f g a"
 using subst_lemma[of e] unfolding shift_def by auto
 
-lemma sound': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
+lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
 proof (induction arbitrary: e f rule: OK.induct)
   case (Assume p a)
   then have "p \<in> set a" by auto
@@ -289,11 +289,14 @@ next
   then show ?case by auto
 qed auto
 
-theorem "OK p [] ==> semantics e f g p"
+theorem soundness: "OK p [] ==> semantics e f g p"
 proof -
-  have "OK p [] \<Longrightarrow> list_all (semantics e f g) [] \<Longrightarrow> semantics e f g p" using sound' by blast
+  have "OK p [] \<Longrightarrow> list_all (semantics e f g) [] \<Longrightarrow> semantics e f g p" using soundness' by blast
   then show "OK p [] \<Longrightarrow> semantics e f g p" by auto
 qed
+
+corollary "OK p [] \<longrightarrow> (\<forall>e f g. semantics e f g p)"
+by (auto, rule soundness)
 
 end
 
