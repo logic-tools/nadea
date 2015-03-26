@@ -103,7 +103,7 @@ definition shift :: "(nat \<Rightarrow> 'u) \<Rightarrow> nat \<Rightarrow> 'u \
 where
 "e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
 
-lemma generalize_upd: "(%n. if n=0 then z else e (n - 1)) = e\<langle>0:z\<rangle>"
+lemma generalize_upd: "(%n. if n = 0 then z else e (n - 1)) = e\<langle>0:z\<rangle>"
 unfolding shift_def by auto
 
 lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Longrightarrow> news c a"
@@ -116,21 +116,21 @@ apply metis
 done
 
 lemma upd_lemma':
-  "new_term n t \<Longrightarrow> semantics_term e (f(n:=x)) t = semantics_term e f t"
-  "new_list n ts \<Longrightarrow> semantics_list e (f(n:=x)) ts = semantics_list e f ts"
+  "new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t"
+  "new_list n ts \<Longrightarrow> semantics_list e (f(n := x)) ts = semantics_list e f ts"
 apply (induction t and ts)
 apply auto
 apply metis+
 done
 
-lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n:=x)) g p = semantics e f g p"
+lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
 apply (induction p arbitrary: e)
 apply (simp_all add: upd_lemma')
 apply metis+
 done
 
 lemma list_upd_lemma: "news n a \<Longrightarrow>
-  list_all (semantics e (f(n:=x)) g) a = list_all (semantics e f g) a"
+  list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
 apply (induction a)
 apply (simp_all)
 apply (metis upd_lemma)
@@ -169,9 +169,8 @@ unfolding shift_def by auto
 lemma Uni_simp2: "semantics e f g (Uni p) = (! x. semantics (e\<langle>0:x\<rangle>) f g p)"
 unfolding shift_def by auto
 
-lemma subst_lemma:
-  "\<And>e t i. semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
-proof (induction a)
+lemma subst_lemma: "semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
+proof (induction a arbitrary: e t i)
   case (Pre p ts)
   show ?case using subst_lemma'[of e] by auto
 next
@@ -212,7 +211,8 @@ next
 qed auto
 
 lemma subst_lemma2:
-"semantics e f g (sub 0 t a) = semantics (%n. if n=0 then semantics_term e f t else e(n - 1)) f g a"
+  "semantics e f g (sub 0 t a) =
+          semantics (%n. if n = 0 then semantics_term e f t else e(n - 1)) f g a"
 using subst_lemma[of e] unfolding shift_def by auto
 
 lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
