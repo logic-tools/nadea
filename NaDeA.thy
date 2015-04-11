@@ -1,6 +1,4 @@
-theory NaDeA
-imports Main
-begin
+theory NaDeA imports Main begin
 
 type_synonym id = string
 
@@ -8,15 +6,18 @@ datatype tm = Var nat | Fun id "tm list"
 
 datatype fm = Falsity | Pre id "tm list" | Imp fm fm | Dis fm fm | Con fm fm | Exi fm | Uni fm
 
-primrec semantics_term :: "(nat => 'u) => (id => 'u list => 'u) => tm => 'u"
-and     semantics_list :: "(nat => 'u) => (id => 'u list => 'u) => tm list => 'u list"
+primrec
+  semantics_term :: "(nat => 'u) => (id => 'u list => 'u) => tm => 'u"
+and
+  semantics_list :: "(nat => 'u) => (id => 'u list => 'u) => tm list => 'u list"
 where
 "semantics_term e f (Var v) = e v" |
 "semantics_term e f (Fun i l) = f i (semantics_list e f l)" |
 "semantics_list e f [] = []" |
 "semantics_list e f (t # l) = semantics_term e f t # semantics_list e f l"
 
-primrec semantics :: "(nat => 'u) => (id => 'u list => 'u) => (id => 'u list => bool) => fm => bool"
+primrec
+  semantics :: "(nat => 'u) => (id => 'u list => 'u) => (id => 'u list => bool) => fm => bool"
 where
 "semantics e f g Falsity = False" |
 "semantics e f g (Pre i l) = g i (semantics_list e f l)" |
@@ -26,20 +27,24 @@ where
 "semantics e f g (Exi p) = (? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" |
 "semantics e f g (Uni p) = (! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)"
 
-primrec member :: "fm => fm list => bool"
+primrec
+  member :: "fm => fm list => bool"
 where
 "member p [] = False" |
 "member p (q # a) = (if p = q then True else member p a)"
 
-primrec new_term :: "id => tm => bool"
-and     new_list :: "id => tm list => bool"
+primrec
+  new_term :: "id => tm => bool"
+and
+  new_list :: "id => tm list => bool"
 where
 "new_term c (Var v) = True" |
 "new_term c (Fun i l) = (if i = c then False else new_list c l)" |
 "new_list c [] = True" |
 "new_list c (t # l) = (if new_term c t then new_list c l else False)"
 
-primrec new :: "id => fm => bool"
+primrec
+  new :: "id => fm => bool"
 where
 "new c Falsity = True" |
 "new c (Pre i l) = new_list c l" |
@@ -49,28 +54,34 @@ where
 "new c (Exi p) = new c p" |
 "new c (Uni p) = new c p"
 
-primrec news :: "id => fm list => bool"
+primrec
+  news :: "id => fm list => bool"
 where
 "news c [] = True" |
 "news c (p # a) = (if new c p then news c a else False)"
 
-primrec inc_term :: "tm => tm"
-and     inc_list :: "tm list => tm list"
+primrec
+  inc_term :: "tm => tm"
+and
+  inc_list :: "tm list => tm list"
 where
 "inc_term (Var v) = Var (v + 1)" |
 "inc_term (Fun i l) = Fun i (inc_list l)" |
 "inc_list [] = []" |
 "inc_list (t # l) = inc_term t # inc_list l"
 
-primrec sub_term :: "nat => tm => tm => tm"
-and     sub_list :: "nat => tm => tm list => tm list"
+primrec
+  sub_term :: "nat => tm => tm => tm"
+and
+  sub_list :: "nat => tm => tm list => tm list"
 where
 "sub_term n s (Var v) = (if v = n then s else if v > n then Var (v - 1) else Var v)" |
 "sub_term n s (Fun i l) = Fun i (sub_list n s l)" |
 "sub_list n s [] = []" |
 "sub_list n s (t # l) = sub_term n s t # sub_list n s l"
 
-primrec sub :: "nat => tm => fm => fm"
+primrec
+  sub :: "nat => tm => fm => fm"
 where
 "sub n s Falsity = Falsity" |
 "sub n s (Pre i l) = Pre i (sub_list n s l)" |
@@ -80,26 +91,42 @@ where
 "sub n s (Exi p) = Exi (sub (n + 1) (inc_term s) p)" |
 "sub n s (Uni p) = Uni (sub (n + 1) (inc_term s) p)"
 
-inductive OK :: "fm => fm list => bool"
+inductive
+  OK :: "fm => fm list => bool"
 where
-Assume: "member p a ==> OK p a" |
-Boole:  "OK Falsity ((Imp p Falsity) # a) ==> OK p a" |
-Imp_E:  "OK (Imp p q) a ==> OK p a ==> OK q a" |
-Imp_I:  "OK q (p # a) ==> OK (Imp p q) a" |
-Dis_E:  "OK (Dis p q) a ==> OK r (p # a) ==> OK r (q # a) ==> OK r a" |
-Dis_I1: "OK p a ==> OK (Dis p q) a" |
-Dis_I2: "OK q a ==> OK (Dis p q) a" |
-Con_E1: "OK (Con p q) a ==> OK p a" |
-Con_E2: "OK (Con p q) a ==> OK q a" |
-Con_I:  "OK p a ==> OK q a ==> OK (Con p q) a" |
-Exi_E:  "OK (Exi p) a ==> OK q ((sub 0 (Fun c []) p) # a) ==> news c (p # q # a) ==> OK q a" |
-Exi_I:  "OK (sub 0 t p) a ==> OK (Exi p) a" |
-Uni_E:  "OK (Uni p) a ==> OK (sub 0 t p) a" |
-Uni_I:  "OK (sub 0 (Fun c []) p) a ==> news c (p # a) ==> OK (Uni p) a"
+Assume:
+        "member p a ==> OK p a" |
+Boole:
+        "OK Falsity ((Imp p Falsity) # a) ==> OK p a" |
+Imp_E:
+        "OK (Imp p q) a ==> OK p a ==> OK q a" |
+Imp_I:
+        "OK q (p # a) ==> OK (Imp p q) a" |
+Dis_E:
+        "OK (Dis p q) a ==> OK r (p # a) ==> OK r (q # a) ==> OK r a" |
+Dis_I1:
+        "OK p a ==> OK (Dis p q) a" |
+Dis_I2:
+        "OK q a ==> OK (Dis p q) a" |
+Con_E1:
+        "OK (Con p q) a ==> OK p a" |
+Con_E2:
+        "OK (Con p q) a ==> OK q a" |
+Con_I:
+        "OK p a ==> OK q a ==> OK (Con p q) a" |
+Exi_E:
+        "OK (Exi p) a ==> OK q ((sub 0 (Fun c []) p) # a) ==> news c (p # q # a) ==> OK q a" |
+Exi_I:
+        "OK (sub 0 t p) a ==> OK (Exi p) a" |
+Uni_E:
+        "OK (Uni p) a ==> OK (sub 0 t p) a" |
+Uni_I:
+        "OK (sub 0 (Fun c []) p) a ==> news c (p # a) ==> OK (Uni p) a"
 
 (* Proof inspired by First-Order Logic According to Fitting by Stefan Berghofer *)
 
-definition shift :: "(nat \<Rightarrow> 'u) \<Rightarrow> nat \<Rightarrow> 'u \<Rightarrow> nat \<Rightarrow> 'u" ("_\<langle>_:_\<rangle>" [90, 0, 0] 91)
+definition
+  shift :: "(nat \<Rightarrow> 'u) \<Rightarrow> nat \<Rightarrow> 'u \<Rightarrow> nat \<Rightarrow> 'u" ("_\<langle>_:_\<rangle>" [90, 0, 0] 91)
 where
 "e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
 
@@ -110,31 +137,19 @@ lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Long
 using news.simps by metis+
 
 lemma membership[simp]: "member x xs \<Longrightarrow> x \<in> set xs"
-apply (induction xs)
-apply auto
-apply metis
-done
+by (induct xs) (auto, metis)
 
 lemma upd_lemma':
   "new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t"
   "new_list n ts \<Longrightarrow> semantics_list e (f(n := x)) ts = semantics_list e f ts"
-apply (induction t and ts)
-apply auto
-apply metis+
-done
+by (induct t and ts rule: semantics_term.induct semantics_list.induct, auto, metis+)
 
 lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
-apply (induction p arbitrary: e)
-apply (simp_all add: upd_lemma')
-apply metis+
-done
+by (induct p arbitrary: e, simp_all add: upd_lemma', metis+)
 
 lemma list_upd_lemma: "news n a \<Longrightarrow>
   list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
-apply (induction a)
-apply (simp_all)
-apply (metis upd_lemma)
-done
+by (induct a, auto, metis upd_lemma, metis, metis upd_lemma, metis)
 
 lemma shift_eq: "i = j \<Longrightarrow> (e\<langle>i:T\<rangle>) j = T"
 by (simp add: shift_def)
@@ -146,22 +161,18 @@ lemma shift_lt: "i < j \<Longrightarrow> (e\<langle>i:T\<rangle>) j = e (j - 1)"
 by (simp add: shift_def)
 
 lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
-apply (rule ext)
-apply (case_tac x)
- apply (simp add: shift_eq shift_gt)
-apply (case_tac nat)
- apply (simp_all add: shift_def)
-done
+by (rule ext, case_tac x, simp add: shift_eq shift_gt, case_tac nat, simp_all add: shift_def)
 
 lemma lift_lemma:
   "semantics_term (e\<langle>0:z\<rangle>) f (inc_term t) = semantics_term e f t"
   "semantics_list (e\<langle>0:z\<rangle>) f (inc_list ts) = semantics_list e f ts"
-by (induction t and ts) (simp_all add: shift_lt)
+by (induct t and ts rule: semantics_term.induct semantics_list.induct) (simp_all add: shift_lt)
 
 lemma subst_lemma':
   "semantics_term e f (sub_term i u t) = semantics_term (e\<langle>i:semantics_term e f u\<rangle>) f t"
   "semantics_list e f (sub_list i u ts) = semantics_list (e\<langle>i:semantics_term e f u\<rangle>) f ts"
-by (induction t and ts) (simp_all add: shift_eq shift_gt shift_lt)
+by (induct t and ts rule: semantics_term.induct semantics_list.induct)
+  (simp_all add: shift_eq shift_gt shift_lt)
 
 lemma Exi_simp2: "semantics e f g (Exi p) = (? x. semantics (e\<langle>0:x\<rangle>) f g p)"
 unfolding shift_def by auto
@@ -170,7 +181,7 @@ lemma Uni_simp2: "semantics e f g (Uni p) = (! x. semantics (e\<langle>0:x\<rang
 unfolding shift_def by auto
 
 lemma subst_lemma: "semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
-proof (induction a arbitrary: e t i)
+proof (induct a arbitrary: e t i)
   case (Pre p ts)
   show ?case using subst_lemma'[of e] by auto
 next
@@ -216,7 +227,7 @@ lemma subst_lemma2:
 using subst_lemma[of e] unfolding shift_def by auto
 
 lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
-proof (induction arbitrary: e f rule: OK.induct)
+proof (induct arbitrary: e f rule: OK.induct)
   case (Assume p a)
   then have "p \<in> set a" by auto
   moreover
@@ -261,13 +272,15 @@ next
   then obtain z where z_def: "semantics (?upd e z) f g p" by auto
   let ?f' = "f(c := \<lambda>x. z)"
   from z_def have "semantics  (e\<langle>0:z\<rangle>) f g p" using generalize_upd[of z] by simp
-  then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E(3) upd_lemma[of c p] by (metis newness(1))
+  then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E(3) upd_lemma[of c p]
+    by (metis Exi_E.hyps(5) news.simps(2))
   then have "semantics (e\<langle>0:semantics_term e ?f' (Fun c [])\<rangle>)?f' g p" using fun_upd_same by auto
   then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" using subst_lemma by blast
   from Exi_E(6) have a_holds: "list_all (semantics e ?f' g) a"
-    using Exi_E(3) list_upd_lemma[of c a] by (metis news.simps(2))
-  from Exi_E(5) have "semantics e ?f' g q" using p_holds a_holds by auto
-  then show ?case using Exi_E(3) upd_lemma newness by metis
+    using Exi_E(3) list_upd_lemma[of c a] by (metis Exi_E.hyps(5) news.simps(2))
+  from Exi_E(5) have "semantics e ?f' g q" using p_holds a_holds
+    by (metis Exi_E.hyps(4) list_all_simps(1))
+  then show ?case using Exi_E(3) upd_lemma newness by (metis Exi_E.hyps(5))
 next
   case (Uni_I c p a)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
@@ -280,9 +293,8 @@ next
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
         using subst_lemma2 by blast
       then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
-        using semantics_term_semantics_list.simps(2) by metis
-      then have "semantics (?upd e (?f' c [])) ?f' g p"
-        using semantics_term_semantics_list.simps(3) by metis
+        by (metis semantics_term.simps(2))
+      then have "semantics (?upd e (?f' c [])) ?f' g p" by (metis fun_upd_same)
       then have "semantics (?upd e x) ?f' g p" using fun_upd_apply by metis
       then show "semantics (?upd e x) f g p" using Uni_I upd_lemma newness by blast
     qed
