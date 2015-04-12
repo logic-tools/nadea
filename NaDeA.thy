@@ -1,3 +1,5 @@
+text \<open>\section*{Soundness Proof}\<close>
+
 theory NaDeA imports Main begin
 
 type_synonym id = string
