@@ -3,8 +3,12 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.1";
+var versionNumber = "0.1.2";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
+
+// Set up index.nadea location
+var indexNadeaURL = "http://nadea.compute.dtu.dk/index.nadea";
+var readNadeaFileLocally = window.location.protocol !== "file:";
 
 // Unknown interface stores information about
 // the unknowns in an uncompleted proof
@@ -16,14 +20,20 @@ interface Unknown {
     linkedTo?: Unknown[];
 };
 
-var proof: Inductive;
-var containsUnknowns: Unknown[];
+class State {
+    p: Inductive;
+    xs: Unknown[];
+    gc: number;
+};
+
+var currentState: State;
+var stateStack: IbStack;
+
 var undefInductivesWithoutUnknowns: { parent: Inductive; self: Inductive; premiseIndex: number }[];
 
-var examples: { goal: string; proof: string; name: string }[] = [];
+//var examples: { proof: string; name: string }[] = [];
 
 $(document).ready(() => {
-
     /*
      * Initialize a generic proof structure
      * - is to be changed to the correct ind. syn type when goal is completed, and a rule is chosen
@@ -33,35 +43,50 @@ $(document).ready(() => {
     /* Jquery event handlers */
     attachEventHandlersUnknowns();
     attachMenuEvents();
+    attachHashEventListeners();
     attachKeyBindings();
 
     // Load examples
-    loadExamples();
+    loadTestCasesAndExercises();
 
-    // Update view
+    $(window).trigger("hashchange");
+
+    // Update
     update();
-
 });
 
 
 function initNewProof() {
-    // Set "proof" variable to the blank proof
-    proof = new Inductive(null, []);
+    currentState = new State;
+    currentState.p = new Inductive(null, []);;
+    currentState.xs = [{ x: currentState.p, inFm: 1 }];
+    currentState.gc = 0;
 
-    // Add unknown goal to list of unknowns
-    containsUnknowns = [{ x: proof, inFm: 1 }];
+    stateStack = new IbStack(currentState);
 }
 
-function loadProof(x: Inductive) {
+function loadProof(x: Inductive[]) {
+
+    var states = [];
+    x.forEach(ind => {
+        var s = new State();
+        s.gc = getNumGeneratedConstants(ind);
+        s.p = ind;
+        s.xs = reconstructUnknownsFromProof(ind);
+
+        states.push(s);
+    });
+
     // Set x as reference proof
-    proof = x;
+    currentState = states[0];
 
-    // Set counter to max. encountered number of asterixes 
-    counterGeneratedConstants = getNumGeneratedConstants(x);
-    console.log(counterGeneratedConstants);
+    var s = states.pop();
+    stateStack.reset(s);
 
-    // Reconstruct the list of unknowns from new proof structure
-    containsUnknowns = reconstructUnknownsFromProof(proof);
+    while (states.length > 0) {
+        s = states.pop();
+        stateStack.update(IbStackEvent.UPDATE_INTERNAL, s);
+    }
 
     // Update the view
     update();
@@ -72,7 +97,7 @@ function update() {
     // Find premises that have goals without unknowns
     undefInductivesWithoutUnknowns = [];
 
-    findUndefInductivesWithoutUnknowns(undefInductivesWithoutUnknowns, proof, null, 0, 0);
+    findUndefInductivesWithoutUnknowns(undefInductivesWithoutUnknowns, currentState.p, null, 0, 0);
 
     undefInductivesWithoutUnknowns.some((v, i) => {
         if (v.parent instanceof synExiE) {
@@ -105,7 +130,7 @@ function updateFrame() {
     $("#frame #frameContainer").children().remove();
 
     // Write proof lines
-    appendLines(proof, 0);
+    appendLines(currentState.p, 0);
 
     // Replace unknowns with HTML elements
     replaceUnknowns();
@@ -123,61 +148,121 @@ function updateFrame() {
     $(window).resize();
 }
 
-function loadExamples() {
-    // Add (hard-coded) proofs to list of examples
-    examples.push({
-        goal: "Imp{Pre{P}{}}{Pre{P}{}}",
-        proof: ". P => P\nImpI{Imp{Pre{P}{}}{Pre{P}{}}}[]:{OK{Pre{P}{}}[Pre{P}{}]}",
-        name: "Test 1"
+
+// Dict to proof codes stored
+var proofCodes: { [id: string]: string };
+
+function loadTestCasesAndExercises() {
+    // Initially the tests are the initial proof state
+    proofCodes = {};
+
+    for (var i = 0; i <= 9; i++)
+        proofCodes["Test " + i] = "OK{¤}[]";
+
+    proofCodes["Test suite"] = "OK{¤}[]";
+
+    /* Get .nadea file contents */
+
+    var xhr = new XMLHttpRequest();
+    xhr.timeout = 5000;
+
+    if (readNadeaFileLocally) {
+        // Try to fetch from server file system
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState == 4 && xhr.status === 200) {
+                readNadeaData(xhr.responseText);
+            }
+        }
+
+        xhr.ontimeout = () => {
+            readNadeaFileLocally = false;
+            loadTestCasesAndExercises();
+        }
+
+        xhr.open("GET", "index.nadea", true);
+        xhr.setRequestHeader('Content-type', 'text/plain; charset=utf-8');
+        xhr.send(null);
+    }
+
+    else {    
+        // Load file from the net if not yet loaded
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState == 4 && xhr.status === 200) {
+                readNadeaData(decodeURI(xhr.responseText));
+            }
+        }
+
+        xhr.ontimeout = () => {
+            console.log("Failed to load test cases and exercises.");
+        }
+
+        xhr.open("GET", indexNadeaURL, true);
+        xhr.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
+        xhr.send(null);
+    }
+}
+
+function readNadeaData(rawFileText: string) {
+    // Go through each line of the loaded .nadea file
+
+    var currentProofID: string = null;
+    var currentProofCode: string = null;
+    var testSuiteCodes: string[] = [];
+
+    var endOfComments: boolean = null;
+
+    var lines = rawFileText.split(/\n/).filter(x => { return x.trim() !== "" });
+
+    var addProofCode = (id, code) => {
+        if (id !== null) {
+            // End of proof code
+            if (isValidProofCode(currentProofCode))
+                proofCodes[id] = code;
+            else
+                console.log("Invalid proof code (" + id + ") read from '.nadea' file.");
+        }
+    };
+
+    lines.forEach((x, i) => {
+        // Check if recognized as valid proof ID
+        var idMatch = x.match(/^\.\s*((Test\s+[0-9])|(Exercise\s+[0-9]+))\s*$/);
+
+        if (idMatch !== null) {
+            addProofCode(currentProofID, currentProofCode);
+
+            // Initialize new proof
+            currentProofID = idMatch[1];
+            currentProofCode = "";
+            endOfComments = false;
+
+        } else if (currentProofID !== null) {
+            // Check if line is a comment
+            var isComment: boolean = x.search(/^\./) !== -1;
+            
+            // If the comment block is exceeded, ignore additional comment lines
+            // Used to filter away some empty comment lines after proof code
+            if (!endOfComments && !isComment) {
+                endOfComments = true;
+
+                // Add this line to test suite if it is test [0-9]
+                var idMatch2 = currentProofID.match(/Test ([1-9])/);
+
+                if (idMatch2 !== null)
+                    testSuiteCodes[+idMatch2[1] - 1] = x;
+            }
+
+            if (endOfComments && isComment)
+                return;
+
+            // Append line to current proof code
+            currentProofCode += x + "\n";
+        }
     });
 
-    examples.push({
-        goal: "Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}{Falsity}",
-        proof: ". ~(P ^ ~P)\nImpI{Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}{Falsity}}[]:{ImpE{Falsity}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{ConE2{Imp{Pre{P}{}}{Falsity}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]}}{ConE1{Pre{P}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]}}}",
-        name: "Test 2"
-    });
+    addProofCode(currentProofID, currentProofCode);
 
-    examples.push({
-        goal: "Imp{Dis{Pre{P}{}}{Pre{Q}{}}}{Dis{Pre{Q}{}}{Pre{P}{}}}",
-        proof: ". (P v Q) => (Q v P)\nImpI{Imp{Dis{Pre{P}{}}{Pre{Q}{}}}{Dis{Pre{Q}{}}{Pre{P}{}}}}[]:{DisE{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}}]:{OK{Dis{Pre{P}{}}{Pre{Q}{}}}[Dis{Pre{P}{}}{Pre{Q}{}}]}{DisI2{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{P}{}]:{OK{Pre{P}{}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{P}{}]}}{DisI1{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{Q}{}]:{OK{Pre{Q}{}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{Q}{}]}}}",
-        name: "Test 3"
-    });
-
-    examples.push({
-        goal: "Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}{Pre{Q}{}}",
-        proof: ". P ^ (P => Q) => Q\nImpI{Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}{Pre{Q}{}}}[]:{ImpE{Pre{Q}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{ConE2{Imp{Pre{P}{}}{Pre{Q}{}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]}}{ConE1{Pre{P}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]}}}",
-        name: "Test 4"
-    });
-
-    examples.push({
-        goal: "Imp{Uni{Uni{Pre{P}{Var{0},Var{1}}}}}{Exi{Exi{Pre{P}{Var{0},Var{1}}}}}}[]:{ExiI{Exi{Exi{Pre{P}{Var{0},Var{1}}}}",
-        proof: ". (A x,y. P(x,y)) => (E x,y. P(x,y))\nImpI{Imp{Uni{Uni{Pre{P}{Var{0},Var{1}}}}}{Exi{Exi{Pre{P}{Var{0},Var{1}}}}}}[]:{ExiI{Exi{Exi{Pre{P}{Var{0},Var{1}}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]:{ExiI{Exi{Pre{P}{Var{0},Fun{c}{}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]:{UniE{Pre{P}{Fun{b}{},Fun{c}{}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]{0}:{UniE{Uni{Pre{P}{Var{0},Fun{c}{}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]{0}:{OK{Uni{Uni{Pre{P}{Var{1},Var{0}}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]}}}}}",
-        name: "Test 5"
-    });
-
-    examples.push({
-        goal: "Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}",
-        proof: ". (E x. P(x)) v (A x . ~P(x))\n. Proof not yet completed. Sorry.\nOK{Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}}[]",
-        name: "Test 6"
-    });
-
-    examples.push({
-        goal: "Imp{Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}}{Uni{Dis{Pre{P}{Var{0}}}{Pre{Q}{Var{0}}}}}",
-        proof: ". (A x.P(x) v A x.Q(x) => (A x. P(x) v Q(x))\nImpI{Imp{Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}}{Uni{Dis{Pre{P}{Var{0}}}{Pre{Q}{Var{0}}}}}}[]:{UniI{Uni{Dis{Pre{P}{Var{0}}}{Pre{Q}{Var{0}}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]{Fun{c*}{},1}:{DisE{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]:{OK{Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]}{DisI1{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]:{UniE{Pre{P}{Fun{c*}{}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]{0}:{OK{Uni{Pre{P}{Var{0}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]}}}{DisI2{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]:{UniE{Pre{Q}{Fun{c*}{}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]{0}:{OK{Uni{Pre{Q}{Var{0}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]}}}}}",
-        name: "Test 7"
-    });
-
-    examples.push({
-        goal: "Imp{Falsity}{Imp{Falsity}{Falsity}}",
-        proof: ". (Falsity => Falsity) => Falsity\nImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity]:{OK{Falsity}[Falsity,Falsity]}}",
-        name: "Test 8"
-    });
-
-    examples.push({
-        goal: "Falsity",
-        proof: ". Example containing a lot of content\n. Not a proof.\nBoole{Falsity}[]:{Boole{Falsity}[Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{OK{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]}}}}}}}}}}}",
-        name: "Test 9"
-    });
+    addProofCode("Test suite", ". The test suite contains the final proof state for all test cases\n" + testSuiteCodes.join("\n"));
 }
 
 $(document).ready(() => {
@@ -221,19 +306,22 @@ function attachEventHandlersUnknowns() {
      * New syn rule click handler
      */
     $(document).on("click", "a.newSynRule", e => {
-        // Get premise that we are appl
+        // Get clicked inductive
         var parentInductive = undefInductivesWithoutUnknowns[$(e.currentTarget).data("synUnknownIndex")];
         var x: Inductive;
 
         if (parentInductive.parent === null)
-            x = proof;
+            x = currentState.p;
         else
             x = parentInductive.parent.premises[parentInductive.premiseIndex];
 
         newOverlay(e, "newSynRule",(x: Inductive) => {
+
+            prepareCurrentStateUpdate();
+            
             // Get parent inductive in order to replace generic "inductive" structure with correct structure for the selected rule
             if (parentInductive.parent === null)
-                proof = x;
+                currentState.p = x;
             else
                 parentInductive.parent.premises[parentInductive.premiseIndex] = x;
 
@@ -272,18 +360,20 @@ function attachEventHandlersUnknowns() {
      * New formula
      */
 
-    $(document).on("click", "a.newFormula",(e) => {
+    $(document).on("click", "a.newFormula", e => {
         // Get index of unknown that is to be replaced
         indexUnknown = $(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newFormula",(fm: Formula) => {
-            var replacedUnknowns = replaceUnknownsFormula(containsUnknowns[indexUnknown], fm);
+            prepareCurrentStateUpdate();
+
+            var replacedUnknowns = replaceUnknownsFormula(currentState.xs[indexUnknown], fm);
 
             // Remove previous unknowns from the pool of unknowns
             var linkedUnks: Unknown[][] = [[], []];
 
             replacedUnknowns.forEach(v => {
-                containsUnknowns.some((w, removeIndex) => {
+                currentState.xs.some((w, removeIndex) => {
                     if (v === w) {
                         var unk1: Unknown,
                             unk2: Unknown;
@@ -293,7 +383,7 @@ function attachEventHandlersUnknowns() {
                         if (fm instanceof FormulaOneArg) {
                             unk1 = { x: fm, inFm: 1 };
 
-                            containsUnknowns[removeIndex] = unk1;
+                            currentState.xs[removeIndex] = unk1;
 
                             linkedUnks[0].push(unk1);
                         }
@@ -301,20 +391,20 @@ function attachEventHandlersUnknowns() {
                         // Unknown is replaced with a two argument formula
                         // Insert two new unknown formulas
                         else if (fm instanceof FormulaTwoArg || fm instanceof fmPre) {
-                            pushIndices(containsUnknowns, removeIndex + 1, 1);
+                            pushIndices(currentState.xs, removeIndex + 1, 1);
 
                             unk1 = { x: fm, inFm: 1 };
                             unk2 = { x: fm, inFm: 2 };
 
-                            containsUnknowns[removeIndex] = unk1;
-                            containsUnknowns[removeIndex + 1] = unk2;
+                            currentState.xs[removeIndex] = unk1;
+                            currentState.xs[removeIndex + 1] = unk2;
 
                             linkedUnks[0].push(unk1);
                             linkedUnks[1].push(unk2);
                         }
 
                         else if (fm instanceof fmFalsity) {
-                            containsUnknowns.splice(removeIndex, 1);
+                            currentState.xs.splice(removeIndex, 1);
                         }
 
                         return true;
@@ -334,18 +424,20 @@ function attachEventHandlersUnknowns() {
      * New ID
      */
 
-    $(document).on("click", "a.newID",(e) => {
+    $(document).on("click", "a.newID", e => {
         // Index of unknown to be replaced
         indexUnknown = $(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newID",(id: string) => {
 
-            var replacedUnknowns = replaceUnknownsID(containsUnknowns[indexUnknown], id);
+            prepareCurrentStateUpdate();
+
+            var replacedUnknowns = replaceUnknownsID(currentState.xs[indexUnknown], id);
 
             replacedUnknowns.forEach(v => {
-                containsUnknowns.some((w, removeIndex) => {
+                currentState.xs.some((w, removeIndex) => {
                     if (v === w) {
-                        containsUnknowns.splice(removeIndex, 1);
+                        currentState.xs.splice(removeIndex, 1);
 
                         return true;
                     }
@@ -362,40 +454,42 @@ function attachEventHandlersUnknowns() {
      */
 
     function tmCallback(tms: number[]) {
-        var replacedUnknowns = replaceUnknownsTm(containsUnknowns[indexUnknown], tms);
+        prepareCurrentStateUpdate();
+
+        var replacedUnknowns = replaceUnknownsTm(currentState.xs[indexUnknown], tms);
 
         // Remove previous unknowns from the pool of unknowns
         var linkedUnks: Unknown[][] = [];
 
         replacedUnknowns.forEach(v => {
-            containsUnknowns.some((w, removeIndex) => {
+            currentState.xs.some((w, removeIndex) => {
                 // Find array index of each replaced unknown
                 if (v === w) {
-                    if (containsUnknowns[removeIndex].x instanceof fmPre
-                        || containsUnknowns[removeIndex].x instanceof tmFun) {
+                    if (currentState.xs[removeIndex].x instanceof fmPre
+                        || currentState.xs[removeIndex].x instanceof tmFun) {
 
-                        if (containsUnknowns[removeIndex].inFm == 1)
+                        if (currentState.xs[removeIndex].inFm == 1)
                             return false;
 
                         var newTmFuns: tmFun[] = [];
 
-                        if (containsUnknowns[removeIndex].x instanceof fmPre)
-                            (<fmPre> containsUnknowns[removeIndex].x).tms.forEach(v => {
+                        if (currentState.xs[removeIndex].x instanceof fmPre)
+                            (<fmPre> currentState.xs[removeIndex].x).tms.forEach(v => {
                                 if (v instanceof tmFun)
                                     newTmFuns.push(<tmFun> v);
                             });
 
-                        else if (containsUnknowns[removeIndex].x instanceof tmFun)
-                            (<tmFun> containsUnknowns[removeIndex].x).tms.forEach(v => {
+                        else if (currentState.xs[removeIndex].x instanceof tmFun)
+                            (<tmFun> currentState.xs[removeIndex].x).tms.forEach(v => {
                                 if (v instanceof tmFun)
                                     newTmFuns.push(<tmFun> v);
                             });
 
-                        containsUnknowns.splice(removeIndex, 1);
+                        currentState.xs.splice(removeIndex, 1);
 
                         if (newTmFuns.length > 0) {
 
-                            pushIndices(containsUnknowns, removeIndex, newTmFuns.length * 2);
+                            pushIndices(currentState.xs, removeIndex, newTmFuns.length * 2);
 
                             for (var i = 0; i < newTmFuns.length; i++) {
                                 var tm = newTmFuns[i];
@@ -411,14 +505,14 @@ function attachEventHandlersUnknowns() {
                                 linkedUnks[i * 2].push(unk1);
                                 linkedUnks[i * 2 + 1].push(unk2);
 
-                                containsUnknowns[i * 2 + removeIndex] = unk1;
-                                containsUnknowns[i * 2 + 1 + removeIndex] = unk2;
+                                currentState.xs[i * 2 + removeIndex] = unk1;
+                                currentState.xs[i * 2 + 1 + removeIndex] = unk2;
                             }
                         }
                     }
 
                     else {
-                        console.log(containsUnknowns[removeIndex]);
+                        console.log(currentState.xs[removeIndex]);
                         throw new Error("Expecting unknown term list, that is to be replaced");
                     }
 
@@ -458,7 +552,7 @@ function attachEventHandlersUnknowns() {
         var x: Inductive;
 
         if (parentInductive.parent === null)
-            x = proof;
+            x = currentState.p;
         else
             x = parentInductive.parent.premises[parentInductive.premiseIndex];
 
@@ -469,7 +563,7 @@ function attachEventHandlersUnknowns() {
 
 function addUnknownsPremises(x: Inductive, insertIndex: number): void {
     // Generate unknowns in premises based on selected rule
-    // Rules listed just below has no new unknowns
+    // Rules listed just below have no new unknowns
     if (x instanceof synBool
         || x instanceof synImpI
         || x instanceof synDisI1
@@ -479,18 +573,18 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
         || x instanceof synUniI)
         return;
     else if (x instanceof synImpE) {
-        pushIndices(containsUnknowns, insertIndex, 2);
+        pushIndices(currentState.xs, insertIndex, 2);
 
         var unk1: Unknown = { x: x.premises[0].goal, inFm: 1 };
         var unk2: Unknown = { x: x.premises[1], inFm: 1, linkedTo: [unk1] };
         unk1.linkedTo = [unk2];
 
-        containsUnknowns[insertIndex] = unk1;
-        containsUnknowns[insertIndex + 1] = unk2;
+        currentState.xs[insertIndex] = unk1;
+        currentState.xs[insertIndex + 1] = unk2;
     }
 
     else if (x instanceof synDisE) {
-        pushIndices(containsUnknowns, insertIndex, 4);
+        pushIndices(currentState.xs, insertIndex, 4);
 
         var unk1: Unknown = { x: x.premises[0].goal, inFm: 1 };
         var unk2: Unknown = { x: x.premises[0].goal, inFm: 2 };
@@ -500,25 +594,25 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
         unk1.linkedTo = [unk3];
         unk2.linkedTo = [unk4];
 
-        containsUnknowns[insertIndex] = unk1;
-        containsUnknowns[insertIndex + 1] = unk2;
-        containsUnknowns[insertIndex + 2] = unk3;
-        containsUnknowns[insertIndex + 3] = unk4;
+        currentState.xs[insertIndex] = unk1;
+        currentState.xs[insertIndex + 1] = unk2;
+        currentState.xs[insertIndex + 2] = unk3;
+        currentState.xs[insertIndex + 3] = unk4;
     }
 
     else if (x instanceof synConE1) {
-        pushIndices(containsUnknowns, insertIndex, 1);
-        containsUnknowns[insertIndex] = { x: x.premises[0].goal, inFm: 2 };
+        pushIndices(currentState.xs, insertIndex, 1);
+        currentState.xs[insertIndex] = { x: x.premises[0].goal, inFm: 2 };
     }
 
     else if (x instanceof synConE2) {
-        pushIndices(containsUnknowns, insertIndex, 1);
-        containsUnknowns[insertIndex] = { x: x.premises[0].goal, inFm: 1 };
+        pushIndices(currentState.xs, insertIndex, 1);
+        currentState.xs[insertIndex] = { x: x.premises[0].goal, inFm: 1 };
     }
 
     else if (x instanceof synExiE) {
-        pushIndices(containsUnknowns, insertIndex, 1);
-        containsUnknowns[insertIndex] = { x: x.premises[0].goal, inFm: 1 };
+        pushIndices(currentState.xs, insertIndex, 1);
+        currentState.xs[insertIndex] = { x: x.premises[0].goal, inFm: 1 };
     }
 
     else if (x instanceof synExiI) {
@@ -563,10 +657,10 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
 
         var quantifiedTerms = getQuantifiedVarsAsUnknowns(x.premises[0]);
 
-        pushIndices(containsUnknowns, insertIndex, quantifiedTerms.length);
+        pushIndices(currentState.xs, insertIndex, quantifiedTerms.length);
 
         quantifiedTerms.forEach((e, i) => {
-            containsUnknowns[insertIndex + i] = e;
+            currentState.xs[insertIndex + i] = e;
         });
     }
 
@@ -618,7 +712,7 @@ function replaceUnknownsFormula(u: Unknown, fm: Formula, updateLinked: boolean =
     return unknowns;
 }
 
-function replaceUnknownsID(u: Unknown, id: string, updateLinked: boolean = true): Unknown[] {
+function replaceUnknownsID(u: Unknown, id: string, updateLinked: boolean = true): Unknown[]{
 
     // Replace id of predicate
     if (u.x instanceof fmPre && u.inFm == 1) {
@@ -720,6 +814,8 @@ function termHandlerUniE(e: JQueryEventObject, x: Inductive) {
 
         if (!(x instanceof synUniE))
             return;
+
+        prepareCurrentStateUpdate();
 
         (<synUniE> x).waitingForTermSelection = false;
 
@@ -962,7 +1058,7 @@ function attachMenuEvents() {
     $("#header .load").on("click", e => {
         closeOverlays();
 
-        newCenteredOverlay("load",(x: Inductive) => loadProof(x));
+        newCenteredOverlay("load",(x: Inductive[]) => loadProof(x));
     });
 
     $("#header .edit").on("click", e => {
@@ -986,6 +1082,43 @@ function attachMenuEvents() {
     $(document).ready(function () {
         $("#header .help").click();
     });
+}
+
+function attachHashEventListeners() {
+    // Check for browser support
+    if (!("onhashchange" in window)) {
+        console.log("Cannot load proofs through hash event listener: No browser support.");
+        return;
+    }
+
+    // Hash change event
+    $(window).on("hashchange",() => {
+        // No hash value
+        if (!window.location.hash)
+            return;
+
+        // Remove leading #
+        var hashValue = window.location.hash.substring(1);
+
+        // Match against number value
+        var match = hashValue.search(/^([0-9]+)$/) !== -1;
+
+        // No match
+        if (!match)
+            return;
+
+        var proofID = "Exercise " + hashValue;
+        
+        if (proofCodes[proofID] === undefined)
+            return;
+
+        var proof = decodeProof(proofCodes[proofID]);
+
+        if (proof !== null)
+            loadProof(proof);
+    });
+
+
 }
 
 
@@ -1407,7 +1540,7 @@ function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: F
     select.append(selectVars);
     select.append(selectFns);
 
-    // Link terms occuring multiple times and
+    // Link terms occuring multiple times 
     var ts: { t: Term; linkedTo: Term[] }[] = [];
 
     getTerms(p).forEach(e => {
@@ -1490,7 +1623,7 @@ function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: F
     replaceFormalSymbols(".overlay.formula");
 }
 
-function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
+function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     // Main div to contain contents
     var content = $("<div class=\"flexContentY\"></div>");
     overlay.append(content);
@@ -1514,7 +1647,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
     var cancel = $('<div class="button small">Cancel load</div>');
     var update = $('<div class="button small">Load shown proof code</div>');
     var presentProof = $('<div class="button small">The present proof</div>');
-    var makeNewProof = $('<div class="button small">The blank proof</div>');
+    //var makeNewProof = $('<div class="button small">The blank proof</div>');
 
     btnLeft.append(cancel);
     btnMid.append(presentProof);
@@ -1523,14 +1656,17 @@ function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
     // Example buttons
     var examplesJQuery: JQuery[] = [];
 
-    for (var i = 0; i < examples.length; i++) {
-        examplesJQuery[i] = $('<div class="button small exampleProof">' + examples[i].name + '</div>');
+    for (var i = 0; i <= 9; i++) {
+        examplesJQuery[i] = $('<div class="button small exampleProof">Test ' + i + '</div>');
         examplesJQuery[i].data("ithExample", i);
 
         btnMid.append(examplesJQuery[i]);
     }
 
-    btnMid.append(makeNewProof);
+    var testSuite = $('<div class="button small exampleProof">Test suite</div>');
+    btnMid.append(testSuite);
+
+    //btnMid.append(makeNewProof);
 
     content.append(buttonsContainer);
 
@@ -1551,9 +1687,12 @@ function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
     update.click(e => {
         var proofString = (<string> textarea.val()).trim();
 
-        var newProof = decodeProof(proofString);
+        if (proofString == "")
+            proofString = "OK{¤}[]";
 
-        if (newProof === undefined || newProof === null) {
+        var newProofs = decodeProof(proofString);
+
+        if (newProofs === undefined || newProofs === null) {
             textarea.css({ borderColor: "red" });
 
             setTimeout(() => {
@@ -1561,7 +1700,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
             }, 2000);
 
         } else {
-            callback(newProof);
+            callback(newProofs);
 
             cancel.trigger("click");
         }
@@ -1569,17 +1708,26 @@ function loadInner(overlay: JQuery, callback: (x: Inductive) => void): void {
     
     // Click handler to insert correct proof code on example button click
     $(".exampleProof").on("click", v => {
-        textarea.val(examples[$(v.currentTarget).data("ithExample")].proof);
+        if ($(v.currentTarget).data("ithExample") !== undefined)
+            textarea.val(proofCodes["Test " + $(v.currentTarget).data("ithExample")]);
+
+        else if ($(v.currentTarget).html() === "Test suite")
+            textarea.val(proofCodes["Test suite"]);
     });
 
     // New proof code
-    var newProofCode = "OK{¤}[]";
+    /*var newProofCode = "OK{¤}[]";
     makeNewProof.click(() => {
         textarea.val(newProofCode);
-    });
+    });*/
 
     // Present proof code with prepended comment lines
-    var presentProofCode = ". The present proof is stored in the code shown here.\n. Use text copy-and-paste to a file in order to save it.\n. The proof code can be edited or replaced entirely.\n. A line like this one starting with a period is a comment only.\n.\n" + encodeProof(proof);
+    var presentProofCode = ". The present proof is stored in the code shown here.\n. Use text copy-and-paste to a file in order to save it.\n. The proof code can be edited or replaced entirely.\n. A line like this one starting with a period is a comment only.\n.\n";
+
+    for (var i = stateStack.stack.length - 1; i >= 0; i--)
+        presentProofCode += encodeProof(stateStack.stack[i].p) + "\n";
+
+    presentProofCode = presentProofCode.substr(0, presentProofCode.length - 1);
 
     presentProof.on("click",() => {
         textarea.val(presentProofCode);
@@ -1678,11 +1826,11 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     // Tabs
     /* Content: Welcome */
-    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window.</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of possible incomplete proofs.</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn edit mode on and off (by default edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
+    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window.</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code.</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn edit mode on and off (by default edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
 
 
     /* Content: Def. of syntax and semantics */
-    var dssContent = $('<div></div>'); 
+    var dssContent = $('<div></div>');
     dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
 
     /* Sample proofs and exercises */
@@ -2092,7 +2240,7 @@ class synBool extends Inductive implements InductiveInterface {
     getPremisesAux(input: Formula[]) {
         var falsity: Formula = new fmFalsity();
 
-        var assumptions: Formula[] = copyAssumptions(this);
+        var assumptions: Formula[] = copyAssumptions(this).as;
 
         assumptions.push(new fmImp(this.goal, falsity));
 
@@ -2139,7 +2287,7 @@ class synImpE extends Inductive implements InductiveInterface {
         var p: Formula = input[0];
         var fm1: Formula = new fmImp(p, this.goal);
 
-        var assumptions: Formula[] = copyAssumptions(this);
+        var assumptions: Formula[] = copyAssumptions(this).as;
 
         var inductive1: Inductive = new Inductive(fm1, assumptions);
         var inductive2: Inductive = new Inductive(p, assumptions);
@@ -2182,7 +2330,7 @@ class synImpI extends Inductive implements InductiveInterface {
         var p: Formula = copyFormula((<fmImp> this.goal).lhs);
         var q: Formula = copyFormula((<fmImp> this.goal).rhs);
 
-        var assumptions: Formula[] = copyAssumptions(this);
+        var assumptions: Formula[] = copyAssumptions(this).as;
         assumptions.push(p);
 
         var inductive = new Inductive(q, assumptions);
@@ -2228,9 +2376,9 @@ class synDisE extends Inductive implements InductiveInterface {
         var p: Formula = input[0];
         var q: Formula = input[1];
 
-        var assumptions1: Formula[] = copyAssumptions(this);
-        var assumptions2: Formula[] = copyAssumptions(this);
-        var assumptions3: Formula[] = copyAssumptions(this);
+        var assumptions1: Formula[] = copyAssumptions(this).as;
+        var assumptions2: Formula[] = copyAssumptions(this).as;
+        var assumptions3: Formula[] = copyAssumptions(this).as;
 
         assumptions2.push(p);
         assumptions3.push(q);
@@ -2279,7 +2427,7 @@ class synDisI1 extends Inductive implements InductiveInterface {
 
     getPremisesAux(input: Formula[]) {
         var p: Formula = (<fmCon> this.goal).lhs;
-        var inductive: Inductive = new Inductive(p, copyAssumptions(this));
+        var inductive: Inductive = new Inductive(p, copyAssumptions(this).as);
         this.premises.push(inductive);
     }
 
@@ -2316,7 +2464,7 @@ class synDisI2 extends Inductive implements InductiveInterface {
 
     getPremisesAux(input: Formula[]) {
         var q: Formula = (<fmCon >this.goal).rhs;
-        var inductive: Inductive = new Inductive(q, copyAssumptions(this));
+        var inductive: Inductive = new Inductive(q, copyAssumptions(this).as);
         this.premises.push(inductive);
     }
 
@@ -2357,7 +2505,7 @@ class synConE1 extends Inductive implements InductiveInterface {
         }
 
         var q: Formula = input[0];
-        var ind: Inductive = new Inductive(new fmCon(this.goal, q), copyAssumptions(this));
+        var ind: Inductive = new Inductive(new fmCon(this.goal, q), copyAssumptions(this).as);
         this.premises.push(ind);
     }
 
@@ -2398,7 +2546,7 @@ class synConE2 extends Inductive implements InductiveInterface {
         }
 
         var p: Formula = input[0];
-        var ind: Inductive = new Inductive(new fmCon(p, this.goal), copyAssumptions(this));
+        var ind: Inductive = new Inductive(new fmCon(p, this.goal), copyAssumptions(this).as);
         this.premises.push(ind);
     }
 
@@ -2437,8 +2585,8 @@ class synConI extends Inductive implements InductiveInterface {
         var p: Formula = (<fmCon> this.goal).lhs;
         var q: Formula = (<fmCon> this.goal).rhs;
 
-        this.premises.push(new Inductive(p, copyAssumptions(this)));
-        this.premises.push(new Inductive(q, copyAssumptions(this)));
+        this.premises.push(new Inductive(p, copyAssumptions(this).as));
+        this.premises.push(new Inductive(q, copyAssumptions(this).as));
     }
 
     getInternalName(): string {
@@ -2495,7 +2643,7 @@ class synExiE extends Inductive implements InductiveInterface {
             this.getNewsAndSub(c);
         }
 
-        var ind1 = new Inductive(new fmExi(p), copyAssumptions(this));
+        var ind1 = new Inductive(new fmExi(p), copyAssumptions(this).as);
 
         this.premises.push(ind1);
     }
@@ -2506,13 +2654,13 @@ class synExiE extends Inductive implements InductiveInterface {
 
         var p: Formula = (<fmExi> this.premises[0].goal).fm;
 
-        var newsFmList: Formula[] = copyAssumptions(this);
+        var newsFmList: Formula[] = copyAssumptions(this).as;
         newsFmList.push(copyFormula(p), copyFormula(this.goal));
 
         this.cIsNew = news(cString, newsFmList);
         this.c = new tmFun(cString, []);
 
-        var ind2Assumptions: Formula[] = copyAssumptions(this);
+        var ind2Assumptions: Formula[] = copyAssumptions(this).as;
         ind2Assumptions.push(sub(0, this.c, copyFormula(p)));
 
         var ind2 = new Inductive(this.goal, ind2Assumptions);
@@ -2560,7 +2708,7 @@ class synExiI extends Inductive implements InductiveInterface {
         var p: Formula = (<fmExi> this.goal).fm;
         var indFm: Formula = sub(0, t, copyFormula(p));
 
-        this.premises.push(new Inductive(indFm, copyAssumptions(this)));
+        this.premises.push(new Inductive(indFm, copyAssumptions(this).as));
     }
 
     getInternalName(): string {
@@ -2688,7 +2836,7 @@ class synUniE extends Inductive implements InductiveInterface {
         }
 
         // Create and push premise
-        this.premises.push(new Inductive(fm, copyAssumptions(this)));
+        this.premises.push(new Inductive(fm, copyAssumptions(this).as));
     }
 
     replaceTerm<T extends { id: string; tms: Term[] }>(v: Term, i: number, input: Term[], add: T, stack: { x: any; y: any; k?: number }[]) {
@@ -2762,19 +2910,19 @@ class synUniI extends Inductive implements InductiveInterface {
 
         var p: Formula = (<fmUni> this.goal).fm;
 
-        var newsFmList: Formula[] = copyAssumptions(this);
+        var newsFmList: Formula[] = copyAssumptions(this).as;
         newsFmList.push(copyFormula(p), copyFormula(this.goal));
 
         this.cIsNew = news(c, newsFmList);
 
-        console.log(this.cIsNew);
+        //console.log(this.cIsNew);
 
         var l = copyFormula(p);
 
         var subResult = sub(0, this.c, l);
 
         this.premises.push(
-            new Inductive(subResult, copyAssumptions(this)));
+            new Inductive(subResult, copyAssumptions(this).as));
     }
 
     getInternalName(): string {
@@ -3128,11 +3276,29 @@ function encodeProof(x: any): string {
 //
 // Build proof structure from string representation built by encoder
 //
-function decodeProof(x: string): Inductive {
+function decodeProof(x: string): Inductive[] {
     // Remove comment lines and then white spaces
-    x = x.replace(/\.[^\r\n]*/gm, "").replace(/\s/g, "");
+    var y = x.replace(/\.[^\r\n]*/gm, "").split(/\s/);
 
-    return decodeProofAux(x);
+    y = y.filter(s => { return s !== "" });
+
+    var z: Inductive[] = [];
+
+    var ok = true;
+
+    y.forEach(p => {
+        var dp = decodeProofAux(p);
+
+        if (dp === null || dp === undefined)
+            ok = false;
+
+        z.push(dp);
+    });
+
+    if (!ok)
+        return null;
+
+    return z;
 }
 
 // Array of inductive classes
@@ -3294,7 +3460,7 @@ function decodeProofAux(x: string): any {
         // Handle inductive types with additional arguments
         //
         if (ind instanceof synExiE && indAdditionalArgs.length >= 3) {
-            var c = decodeProof(indAdditionalArgs[0]);
+            var c = decodeProofAux(indAdditionalArgs[0]);
             var cIsNew = indAdditionalArgs[1] === "1";
             var waitingForPCompletion = indAdditionalArgs[2] === "1";
 
@@ -3313,7 +3479,7 @@ function decodeProofAux(x: string): any {
         }
 
         else if (ind instanceof synUniI && indAdditionalArgs.length >= 2) {
-            var c = decodeProof(indAdditionalArgs[0]);
+            var c = decodeProofAux(indAdditionalArgs[0]);
             var cIsNew = indAdditionalArgs[1] === "1";
 
             if (c === undefined)
@@ -3535,45 +3701,75 @@ function extractArgs(x: string, isInd: boolean = false): any {
     return !isInd ? args : { args: args, assum: assumStr };
 }
 
+function isValidProofCode(x: string) {
+    var dp = decodeProof(x);
+
+    return dp !== null && dp !== undefined;
+}
+
 // Deep copy of a list of assumptions
-function copyAssumptions(x: Inductive): Formula[] {
+function copyAssumptions(x: Inductive): { as: Formula[]; n: number } {
     var assumptions: Formula[] = [];
 
+    var numRefs = 0;
+
     x.assumptions.forEach(function (v) {
+        if (v === null)
+            numRefs++;
+
         assumptions.push(copyFormula(v));
     });
 
-    return assumptions;
+    return { as: assumptions, n: numRefs };
 }
 
 // Deep copy of formula
-function copyFormula(x: Formula): Formula {
+function copyFormula(x: Formula, refs: any[] = null): Formula {
+    if (x === null)
+        return null;
+
     var y: Formula;
 
     var fm: Formula, lhs: Formula, rhs: Formula;
 
     if (x instanceof FormulaOneArg) {
-        fm = copyFormula((<FormulaOneArg> x).fm);
+        fm = copyFormula((<FormulaOneArg> x).fm, refs);
+
+        var r: Formula;
 
         if (x instanceof fmExi)
-            return new fmExi(fm);
+            r = new fmExi(fm);
 
         else if (x instanceof fmUni)
-            return new fmUni(fm);
+            r = new fmUni(fm);
+
+        if (refs !== null && fm === null)
+            refs.push(r);
+
+        return r;
     }
 
     else if (x instanceof FormulaTwoArg) {
-        lhs = copyFormula((<FormulaTwoArg> x).lhs);
-        rhs = copyFormula((<FormulaTwoArg> x).rhs);
+        lhs = copyFormula((<FormulaTwoArg> x).lhs, refs);
+        rhs = copyFormula((<FormulaTwoArg> x).rhs, refs);
+
+        var r: Formula;
 
         if (x instanceof fmCon)
-            return new fmCon(lhs, rhs);
+            r = new fmCon(lhs, rhs);
 
         else if (x instanceof fmDis)
-            return new fmDis(lhs, rhs);
+            r = new fmDis(lhs, rhs);
 
         else if (x instanceof fmImp)
-            return new fmImp(lhs, rhs);
+            r = new fmImp(lhs, rhs);
+
+        if (refs !== null && lhs === null)
+            refs.push(r);
+        if (refs !== null && rhs === null)
+            refs.push(r);
+
+        return r;
     }
 
     else if (x instanceof fmFalsity)
@@ -3582,26 +3778,51 @@ function copyFormula(x: Formula): Formula {
     else if (x instanceof fmPre) {
         var tms: Term[] = [];
 
-        (<fmPre> x).tms.forEach(v => {
-            tms.push(copyTerm(v));
-        });
+        if ((<fmPre> x).tms === null)
+            tms = null;
+        else
+            (<fmPre> x).tms.forEach(v => {
+                tms.push(copyTerm(v, refs));
+            });
 
-        return new fmPre((<fmPre> x).id, tms);
+        var r: Formula = new fmPre((<fmPre> x).id, tms);
+
+        if (refs !== null && x.id === null)
+            refs.push(r);
+        if (refs !== null && x.tms === null)
+            refs.push(r);
+
+        return r;
     }
 };
 
 // Deep copy of term
-function copyTerm(x: Term): Term {
+function copyTerm(x: Term, refs: any[] = null): Term {
+    if (x === null)
+        return null;
+
+    //console.log(x);
+
     if (x instanceof tmVar)
         return new tmVar((<tmVar> x).nat);
     else if (x instanceof tmFun) {
         var tms: Term[] = [];
 
-        (<tmFun> x).tms.forEach(v=> {
-            tms.push(copyTerm(v));
-        });
+        if ((<tmFun> x).tms === null)
+            tms = null;
+        else
+            (<tmFun> x).tms.forEach(v=> {
+                tms.push(copyTerm(v, refs));
+            });
 
-        return new tmFun((<tmFun> x).id, tms);
+        var t = new tmFun((<tmFun> x).id, tms);
+
+        if (refs !== null && x.id === null)
+            refs.push(t);
+        if (refs !== null && x.tms === null)
+            refs.push(t);
+
+        return t;
     }
 }
 
@@ -3788,14 +4009,13 @@ function setLinkedUnks(linkedUnks: Unknown[][]) {
 }
 
 // Helper function to generate constants and keep track of the counter
-var counterGeneratedConstants = 0;
 function getNewConstant(): string {
     var s = "c";
 
-    for (var i = 0; i <= counterGeneratedConstants; i++)
+    for (var i = 0; i <= currentState.gc; i++)
         s += "*";
 
-    counterGeneratedConstants++;
+    currentState.gc++;
 
     return s;
 }
@@ -4374,8 +4594,25 @@ function getRuleName(x: Inductive): string {
 // Attach key bindings to application
 function attachKeyBindings() {
     $(document).keyup((e) => {
-        if (e.keyCode == 27) { $('.closeOverlay, .closeCenteredOverlay').click(); }   // esc
+        if (e.keyCode == 27) {
+            $('.closeOverlay, .closeCenteredOverlay').click();
+        } // esc
+
+        else if (e.keyCode == 46) {
+            stateStack.update(IbStackEvent.DELETE);
+
+            setCurrentState(stateStack.top());
+            update();
+        } // delete
+
+        else if (e.keyCode == 45) {
+            stateStack.update(IbStackEvent.INSERT);
+        } // insert
     });
+}
+
+function setCurrentState(s: State) {
+    currentState = s;
 }
 
 // Returns the highest number of asterixes found in the proof
@@ -4391,3 +4628,220 @@ function getNumGeneratedConstants(x: Inductive): number {
 
     return n;
 }
+
+//
+// UNDO BLOCK
+//
+
+enum IbStackEvent {
+    DELETE,
+    INSERT,
+    UPDATE,
+    UPDATE_INTERNAL
+}
+
+class IbStack {
+    stack: State[];
+    markedIndex: number;
+
+    constructor(s: State) {
+        this.reset(s);
+    }
+
+    update(e: IbStackEvent, s: State = null) {
+        if (e == IbStackEvent.INSERT) {
+            this.markedIndex = null;
+
+            return;
+        }
+
+        else if (e == IbStackEvent.DELETE && (this.stack.length <= 1 || this.markedIndex == 0)) {
+            return;
+        }
+
+        else {
+            if (e == IbStackEvent.DELETE) {
+                if (this.markedIndex !== null)
+                    this.markedIndex--;
+                else
+                    this.markedIndex = this.stack.length - 2;
+
+                this.stack.push(copyState(this.stack[this.markedIndex]));
+            }
+
+            else {
+                if (s == null)
+                    throw new Error();
+
+                this.markedIndex = null;
+                
+                // On update the current state is kept as top,
+                // instead the "previous" step is pushed to second last position
+                if (e == IbStackEvent.UPDATE) {
+                    this.stack.push(this.top());
+                    this.stack[this.stack.length - 2] = s;
+                } else {
+                    this.stack.push(s);
+                }
+            }
+        }
+    }
+
+    top() {
+        return this.stack[this.stack.length - 1];
+    }
+
+    reset(s: State) {
+        this.stack = [s];
+        this.markedIndex = null;
+    }
+};
+
+function prepareCurrentStateUpdate() {
+    var s = copyState(currentState);
+
+    stateStack.update(IbStackEvent.UPDATE, s);
+}
+
+function copyState(s: State): State {
+    var x: State = new State;
+
+    var refs = [];
+    var ltIndices: number[][] = []
+
+    x.p = copyInductive(s.p, refs);
+
+    x.xs = [];
+    s.xs.forEach((e, i) => x.xs[i] = copyUnknown(e, refs[i], s.xs, ltIndices));
+
+    //console.log(ltIndices);
+    //console.log(s.xs);
+    //console.log(refs);
+
+    ltIndices.forEach((lts, i) => {
+        lts.forEach(j => {
+            x.xs[i].linkedTo.push(x.xs[j]);
+        });
+    });
+
+    x.gc = s.gc;
+
+    //console.log(x.p);
+
+    return x;
+}
+
+function copyInductive(x: Inductive, refs: any[]): Inductive {
+    var i: Inductive;
+
+    // Copy
+    var g = copyFormula(x.goal, refs);
+    var cpas = copyAssumptions(x);
+
+    // Inst. new object of same type
+    if (x instanceof synBool) {
+        i = new synBool(g, cpas.as);
+    }
+
+    else if (x instanceof synConE1) {
+        i = new synConE1(g, cpas.as);
+    }
+
+    else if (x instanceof synConE2) {
+        i = new synConE2(g, cpas.as);
+    }
+
+    else if (x instanceof synConI) {
+        i = new synConI(g, cpas.as);
+    }
+
+    else if (x instanceof synDisE) {
+        i = new synDisE(g, cpas.as);
+    }
+
+    else if (x instanceof synDisI1) {
+        i = new synDisI1(g, cpas.as);
+    }
+
+    else if (x instanceof synDisI2) {
+        i = new synDisI2(g, cpas.as);
+    }
+
+    else if (x instanceof synExiE) {
+        i = new synExiE(g, cpas.as);
+    }
+
+    else if (x instanceof synExiI) {
+        i = new synExiI(g, cpas.as);
+    }
+
+    else if (x instanceof synUniE) {
+        i = new synUniE(g, cpas.as);
+        
+        (<synUniE> i).waitingForTermSelection = x.waitingForTermSelection;
+    }
+
+    else if (x instanceof synUniI) {
+        i = new synUniI(g, cpas.as);
+    }
+
+    else if (x instanceof synImpE) {
+        i = new synImpE(g, cpas.as);
+    }
+
+    else if (x instanceof synImpI) {
+        i = new synImpI(g, cpas.as);
+    }
+
+    else {
+        i = new Inductive(g, cpas.as);
+    }
+
+    if (g === null) {
+        // Goal is unknown
+        refs.push(i);
+    }
+
+    for (var j = 0; j < cpas.n; j++)
+        refs.push(i);
+
+    var ps = [];
+    x.premises.forEach(i => ps.push(copyInductive(i, refs)));
+    i.premises = ps;
+
+    return i;
+}
+
+function copyUnknown(x: Unknown, ref: any, xs: Unknown[], ltIndices: number[][]): Unknown {
+    var u: Unknown = { x: ref };
+
+    if (x.inAssumption !== undefined)
+        u.inAssumption = x.inAssumption;
+
+    if (x.inFm !== undefined)
+        u.inFm = x.inFm;
+
+    if (x.inTm !== undefined)
+        u.inTm = x.inTm;
+
+    var lts: number[] = [];
+
+    if (x.linkedTo !== undefined) {
+        u.linkedTo = [];
+
+        x.linkedTo.forEach((u, i) => {
+            var z = xs.indexOf(u);
+
+            if (z !== -1)
+                lts.push(z);
+        });
+    }
+
+    ltIndices.push(lts);
+
+    return u;
+}
+
+//
+// END OF UNDO
+//
