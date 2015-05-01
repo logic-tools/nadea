@@ -1,4 +1,4 @@
-text \<open>\section*{Soundness Proof}\<close>
+text \<open>\Large Soundness Proof \par~\<close>
 
 theory NaDeA imports Main begin
 
@@ -133,54 +133,44 @@ where
 "e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
 
 lemma generalize_upd: "(%n. if n = 0 then z else e (n - 1)) = e\<langle>0:z\<rangle>"
-unfolding shift_def by auto
+by (simp add: shift_def)
 
 lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Longrightarrow> news c a"
-using news.simps by metis+
+by auto metis+
 
 lemma membership[simp]: "member x xs \<Longrightarrow> x \<in> set xs"
-by (induct xs) (auto, metis)
+by (induct xs, auto) metis
 
 lemma upd_lemma':
   "new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t"
   "new_list n ts \<Longrightarrow> semantics_list e (f(n := x)) ts = semantics_list e f ts"
-by (induct t and ts rule: semantics_term.induct semantics_list.induct, auto, metis+)
+by (induct t and ts rule: semantics_term.induct semantics_list.induct, auto) metis+
 
 lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
-by (induct p arbitrary: e, simp_all add: upd_lemma', metis+)
+by (induct p arbitrary: e, simp_all add: upd_lemma') metis+
 
 lemma list_upd_lemma: "news n a \<Longrightarrow>
   list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
-by (induct a, auto, metis upd_lemma, metis, metis upd_lemma, metis)
-
-lemma shift_eq: "i = j \<Longrightarrow> (e\<langle>i:T\<rangle>) j = T"
-by (simp add: shift_def)
-
-lemma shift_gt: "j < i \<Longrightarrow> (e\<langle>i:T\<rangle>) j = e j"
-by (simp add: shift_def)
-
-lemma shift_lt: "i < j \<Longrightarrow> (e\<langle>i:T\<rangle>) j = e (j - 1)"
-by (simp add: shift_def)
+by (induct a, auto) (metis upd_lemma, metis)+
 
 lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
-by (rule ext, case_tac x, simp add: shift_eq shift_gt, case_tac nat, simp_all add: shift_def)
+by (rule ext, simp add: shift_def) auto
 
 lemma lift_lemma:
   "semantics_term (e\<langle>0:z\<rangle>) f (inc_term t) = semantics_term e f t"
   "semantics_list (e\<langle>0:z\<rangle>) f (inc_list ts) = semantics_list e f ts"
-by (induct t and ts rule: semantics_term.induct semantics_list.induct) (simp_all add: shift_lt)
+by (induct t and ts rule: semantics_term.induct semantics_list.induct) (simp_all add: shift_def)
 
 lemma subst_lemma':
   "semantics_term e f (sub_term i u t) = semantics_term (e\<langle>i:semantics_term e f u\<rangle>) f t"
   "semantics_list e f (sub_list i u ts) = semantics_list (e\<langle>i:semantics_term e f u\<rangle>) f ts"
-by (induct t and ts rule: semantics_term.induct semantics_list.induct)
-  (simp_all add: shift_eq shift_gt shift_lt)
+by (induct t and ts rule: semantics_term.induct semantics_list.induct) (simp_all add: shift_def)
 
 lemma Exi_simp2: "semantics e f g (Exi p) = (? x. semantics (e\<langle>0:x\<rangle>) f g p)"
-unfolding shift_def by auto
+by (simp add: shift_def)
 
 lemma Uni_simp2: "semantics e f g (Uni p) = (! x. semantics (e\<langle>0:x\<rangle>) f g p)"
-unfolding shift_def by auto
+by (simp add: shift_def)
 
 lemma subst_lemma: "semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
 proof (induct a arbitrary: e t i)
@@ -226,7 +216,7 @@ qed auto
 lemma subst_lemma2:
   "semantics e f g (sub 0 t a) =
           semantics (%n. if n = 0 then semantics_term e f t else e(n - 1)) f g a"
-using subst_lemma[of e] unfolding shift_def by auto
+by (simp add: generalize_upd subst_lemma)
 
 lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
 proof (induct arbitrary: e f rule: OK.induct)
@@ -304,13 +294,9 @@ next
 qed auto
 
 theorem soundness: "OK p [] ==> semantics e f g p"
-proof -
-  have "OK p [] \<Longrightarrow> list_all (semantics e f g) [] \<Longrightarrow> semantics e f g p" using soundness' by blast
-  then show "OK p [] \<Longrightarrow> semantics e f g p" by auto
-qed
+by (simp add: soundness')
 
 corollary "OK p [] \<longrightarrow> (\<forall>e f g. semantics e f g p)"
-by (auto, rule soundness)
+by (simp add: soundness)
 
 end
-
