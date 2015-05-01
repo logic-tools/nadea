@@ -136,22 +136,22 @@ lemma generalize_upd: "(%n. if n = 0 then z else e (n - 1)) = e\<langle>0:z\<ran
 by (simp add: shift_def)
 
 lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Longrightarrow> news c a"
-by auto metis+
+by simp_all metis+
 
 lemma membership[simp]: "member x xs \<Longrightarrow> x \<in> set xs"
-by (induct xs, auto) metis
+by (induct xs, simp_all) metis
 
 lemma upd_lemma':
   "new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t"
   "new_list n ts \<Longrightarrow> semantics_list e (f(n := x)) ts = semantics_list e f ts"
-by (induct t and ts rule: semantics_term.induct semantics_list.induct, auto) metis+
+by (induct t and ts rule: semantics_term.induct semantics_list.induct, simp_all) metis+
 
 lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
 by (induct p arbitrary: e, simp_all add: upd_lemma') metis+
 
 lemma list_upd_lemma: "news n a \<Longrightarrow>
   list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
-by (induct a, auto) (metis upd_lemma, metis)+
+by (induct a, simp_all) (metis upd_lemma)
 
 lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
 by (rule ext, simp add: shift_def) auto
