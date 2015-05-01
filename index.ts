@@ -3,12 +3,14 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.2";
+var versionNumber = "0.1.3";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
 var indexNadeaURL = "http://nadea.compute.dtu.dk/index.nadea";
 var readNadeaFileLocally = window.location.protocol !== "file:";
+
+var INITIAL_PROOF = "OK{\<currency>}[]";
 
 // Unknown interface stores information about
 // the unknowns in an uncompleted proof
@@ -47,7 +49,7 @@ $(document).ready(() => {
     attachKeyBindings();
 
     // Load examples
-    loadTestCasesAndExercises();
+    loadTestsAndHints();
 
     $(window).trigger("hashchange");
 
@@ -65,7 +67,7 @@ function initNewProof() {
     stateStack = new IbStack(currentState);
 }
 
-function loadProof(x: Inductive[]) {
+function loadProof(x: Inductive[], reverse = false) {
 
     var states = [];
     x.forEach(ind => {
@@ -74,7 +76,10 @@ function loadProof(x: Inductive[]) {
         s.p = ind;
         s.xs = reconstructUnknownsFromProof(ind);
 
-        states.push(s);
+        if (reverse)
+            states.unshift(s);
+        else
+            states.push(s);
     });
 
     // Set x as reference proof
@@ -152,19 +157,18 @@ function updateFrame() {
 // Dict to proof codes stored
 var proofCodes: { [id: string]: string };
 
-function loadTestCasesAndExercises() {
+function loadTestsAndHints() {
     // Initially the tests are the initial proof state
     proofCodes = {};
 
     for (var i = 0; i <= 9; i++)
-        proofCodes["Test " + i] = "OK{¤}[]";
+        proofCodes["Test " + i] = INITIAL_PROOF;
 
-    proofCodes["Test suite"] = "OK{¤}[]";
+    proofCodes["Test suite"] = INITIAL_PROOF;
 
     /* Get .nadea file contents */
 
     var xhr = new XMLHttpRequest();
-    xhr.timeout = 5000;
 
     if (readNadeaFileLocally) {
         // Try to fetch from server file system
@@ -177,10 +181,11 @@ function loadTestCasesAndExercises() {
 
         xhr.ontimeout = () => {
             readNadeaFileLocally = false;
-            loadTestCasesAndExercises();
+            loadTestsAndHints();
         }
 
         xhr.open("GET", "index.nadea", true);
+        xhr.timeout = 5000;
         xhr.setRequestHeader('Content-type', 'text/plain; charset=utf-8');
         xhr.send(null);
     }
@@ -194,10 +199,11 @@ function loadTestCasesAndExercises() {
         }
 
         xhr.ontimeout = () => {
-            console.log("Failed to load test cases and exercises.");
+            console.log("Failed to load tests and hints.");
         }
 
         xhr.open("GET", indexNadeaURL, true);
+        xhr.timeout = 5000;
         xhr.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
         xhr.send(null);
     }
@@ -214,10 +220,10 @@ function readNadeaData(rawFileText: string) {
 
     var lines = rawFileText.split(/\n/).filter(x => { return x.trim() !== "" });
 
-    var addProofCode = (id, code) => {
+    var addProofCode = (id, code, bypassCheck = false) => {
         if (id !== null) {
             // End of proof code
-            if (isValidProofCode(currentProofCode))
+            if (bypassCheck || isValidProofCode(currentProofCode))
                 proofCodes[id] = code;
             else
                 console.log("Invalid proof code (" + id + ") read from '.nadea' file.");
@@ -226,7 +232,7 @@ function readNadeaData(rawFileText: string) {
 
     lines.forEach((x, i) => {
         // Check if recognized as valid proof ID
-        var idMatch = x.match(/^\.\s*((Test\s+[0-9])|(Exercise\s+[0-9]+))\s*$/);
+        var idMatch = x.match(/^\.\s*((Test\s+[0-9])|(Hint\s+[0-9]+))\s*$/);
 
         if (idMatch !== null) {
             addProofCode(currentProofID, currentProofCode);
@@ -262,7 +268,13 @@ function readNadeaData(rawFileText: string) {
 
     addProofCode(currentProofID, currentProofCode);
 
-    addProofCode("Test suite", ". The test suite contains the final proof state for all test cases\n" + testSuiteCodes.join("\n"));
+    var allProofCodes = "";
+
+    for (var key in proofCodes)
+        allProofCodes += "." + key + "\n" + proofCodes[key];
+
+    addProofCode("All proofs", ". 'All proofs' contain all the proofs from the nadea file\n" + allProofCodes, true);
+    addProofCode("Test suite", ". The test suite contains the final proof state for all tests\n" + testSuiteCodes.join("\n"));
 }
 
 $(document).ready(() => {
@@ -712,7 +724,7 @@ function replaceUnknownsFormula(u: Unknown, fm: Formula, updateLinked: boolean =
     return unknowns;
 }
 
-function replaceUnknownsID(u: Unknown, id: string, updateLinked: boolean = true): Unknown[]{
+function replaceUnknownsID(u: Unknown, id: string, updateLinked: boolean = true): Unknown[] {
 
     // Replace id of predicate
     if (u.x instanceof fmPre && u.inFm == 1) {
@@ -972,17 +984,17 @@ function replaceUnknowns() {
     // Code frame
     //
 
-    replaceHTML("#frameContainer .line .left", /\@fm/g, "<a class=\"newFormula\" title=\"Unknown formula\">¤<\/a>");
-    replaceHTML("#frameContainer .line .left", /\@id/g, "<a class=\"newID\" title=\"Unknown ID\">¤<\/a>");
-    replaceHTML("#frameContainer .line .left", /\@tms/g, "<a class=\"newTms\" title=\"Unknown list of terms\">¤<\/a>");
-    replaceHTML("#frameContainer .line .left", /\@tm/g, "<a class=\"newTm\" title=\"Unknown term\">¤<\/a>");
+    replaceHTML("#frameContainer .line .left", /\@fm/g, "<a class=\"newFormula\" title=\"Unknown formula\">\<currency><\/a>");
+    replaceHTML("#frameContainer .line .left", /\@id/g, "<a class=\"newID\" title=\"Unknown ID\">\<currency><\/a>");
+    replaceHTML("#frameContainer .line .left", /\@tms/g, "<a class=\"newTms\" title=\"Unknown list of terms\">\<currency><\/a>");
+    replaceHTML("#frameContainer .line .left", /\@tm/g, "<a class=\"newTm\" title=\"Unknown term\">\<currency><\/a>");
 
     // @syn -> 
     // if (syn has no unknowns in goal) -> link to select syn rule
     // else -> remove
     $("#frameContainer .line .middle").filter((i, v) => { return $(v).html().search("news") === -1 }).each((i, e) => {
         if (undefInductivesWithoutUnknowns[i] !== undefined) {
-            $(e).html($(e).html().replace(/\@syn/, "<a class='newSynRule' title='Unknown rule'>¤</a>"));
+            $(e).html($(e).html().replace(/\@syn/, "<a class='newSynRule' title='Unknown rule'>\<currency></a>"));
         }
         else
             $(e).html("&nbsp;");
@@ -992,10 +1004,10 @@ function replaceUnknowns() {
     // Formal frame
     //
 
-    replaceHTML("#frameContainer .line .right", /\@fm/g, '<span title="Unknown formula" class="formalUnknown">¤</span>');
-    replaceHTML("#frameContainer .line .right", /\@id/g, '<span title="Unknown ID" class="formalUnknown">¤</span>');
-    replaceHTML("#frameContainer .line .right", /\@tms/g, '<span title="Unknown list of terms" class="formalUnknown">¤</span>');
-    replaceHTML("#frameContainer .line .right", /\@tm/g, '<span title="Unknown term" class="formalUnknown">¤</span>');
+    replaceHTML("#frameContainer .line .right", /\@fm/g, '<span title="Unknown formula" class="formalUnknown">\<currency></span>');
+    replaceHTML("#frameContainer .line .right", /\@id/g, '<span title="Unknown ID" class="formalUnknown">\<currency></span>');
+    replaceHTML("#frameContainer .line .right", /\@tms/g, '<span title="Unknown list of terms" class="formalUnknown">\<currency></span>');
+    replaceHTML("#frameContainer .line .right", /\@tm/g, '<span title="Unknown term" class="formalUnknown">\<currency></span>');
 }
 
 function replaceFormalSymbols(selection: string): void {
@@ -1107,15 +1119,18 @@ function attachHashEventListeners() {
         if (!match)
             return;
 
-        var proofID = "Exercise " + hashValue;
-        
+        var proofID = "Hint " + hashValue;
+
         if (proofCodes[proofID] === undefined)
             return;
 
         var proof = decodeProof(proofCodes[proofID]);
 
-        if (proof !== null)
-            loadProof(proof);
+        if (proof !== null) {
+            closeAllOverlays();
+
+            loadProof(proof, true);
+        }
     });
 
 
@@ -1193,11 +1208,16 @@ function closeOverlays(...exceptions: JQuery[]) {
     selection.remove();
 };
 
+function closeAllOverlays() {
+    closeOverlays();
+    $(".centeredOverlayOuter").remove();
+}
+
 //
 // New centered overlay
 //
 
-function newCenteredOverlay(type: string, cb: (...input) => any, ...input): void {
+function newCenteredOverlay(olType: string, cb: (...input) => any, ...input): void {
     var outer = $("<div class=\"centeredOverlayOuter\"></div>");
 
     var content = $("<div class=\"overlay\"></div>");
@@ -1207,7 +1227,7 @@ function newCenteredOverlay(type: string, cb: (...input) => any, ...input): void
     outer.append(content);
     $("body").append(outer);
 
-    switch (type) {
+    switch (olType) {
         case "load":
 
             loadInner(content, cb);
@@ -1219,7 +1239,7 @@ function newCenteredOverlay(type: string, cb: (...input) => any, ...input): void
 
             break;
         default:
-            throw new Error("Could not get overlay of type: " + type);
+            throw new Error("Could not get overlay of type: " + olType);
 
     }
 
@@ -1645,7 +1665,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     buttonsTable.append(buttonsRow);
 
     var cancel = $('<div class="button small">Cancel load</div>');
-    var update = $('<div class="button small">Load shown proof code</div>');
+    var update = $('<div class="button small">Load shown proof</div>');
     var presentProof = $('<div class="button small">The present proof</div>');
     //var makeNewProof = $('<div class="button small">The blank proof</div>');
 
@@ -1666,6 +1686,9 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     var testSuite = $('<div class="button small exampleProof">Test suite</div>');
     btnMid.append(testSuite);
 
+    var allProofs = $('<div class="button small exampleProof">All proofs</div>');
+    btnMid.append(allProofs);
+
     //btnMid.append(makeNewProof);
 
     content.append(buttonsContainer);
@@ -1674,7 +1697,6 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     var textareaContainer = $('<div class="loadTextareaContainer"></div>');
 
     var textarea = $("<textarea class=\"loadTextarea\" spellcheck='false'></textarea>");
-
 
     textareaContainer.append(textarea);
     content.append(textareaContainer);
@@ -1688,7 +1710,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
         var proofString = (<string> textarea.val()).trim();
 
         if (proofString == "")
-            proofString = "OK{¤}[]";
+            proofString = INITIAL_PROOF;
 
         var newProofs = decodeProof(proofString);
 
@@ -1713,10 +1735,13 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
 
         else if ($(v.currentTarget).html() === "Test suite")
             textarea.val(proofCodes["Test suite"]);
+
+        else if ($(v.currentTarget).html() === "All proofs")
+            textarea.val(proofCodes["All proofs"]);
     });
 
     // New proof code
-    /*var newProofCode = "OK{¤}[]";
+    /*var newProofCode = "OK{\<currency>}[]";
     makeNewProof.click(() => {
         textarea.val(newProofCode);
     });*/
@@ -1771,8 +1796,8 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     var folButton = $('<div class="button small">Definition of first-order logic syntax and semantics</div>');
     var ndButton = $('<div class="button small">Summary of natural deduction proof system</div>');
     //var copyrightButton = $('<div class="button small">Copyright notice and disclaimer</div>');
-    var sampleButton = $('<div class="button small">Sample proofs and exercises</div>');
-    var welcomeButton = $('<div class="button small">Show the welcome help</div>');
+    var sampleButton = $('<div class="button small">Sample proofs and hints</div>');
+    var welcomeButton = $('<div class="button small">Show welcome help</div>');
 
     btnLeft.append(cancel);
     btnMid.append(ndButton);
@@ -1826,12 +1851,12 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     // Tabs
     /* Content: Welcome */
-    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window.</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code.</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn edit mode on and off (by default edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
+    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn edit mode on and off (by default edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
 
 
     /* Content: Def. of syntax and semantics */
     var dssContent = $('<div></div>');
-    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
+    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment \<acute>e\<acute> for variables and in the function semantics \<acute>f\<acute> and predicate semantics \<acute>g\<acute> of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
 
     /* Sample proofs and exercises */
     var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
@@ -1839,7 +1864,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     /* Summary of rules */
     var sorContent = $('<div></div>');
 
-    sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate ´OK´ and auxiliary primitive recursive functions ´news´ (new constant in formulas) and ´sub´ (substitution for variable in formula).</div>');
+    sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate \<acute>OK\<acute> and auxiliary primitive recursive functions \<acute>news\<acute> (new constant in formulas) and \<acute>sub\<acute> (substitution for variable in formula).</div>');
 
     // Rule tables are created. Based on Scratch.thy
 
@@ -3144,7 +3169,7 @@ function incl(ts: Term[]): Term[] {
 //
 function encodeProof(x: any): string {
     if (x === null || x === undefined)
-        return "¤";
+        return "\<currency>";
 
     var s: string = "";
 
@@ -3212,13 +3237,13 @@ function encodeProof(x: any): string {
         s += fmp.getInternalName();
 
         s += "{";
-        s += (fmp.id === null ? "¤" : fmp.id);
+        s += (fmp.id === null ? "\<currency>" : fmp.id);
         s += "}";
 
         s += "{";
 
         if (fmp.tms === null)
-            s += "¤";
+            s += "\<currency>";
         else if (fmp.tms.length > 0) {
             fmp.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3247,12 +3272,12 @@ function encodeProof(x: any): string {
         s += tmf.getInternalName();
 
         s += "{";
-        s += (tmf.id === null ? "¤" : tmf.id);
+        s += (tmf.id === null ? "\<currency>" : tmf.id);
         s += "}";
         s += "{";
 
         if (tmf.tms === null)
-            s += "¤";
+            s += "\<currency>";
         else if (tmf.tms.length > 0) {
             tmf.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3360,7 +3385,7 @@ function decodeProofAux(x: string): any {
     // Special unknown symbol
     //
 
-    if (x === "¤")
+    if (x === "\<currency>")
         return null;
 
     var m: string[];
@@ -3548,10 +3573,10 @@ function decodeProofAux(x: string): any {
 
         else if (fm instanceof fmPre) {
 
-            if (args[0] !== "¤")
+            if (args[0] !== "\<currency>")
                 (<fmPre> fm).id = args[0];
 
-            if (args[1] !== "¤") {
+            if (args[1] !== "\<currency>") {
                 (<fmPre> fm).tms = [];
 
                 if (args[1] !== undefined) {
@@ -3612,10 +3637,10 @@ function decodeProofAux(x: string): any {
         }
 
         else if (tm instanceof tmFun) {
-            if (args[0] !== "¤")
+            if (args[0] !== "\<currency>")
                 (<tmFun> tm).id = args[0];
 
-            if (args[1] !== "¤") {
+            if (args[1] !== "\<currency>") {
                 (<tmFun> tm).tms = [];
 
                 if (args[1] !== undefined) {
@@ -4593,7 +4618,7 @@ function getRuleName(x: Inductive): string {
 
 // Attach key bindings to application
 function attachKeyBindings() {
-    $(document).keyup((e) => {
+    $(document).keydown((e) => {
         if (e.keyCode == 27) {
             $('.closeOverlay, .closeCenteredOverlay').click();
         } // esc
@@ -4777,7 +4802,7 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
 
     else if (x instanceof synUniE) {
         i = new synUniE(g, cpas.as);
-        
+
         (<synUniE> i).waitingForTermSelection = x.waitingForTermSelection;
     }
 
