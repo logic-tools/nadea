@@ -43,13 +43,13 @@ ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity
 . Not a proof.
 Boole{Falsity}[]:{Boole{Falsity}[Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{OK{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]}}}}}}}}}}}
 .
-. Exercise 123
+. Hint 123
 ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity]:{OK{Falsity}[Falsity,Falsity]}}
 .
-. Exercise 234
+. Hint 234
 OK{Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}}[]
 .
-. Exercise 345
+. Hint 345
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{ImpI{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]:{OK{Pre{A}{}}[Pre{A}{},Pre{B}{}]}}
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{OK{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]}
 OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]

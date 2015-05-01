@@ -10,7 +10,7 @@ $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 var indexNadeaURL = "http://nadea.compute.dtu.dk/index.nadea";
 var readNadeaFileLocally = window.location.protocol !== "file:";
 
-var INITIAL_PROOF = "OK{\<currency>}[]";
+var INITIAL_PROOF = "OK{¤}[]";
 
 // Unknown interface stores information about
 // the unknowns in an uncompleted proof
@@ -984,17 +984,17 @@ function replaceUnknowns() {
     // Code frame
     //
 
-    replaceHTML("#frameContainer .line .left", /\@fm/g, "<a class=\"newFormula\" title=\"Unknown formula\">\<currency><\/a>");
-    replaceHTML("#frameContainer .line .left", /\@id/g, "<a class=\"newID\" title=\"Unknown ID\">\<currency><\/a>");
-    replaceHTML("#frameContainer .line .left", /\@tms/g, "<a class=\"newTms\" title=\"Unknown list of terms\">\<currency><\/a>");
-    replaceHTML("#frameContainer .line .left", /\@tm/g, "<a class=\"newTm\" title=\"Unknown term\">\<currency><\/a>");
+    replaceHTML("#frameContainer .line .left", /\@fm/g, "<a class=\"newFormula\" title=\"Unknown formula\">¤<\/a>");
+    replaceHTML("#frameContainer .line .left", /\@id/g, "<a class=\"newID\" title=\"Unknown ID\">¤<\/a>");
+    replaceHTML("#frameContainer .line .left", /\@tms/g, "<a class=\"newTms\" title=\"Unknown list of terms\">¤<\/a>");
+    replaceHTML("#frameContainer .line .left", /\@tm/g, "<a class=\"newTm\" title=\"Unknown term\">¤<\/a>");
 
     // @syn -> 
     // if (syn has no unknowns in goal) -> link to select syn rule
     // else -> remove
     $("#frameContainer .line .middle").filter((i, v) => { return $(v).html().search("news") === -1 }).each((i, e) => {
         if (undefInductivesWithoutUnknowns[i] !== undefined) {
-            $(e).html($(e).html().replace(/\@syn/, "<a class='newSynRule' title='Unknown rule'>\<currency></a>"));
+            $(e).html($(e).html().replace(/\@syn/, "<a class='newSynRule' title='Unknown rule'>¤</a>"));
         }
         else
             $(e).html("&nbsp;");
@@ -1004,10 +1004,10 @@ function replaceUnknowns() {
     // Formal frame
     //
 
-    replaceHTML("#frameContainer .line .right", /\@fm/g, '<span title="Unknown formula" class="formalUnknown">\<currency></span>');
-    replaceHTML("#frameContainer .line .right", /\@id/g, '<span title="Unknown ID" class="formalUnknown">\<currency></span>');
-    replaceHTML("#frameContainer .line .right", /\@tms/g, '<span title="Unknown list of terms" class="formalUnknown">\<currency></span>');
-    replaceHTML("#frameContainer .line .right", /\@tm/g, '<span title="Unknown term" class="formalUnknown">\<currency></span>');
+    replaceHTML("#frameContainer .line .right", /\@fm/g, '<span title="Unknown formula" class="formalUnknown">¤</span>');
+    replaceHTML("#frameContainer .line .right", /\@id/g, '<span title="Unknown ID" class="formalUnknown">¤</span>');
+    replaceHTML("#frameContainer .line .right", /\@tms/g, '<span title="Unknown list of terms" class="formalUnknown">¤</span>');
+    replaceHTML("#frameContainer .line .right", /\@tm/g, '<span title="Unknown term" class="formalUnknown">¤</span>');
 }
 
 function replaceFormalSymbols(selection: string): void {
@@ -1741,7 +1741,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     });
 
     // New proof code
-    /*var newProofCode = "OK{\<currency>}[]";
+    /*var newProofCode = "OK{¤}[]";
     makeNewProof.click(() => {
         textarea.val(newProofCode);
     });*/
@@ -1856,7 +1856,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     /* Content: Def. of syntax and semantics */
     var dssContent = $('<div></div>');
-    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment \<acute>e\<acute> for variables and in the function semantics \<acute>f\<acute> and predicate semantics \<acute>g\<acute> of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
+    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
 
     /* Sample proofs and exercises */
     var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
@@ -1864,7 +1864,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     /* Summary of rules */
     var sorContent = $('<div></div>');
 
-    sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate \<acute>OK\<acute> and auxiliary primitive recursive functions \<acute>news\<acute> (new constant in formulas) and \<acute>sub\<acute> (substitution for variable in formula).</div>');
+    sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate ´OK´ and auxiliary primitive recursive functions ´news´ (new constant in formulas) and ´sub´ (substitution for variable in formula).</div>');
 
     // Rule tables are created. Based on Scratch.thy
 
@@ -3169,7 +3169,7 @@ function incl(ts: Term[]): Term[] {
 //
 function encodeProof(x: any): string {
     if (x === null || x === undefined)
-        return "\<currency>";
+        return "¤";
 
     var s: string = "";
 
@@ -3237,13 +3237,13 @@ function encodeProof(x: any): string {
         s += fmp.getInternalName();
 
         s += "{";
-        s += (fmp.id === null ? "\<currency>" : fmp.id);
+        s += (fmp.id === null ? "¤" : fmp.id);
         s += "}";
 
         s += "{";
 
         if (fmp.tms === null)
-            s += "\<currency>";
+            s += "¤";
         else if (fmp.tms.length > 0) {
             fmp.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3272,12 +3272,12 @@ function encodeProof(x: any): string {
         s += tmf.getInternalName();
 
         s += "{";
-        s += (tmf.id === null ? "\<currency>" : tmf.id);
+        s += (tmf.id === null ? "¤" : tmf.id);
         s += "}";
         s += "{";
 
         if (tmf.tms === null)
-            s += "\<currency>";
+            s += "¤";
         else if (tmf.tms.length > 0) {
             tmf.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3385,7 +3385,7 @@ function decodeProofAux(x: string): any {
     // Special unknown symbol
     //
 
-    if (x === "\<currency>")
+    if (x === "¤")
         return null;
 
     var m: string[];
@@ -3573,10 +3573,10 @@ function decodeProofAux(x: string): any {
 
         else if (fm instanceof fmPre) {
 
-            if (args[0] !== "\<currency>")
+            if (args[0] !== "¤")
                 (<fmPre> fm).id = args[0];
 
-            if (args[1] !== "\<currency>") {
+            if (args[1] !== "¤") {
                 (<fmPre> fm).tms = [];
 
                 if (args[1] !== undefined) {
@@ -3637,10 +3637,10 @@ function decodeProofAux(x: string): any {
         }
 
         else if (tm instanceof tmFun) {
-            if (args[0] !== "\<currency>")
+            if (args[0] !== "¤")
                 (<tmFun> tm).id = args[0];
 
-            if (args[1] !== "\<currency>") {
+            if (args[1] !== "¤") {
                 (<tmFun> tm).tms = [];
 
                 if (args[1] !== undefined) {
