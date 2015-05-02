@@ -224,6 +224,7 @@ next
 next
   case (Dis_E p q a r)
   then have "semantics e f g (Dis p q)" by auto
+  then have "semantics e f g p \<or> semantics e f g q" by (metis semantics.simps(4))
   then show ?case using Dis_E by auto
 next
   case (Con_E1 p q a)
