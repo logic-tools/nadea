@@ -219,19 +219,19 @@ next
   then have "list_all (semantics e f g) (Imp p Falsity # a) \<Longrightarrow> False" by auto
   then have "\<not>list_all (semantics e f g) (Imp p Falsity # a)" by auto
   then have "\<not>semantics e f g (Imp p Falsity)" using Boole by simp
-  then have "semantics e f g p \<and> \<not>semantics e f g Falsity" by (metis semantics.simps(3))
-  then show ?case by auto
+  then have "semantics e f g p \<and> \<not>semantics e f g Falsity" by auto metis
+  then show ?case by simp
 next
   case (Dis_E p q a r)
-  then have "semantics e f g (Dis p q)" by auto
-  then have "semantics e f g p \<or> semantics e f g q" by (metis semantics.simps(4))
+  then have "semantics e f g (Dis p q)" by simp
+  then have "semantics e f g p \<or> semantics e f g q" by auto metis
   then show ?case using Dis_E by auto
 next
   case (Con_E1 p q a)
-  then show ?case by (metis semantics.simps(5))
+  then show ?case by auto metis
 next
   case (Con_E2 p q a)
-  then show ?case by (metis semantics.simps(5))
+  then show ?case by auto metis
 next
   case (Exi_I t p a)
   then have "semantics e f g (sub 0 t p)" by simp
@@ -248,7 +248,7 @@ next
 next
   case (Exi_E p a q c)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
-  from Exi_E have "semantics e f g (Exi p)" by auto
+  from Exi_E have "semantics e f g (Exi p)" by simp
   then have "(? z. semantics (?upd e z) f g p)" by simp
   then obtain z where z_def: "semantics (?upd e z) f g p" by auto
   let ?f' = "f(c := \<lambda>x. z)"
@@ -257,10 +257,10 @@ next
   then have "semantics (e\<langle>0:semantics_term e ?f' (Fun c [])\<rangle>)?f' g p" using fun_upd_same by auto
   then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" by (simp add: subst_lemma)
   from Exi_E(6) have a_holds: "list_all (semantics e ?f' g) a"
-    using Exi_E(3) list_upd_lemma[of c a] by (metis Exi_E.hyps(5) news.simps(2))
+    by (metis list_upd_lemma Exi_E.hyps(5) news.simps(2))
   from Exi_E(5) have "semantics e ?f' g q" using p_holds a_holds
     by (metis Exi_E.hyps(4) list_all_simps(1))
-  then show ?case using Exi_E(3) upd_lemma newness by (metis Exi_E.hyps(5))
+  then show ?case by (metis upd_lemma newness Exi_E.hyps(5))
 next
   case (Uni_I c p a)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
@@ -268,15 +268,15 @@ next
     proof
       fix x
       let ?f' = "f(c := \<lambda>y. x)"
-      from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by blast
-      then have "semantics e ?f' g (sub 0 (Fun c []) p)" by (metis Uni_I(2))
+      from Uni_I have "list_all (semantics e ?f' g) a" by (metis list_upd_lemma newness(2))
+      then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by simp
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
         by (simp add: generalize_upd subst_lemma)
       then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
         by (metis semantics_term.simps(2))
       then have "semantics (?upd e (?f' c [])) ?f' g p" by (metis fun_upd_same)
       then have "semantics (?upd e x) ?f' g p" by (metis fun_upd_apply)
-      then show "semantics (?upd e x) f g p" using Uni_I upd_lemma newness by blast
+      then show "semantics (?upd e x) f g p" by (metis Uni_I(3) upd_lemma newness(1))
     qed
   then show ?case by simp
 qed auto
