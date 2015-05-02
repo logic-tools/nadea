@@ -236,7 +236,7 @@ next
   case (Exi_I t p a)
   then have "semantics e f g (sub 0 t p)" by auto
   then have "semantics (\<lambda>n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
-    using subst_lemma by (simp add: generalize_upd subst_lemma)
+    by (simp add: shift_def subst_lemma)
   then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by auto
   then show ?case by auto
 next
@@ -244,7 +244,7 @@ next
   then have "semantics e f g (Uni p)" by auto
   then have "!x. semantics (% n. if n = 0 then x else e (n - 1)) f g p" by auto
   then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p" by auto
-  then show ?case using subst_lemma by (simp add: generalize_upd subst_lemma)
+  then show ?case by (simp add: shift_def subst_lemma)
 next
   case (Exi_E p a q c)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
@@ -252,7 +252,7 @@ next
   then have "(? z. semantics (?upd e z) f g p)" by simp
   then obtain z where z_def: "semantics (?upd e z) f g p" by auto
   let ?f' = "f(c := \<lambda>x. z)"
-  from z_def have "semantics  (e\<langle>0:z\<rangle>) f g p" using generalize_upd[of z] by simp
+  from z_def have "semantics  (e\<langle>0:z\<rangle>) f g p" by (simp add: shift_def subst_lemma)
   then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E(3) upd_lemma[of c p]
     by (metis Exi_E.hyps(5) news.simps(2))
   then have "semantics (e\<langle>0:semantics_term e ?f' (Fun c [])\<rangle>)?f' g p" using fun_upd_same by auto
@@ -272,7 +272,7 @@ next
       from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by blast
       then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by auto
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
-        using subst_lemma by (simp add: generalize_upd subst_lemma)
+        by (simp add: generalize_upd subst_lemma)
       then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
         by (metis semantics_term.simps(2))
       then have "semantics (?upd e (?f' c [])) ?f' g p" by (metis fun_upd_same)
