@@ -166,12 +166,6 @@ lemma subst_lemma':
   "semantics_list e f (sub_list i u ts) = semantics_list (e\<langle>i:semantics_term e f u\<rangle>) f ts"
 by (induct t and ts rule: semantics_term.induct semantics_list.induct) (simp_all add: shift_def)
 
-lemma Exi_simp2: "semantics e f g (Exi p) = (? x. semantics (e\<langle>0:x\<rangle>) f g p)"
-by (simp add: shift_def)
-
-lemma Uni_simp2: "semantics e f g (Uni p) = (! x. semantics (e\<langle>0:x\<rangle>) f g p)"
-by (simp add: shift_def)
-
 lemma subst_lemma: "semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
 proof (induct a arbitrary: e t i)
   case (Pre p ts)
@@ -180,7 +174,7 @@ next
   case (Uni a)
   have "semantics (e\<langle>i:semantics_term e f t\<rangle>) f g (Uni a)
             = (\<forall>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)"
-    using Uni_simp2 by simp
+    by (simp add: shift_def)
   also
   have "... = (\<forall>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term e f t\<rangle>) f g a)"
     using shift_commute[of e] by auto
@@ -190,14 +184,14 @@ next
   also
   have "... = (\<forall>z. semantics (e\<langle>0:z\<rangle>) f g (sub (i + 1) (inc_term t) a))" using Uni by simp
   also
-  have "... = semantics e f g (Uni (sub (i + 1) (inc_term t) a))" using Uni_simp2[of e] by simp
+  have "... = semantics e f g (Uni (sub (i + 1) (inc_term t) a))" by (simp add: shift_def)
   also
   have "... = semantics e f g (sub i t (Uni a)) " by auto
   finally show ?case by simp
 next
   case (Exi a)
   have "semantics (e\<langle>i:semantics_term e f t\<rangle>) f g (Exi a)
-            = (\<exists>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)" using Exi_simp2 by simp
+            = (\<exists>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)" by (simp add: shift_def)
   also
   have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term e f t\<rangle>) f g a)"
     using shift_commute[of e] by auto
@@ -207,16 +201,11 @@ next
   also
   have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>) f g (sub (i + 1) (inc_term t) a))" using Exi by simp
   also
-  have "... = semantics e f g (Exi (sub (i + 1) (inc_term t) a))" using Exi_simp2[of e] by simp
+  have "... = semantics e f g (Exi (sub (i + 1) (inc_term t) a))" by (simp add: shift_def)
   also
   have "... = semantics e f g (sub i t (Exi a)) " by auto
   finally show ?case by simp
 qed auto
-
-lemma subst_lemma2:
-  "semantics e f g (sub 0 t a) =
-          semantics (%n. if n = 0 then semantics_term e f t else e(n - 1)) f g a"
-by (simp add: generalize_upd subst_lemma)
 
 lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
 proof (induct arbitrary: e f rule: OK.induct)
@@ -247,7 +236,7 @@ next
   case (Exi_I t p a)
   then have "semantics e f g (sub 0 t p)" by auto
   then have "semantics (\<lambda>n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
-    using subst_lemma2 by blast
+    using subst_lemma by (simp add: generalize_upd subst_lemma)
   then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by auto
   then show ?case by auto
 next
@@ -255,7 +244,7 @@ next
   then have "semantics e f g (Uni p)" by auto
   then have "!x. semantics (% n. if n = 0 then x else e (n - 1)) f g p" by auto
   then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p" by auto
-  then show ?case using subst_lemma2 by blast
+  then show ?case using subst_lemma by (simp add: generalize_upd subst_lemma)
 next
   case (Exi_E p a q c)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
@@ -283,7 +272,7 @@ next
       from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by blast
       then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by auto
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
-        using subst_lemma2 by blast
+        using subst_lemma by (simp add: generalize_upd subst_lemma)
       then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
         by (metis semantics_term.simps(2))
       then have "semantics (?upd e (?f' c [])) ?f' g p" by (metis fun_upd_same)
