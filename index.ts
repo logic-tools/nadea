@@ -3,7 +3,7 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.3";
+var versionNumber = "0.1.4";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
@@ -50,8 +50,6 @@ $(document).ready(() => {
 
     // Load examples
     loadTestsAndHints();
-
-    $(window).trigger("hashchange");
 
     // Update
     update();
@@ -232,7 +230,7 @@ function readNadeaData(rawFileText: string) {
 
     lines.forEach((x, i) => {
         // Check if recognized as valid proof ID
-        var idMatch = x.match(/^\.\s*((Test\s+[0-9])|(Hint\s+[0-9]+))\s*$/);
+        var idMatch = x.match(/^\.\s*((Test\s+[0-9]+)|(Hint\s+[0-9]+))\s*$/);
 
         if (idMatch !== null) {
             addProofCode(currentProofID, currentProofCode);
@@ -252,7 +250,7 @@ function readNadeaData(rawFileText: string) {
                 endOfComments = true;
 
                 // Add this line to test suite if it is test [0-9]
-                var idMatch2 = currentProofID.match(/Test ([1-9])/);
+                var idMatch2 = currentProofID.match(/Test ([0-9]+)/);
 
                 if (idMatch2 !== null)
                     testSuiteCodes[+idMatch2[1] - 1] = x;
@@ -268,13 +266,17 @@ function readNadeaData(rawFileText: string) {
 
     addProofCode(currentProofID, currentProofCode);
 
+    addProofCode("Test suite", ". The test suite contains the final proof state for all tests\n.\n" + testSuiteCodes.join("\n"));
+
     var allProofCodes = "";
 
     for (var key in proofCodes)
-        allProofCodes += "." + key + "\n" + proofCodes[key];
+        allProofCodes += ".\n. " + key + "\n.\n" + proofCodes[key];
 
-    addProofCode("All proofs", ". 'All proofs' contain all the proofs from the nadea file\n" + allProofCodes, true);
-    addProofCode("Test suite", ". The test suite contains the final proof state for all tests\n" + testSuiteCodes.join("\n"));
+    addProofCode("Online proofs", ". Online proofs in the index.nadea file\n" + allProofCodes, true);
+
+    // Wait for nadea-file
+    $(window).trigger("hashchange");
 }
 
 $(document).ready(() => {
@@ -551,8 +553,6 @@ function attachEventHandlersUnknowns() {
     $(document).on("click", "a.newTm",(e) => {
 
         indexUnknown = $(e.currentTarget).data("indexUnknown");
-
-        // console.log("indexUnknown: " + indexUnknown);
 
         newOverlay(e, "newTm", tmCallback);
     });
@@ -1132,8 +1132,6 @@ function attachHashEventListeners() {
             loadProof(proof, true);
         }
     });
-
-
 }
 
 
@@ -1686,8 +1684,8 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     var testSuite = $('<div class="button small exampleProof">Test suite</div>');
     btnMid.append(testSuite);
 
-    var allProofs = $('<div class="button small exampleProof">All proofs</div>');
-    btnMid.append(allProofs);
+    var onlineProofs = $('<div class="button small exampleProof">Online proofs</div>');
+    btnMid.append(onlineProofs);
 
     //btnMid.append(makeNewProof);
 
@@ -1736,15 +1734,9 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
         else if ($(v.currentTarget).html() === "Test suite")
             textarea.val(proofCodes["Test suite"]);
 
-        else if ($(v.currentTarget).html() === "All proofs")
-            textarea.val(proofCodes["All proofs"]);
+        else if ($(v.currentTarget).html() === "Online proofs")
+            textarea.val(proofCodes["Online proofs"]);
     });
-
-    // New proof code
-    /*var newProofCode = "OK{¤}[]";
-    makeNewProof.click(() => {
-        textarea.val(newProofCode);
-    });*/
 
     // Present proof code with prepended comment lines
     var presentProofCode = ". The present proof is stored in the code shown here.\n. Use text copy-and-paste to a file in order to save it.\n. The proof code can be edited or replaced entirely.\n. A line like this one starting with a period is a comment only.\n.\n";
@@ -1795,8 +1787,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     var cancel = $('<div class="button small">Cancel help</div>');
     var folButton = $('<div class="button small">Definition of first-order logic syntax and semantics</div>');
     var ndButton = $('<div class="button small">Summary of natural deduction proof system</div>');
-    //var copyrightButton = $('<div class="button small">Copyright notice and disclaimer</div>');
-    var sampleButton = $('<div class="button small">Sample proofs and hints</div>');
+    var sampleButton = $('<div class="button small">Sample proofs and exercises with hints</div>');
     var welcomeButton = $('<div class="button small">Show welcome help</div>');
 
     btnLeft.append(cancel);
@@ -1851,14 +1842,14 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     // Tabs
     /* Content: Welcome */
-    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn edit mode on and off (by default edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
+    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn the edit mode on and off (by default the edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
 
 
     /* Content: Def. of syntax and semantics */
     var dssContent = $('<div></div>');
-    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
+    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule (Isabelle proof available in NaDeA.thy file on GitHub)</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
 
-    /* Sample proofs and exercises */
+    /* Sample proofs and exercises with hints */
     var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
 
     /* Summary of rules */
@@ -1866,7 +1857,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate ´OK´ and auxiliary primitive recursive functions ´news´ (new constant in formulas) and ´sub´ (substitution for variable in formula).</div>');
 
-    // Rule tables are created. Based on Scratch.thy
+    // Rule tables are created.
 
     var divBox1 = $('<div class="ndRulesContainer first"></div>');
     var divBox2 = $('<div class="ndRulesContainer"></div>');
@@ -2940,8 +2931,6 @@ class synUniI extends Inductive implements InductiveInterface {
 
         this.cIsNew = news(c, newsFmList);
 
-        //console.log(this.cIsNew);
-
         var l = copyFormula(p);
 
         var subResult = sub(0, this.c, l);
@@ -3825,8 +3814,6 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
 function copyTerm(x: Term, refs: any[] = null): Term {
     if (x === null)
         return null;
-
-    //console.log(x);
 
     if (x instanceof tmVar)
         return new tmVar((<tmVar> x).nat);
@@ -4739,10 +4726,6 @@ function copyState(s: State): State {
     x.xs = [];
     s.xs.forEach((e, i) => x.xs[i] = copyUnknown(e, refs[i], s.xs, ltIndices));
 
-    //console.log(ltIndices);
-    //console.log(s.xs);
-    //console.log(refs);
-
     ltIndices.forEach((lts, i) => {
         lts.forEach(j => {
             x.xs[i].linkedTo.push(x.xs[j]);
@@ -4750,8 +4733,6 @@ function copyState(s: State): State {
     });
 
     x.gc = s.gc;
-
-    //console.log(x.p);
 
     return x;
 }

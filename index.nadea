@@ -43,13 +43,23 @@ ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity
 . Not a proof.
 Boole{Falsity}[]:{Boole{Falsity}[Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{OK{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]}}}}}}}}}}}
 .
-. Hint 123
+. Test 10
+. The default proof
+.
+OK{¤}[]
+.
+. Hint 0
+. Hello World
+.
+OK{¤}[]
+.
+. Hint 1
 ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity]:{OK{Falsity}[Falsity,Falsity]}}
 .
-. Hint 234
+. Hint 2
 OK{Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}}[]
 .
-. Hint 345
+. Hint 3
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{ImpI{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]:{OK{Pre{A}{}}[Pre{A}{},Pre{B}{}]}}
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{OK{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]}
 OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]
