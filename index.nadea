@@ -1,80 +1,84 @@
-. NaDeA
+. The official index.nadea file
 .
-. Test 0
+# Test 0
 . The default proof
 .
-OK{¤}[]
+OK{.}[]
 .
-. Test 1
+# Test 1
 . P => P
 ImpI{Imp{Pre{P}{}}{Pre{P}{}}}[]:{OK{Pre{P}{}}[Pre{P}{}]}
 .
-. Test 2
+# Test 2
 . ~(P ^ ~P)
 ImpI{Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}{Falsity}}[]:{ImpE{Falsity}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{ConE2{Imp{Pre{P}{}}{Falsity}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]}}{ConE1{Pre{P}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Falsity}}]}}}
 .
-. Test 3
+# Test 3
 . (P v Q) => (Q v P)
 ImpI{Imp{Dis{Pre{P}{}}{Pre{Q}{}}}{Dis{Pre{Q}{}}{Pre{P}{}}}}[]:{DisE{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}}]:{OK{Dis{Pre{P}{}}{Pre{Q}{}}}[Dis{Pre{P}{}}{Pre{Q}{}}]}{DisI2{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{P}{}]:{OK{Pre{P}{}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{P}{}]}}{DisI1{Dis{Pre{Q}{}}{Pre{P}{}}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{Q}{}]:{OK{Pre{Q}{}}[Dis{Pre{P}{}}{Pre{Q}{}},Pre{Q}{}]}}}
 .
-. Test 4
+# Test 4
 . P ^ (P => Q) => Q
 ImpI{Imp{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}{Pre{Q}{}}}[]:{ImpE{Pre{Q}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{ConE2{Imp{Pre{P}{}}{Pre{Q}{}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]}}{ConE1{Pre{P}{}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]:{OK{Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}}[Con{Pre{P}{}}{Imp{Pre{P}{}}{Pre{Q}{}}}]}}}
 .
-. Test 5
+# Test 5
 . (A x,y. P(x,y)) => (E x,y. P(x,y))
 ImpI{Imp{Uni{Uni{Pre{P}{Var{0},Var{1}}}}}{Exi{Exi{Pre{P}{Var{0},Var{1}}}}}}[]:{ExiI{Exi{Exi{Pre{P}{Var{0},Var{1}}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]:{ExiI{Exi{Pre{P}{Var{0},Fun{c}{}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]:{UniE{Pre{P}{Fun{b}{},Fun{c}{}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]{0}:{UniE{Uni{Pre{P}{Var{0},Fun{c}{}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]{0}:{OK{Uni{Uni{Pre{P}{Var{1},Var{0}}}}}[Uni{Uni{Pre{P}{Var{0},Var{1}}}}]}}}}}
 .
-. Test 6
+# Test 6
 . (E x. P(x)) v (A x . ~P(x))
 . Proof not yet completed. Sorry.
 OK{Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}}[]
 .
-. Test 7
+# Test 7
 . (A x.P(x) v A x.Q(x) => (A x. P(x) v Q(x))
 ImpI{Imp{Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}}{Uni{Dis{Pre{P}{Var{0}}}{Pre{Q}{Var{0}}}}}}[]:{UniI{Uni{Dis{Pre{P}{Var{0}}}{Pre{Q}{Var{0}}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]{Fun{c*}{},1}:{DisE{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]:{OK{Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}}]}{DisI1{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]:{UniE{Pre{P}{Fun{c*}{}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]{0}:{OK{Uni{Pre{P}{Var{0}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{P}{Var{0}}}]}}}{DisI2{Dis{Pre{P}{Fun{c*}{}}}{Pre{Q}{Fun{c*}{}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]:{UniE{Pre{Q}{Fun{c*}{}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]{0}:{OK{Uni{Pre{Q}{Var{0}}}}[Dis{Uni{Pre{P}{Var{0}}}}{Uni{Pre{Q}{Var{0}}}},Uni{Pre{Q}{Var{0}}}]}}}}}
 .
-. Test 8
+# Test 8
 . (Falsity => Falsity) => Falsity
 ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity]:{OK{Falsity}[Falsity,Falsity]}}
 .
-. Test 9
+# Test 9
 . Example containing a lot of content
 . Not a proof.
 Boole{Falsity}[]:{Boole{Falsity}[Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{Boole{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]:{OK{Falsity}[Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity},Imp{Falsity}{Falsity}]}}}}}}}}}}}
 .
-. Test 10
-. The default proof
+# Test 10
+. Extra proof
 .
-OK{¤}[]
+OK{.}[]
 .
-. Hint 0
-. Hello World
+# Hint 0
 .
-OK{¤}[]
+OK{.}[]
 .
-. Hint 1
+# Hint 1
 ImpI{Imp{Falsity}{Imp{Falsity}{Falsity}}}[]:{ImpI{Imp{Falsity}{Falsity}}[Falsity]:{OK{Falsity}[Falsity,Falsity]}}
 .
-. Hint 2
+# Hint 2
 OK{Dis{Exi{Pre{P}{Var{0}}}}{Uni{Imp{Pre{P}{Var{0}}}{Falsity}}}}[]
 .
-. Hint 3
+# Hint 3
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{ImpI{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]:{OK{Pre{A}{}}[Pre{A}{},Pre{B}{}]}}
 ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{OK{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]}
 OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{¤}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{¤}{¤}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{¤}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{¤}{¤}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{A}{¤}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{A}{}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{A}{¤}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{¤}{¤}}{¤}}}[]
-OK{Imp{Pre{A}{}}{Imp{¤}{¤}}}[]
-OK{Imp{Pre{A}{¤}}{Imp{¤}{¤}}}[]
-OK{Imp{Pre{¤}{¤}}{Imp{¤}{¤}}}[]
-OK{Imp{¤}{Imp{¤}{¤}}}[]
-OK{Imp{¤}{¤}}[]
-OK{¤}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{.}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{A}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{A}{}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{A}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
+OK{Imp{Pre{A}{.}}{Imp{.}{.}}}[]
+OK{Imp{Pre{.}{.}}{Imp{.}{.}}}[]
+OK{Imp{.}{Imp{.}{.}}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+.
+# Hint 4
+. Hello World
+.
+OK{.}[]

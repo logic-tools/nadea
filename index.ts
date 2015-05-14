@@ -3,14 +3,14 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.4";
+var versionNumber = "0.1.5";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
 var indexNadeaURL = "http://nadea.compute.dtu.dk/index.nadea";
 var readNadeaFileLocally = window.location.protocol !== "file:";
 
-var INITIAL_PROOF = "OK{¤}[]";
+var INITIAL_PROOF = "OK{.}[]";
 
 // Unknown interface stores information about
 // the unknowns in an uncompleted proof
@@ -52,7 +52,7 @@ $(document).ready(() => {
     loadTestsAndHints();
 
     // Update
-    update();
+    update(window.location.hash ? true : false);
 });
 
 
@@ -96,7 +96,7 @@ function loadProof(x: Inductive[], reverse = false) {
 };
 
 
-function update() {
+function update(hidden: boolean = false) {
     // Find premises that have goals without unknowns
     undefInductivesWithoutUnknowns = [];
 
@@ -125,12 +125,17 @@ function update() {
                 v.self.checkGoal();
     });
 
-    updateFrame();
+    updateFrame(hidden);
 }
 
-function updateFrame() {
+function updateFrame(hidden: boolean) {
     // Clear the frame
     $("#frame #frameContainer").children().remove();
+
+    if (hidden)
+        $("#frame #frameContainer").hide();
+    else 
+        $("#frame #frameContainer").show();
 
     // Write proof lines
     appendLines(currentState.p, 0);
@@ -160,9 +165,9 @@ function loadTestsAndHints() {
     proofCodes = {};
 
     for (var i = 0; i <= 9; i++)
-        proofCodes["Test " + i] = INITIAL_PROOF;
+        proofCodes["Test " + i] = "";
 
-    proofCodes["Test suite"] = INITIAL_PROOF;
+    proofCodes["Test suite"] = ". The test suite collects the final proof state for all tests but no tests are provided in the index.nadea file (or the file was not found)\n";
 
     /* Get .nadea file contents */
 
@@ -230,7 +235,7 @@ function readNadeaData(rawFileText: string) {
 
     lines.forEach((x, i) => {
         // Check if recognized as valid proof ID
-        var idMatch = x.match(/^\.\s*((Test\s+[0-9]+)|(Hint\s+[0-9]+))\s*$/);
+        var idMatch = x.match(/^\#\s*((Test\s+([0-9]+|suite))|(Hint\s+[0-9]+))\s*$/);
 
         if (idMatch !== null) {
             addProofCode(currentProofID, currentProofCode);
@@ -253,7 +258,7 @@ function readNadeaData(rawFileText: string) {
                 var idMatch2 = currentProofID.match(/Test ([0-9]+)/);
 
                 if (idMatch2 !== null)
-                    testSuiteCodes[+idMatch2[1] - 1] = x;
+                    testSuiteCodes[+idMatch2[1]] = x;
             }
 
             if (endOfComments && isComment)
@@ -266,15 +271,15 @@ function readNadeaData(rawFileText: string) {
 
     addProofCode(currentProofID, currentProofCode);
 
-    addProofCode("Test suite", ". The test suite contains the final proof state for all tests\n.\n" + testSuiteCodes.join("\n"));
+    addProofCode("Test suite", ". The test suite collects the final proof state for all tests\n.\n" + testSuiteCodes.join("\n") + "\n");
 
     var allProofCodes = "";
 
     for (var key in proofCodes)
-        allProofCodes += ".\n. " + key + "\n.\n" + proofCodes[key];
+        allProofCodes += ".\n# " + key + "\n" + proofCodes[key];
 
     addProofCode("Online proofs", ". Online proofs in the index.nadea file\n" + allProofCodes, true);
-
+    
     // Wait for nadea-file
     $(window).trigger("hashchange");
 }
@@ -1092,7 +1097,8 @@ function attachMenuEvents() {
     });
 
     $(document).ready(function () {
-        $("#header .help").click();
+        if (!window.location.hash)
+            $("#header .help").click();
     });
 }
 
@@ -1786,7 +1792,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     var cancel = $('<div class="button small">Cancel help</div>');
     var folButton = $('<div class="button small">Definition of first-order logic syntax and semantics</div>');
-    var ndButton = $('<div class="button small">Summary of natural deduction proof system</div>');
+    var ndButton = $('<div class="button small">Definition of natural deduction proof system</div>');
     var sampleButton = $('<div class="button small">Sample proofs and exercises with hints</div>');
     var welcomeButton = $('<div class="button small">Show welcome help</div>');
 
@@ -1794,7 +1800,6 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     btnMid.append(ndButton);
     btnMid.append(folButton);
     btnMid.append(sampleButton);
-    //btnMid.append(copyrightButton);
     btnRight.append(welcomeButton);
 
     content.append(buttonsContainer);
@@ -1847,7 +1852,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     /* Content: Def. of syntax and semantics */
     var dssContent = $('<div></div>');
-    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline"><strong>Syntax &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">Uses the de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics &#40;terms and formulas&#41;</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline"><strong>Derived rule (Isabelle proof available in NaDeA.thy file on GitHub)</strong></div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div><div class="textline">Implicit universal quantification for all meta-variables.</div></div></div>');
+    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline extraSpace">The natural deduction proof system assumes the following definition of first-order logic syntax and semantics:</div><div class="textline"><strong>Syntax</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">The quantifiers use de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline extraSpace">All meta-variables are implicitly universally quantified in the following derived rule connecting the provability predicate ´OK´ and the semantics:</div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div></div><br /><div class="textline">The computer-checked soundness proof is provided in the Isabelle theory file here: https://github.com/logic-tools/nadea</div>');
 
     /* Sample proofs and exercises with hints */
     var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
@@ -1855,7 +1860,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     /* Summary of rules */
     var sorContent = $('<div></div>');
 
-    sorContent.append('<div class="textline codeBlock extraSpace">Definition of inductive provability predicate ´OK´ and auxiliary primitive recursive functions ´news´ (new constant in formulas) and ´sub´ (substitution for variable in formula).</div>');
+    sorContent.append('<div class="textline codeBlock extraSpace">The natural deduction proof system is defined by the inductive provability predicate ´OK´ and the auxiliary primitive recursive functions ´news´ (new identifier in formulas) and ´sub´ (substitution for variable in formula):</div>');
 
     // Rule tables are created.
 
@@ -3158,7 +3163,7 @@ function incl(ts: Term[]): Term[] {
 //
 function encodeProof(x: any): string {
     if (x === null || x === undefined)
-        return "¤";
+        return ".";
 
     var s: string = "";
 
@@ -3226,13 +3231,13 @@ function encodeProof(x: any): string {
         s += fmp.getInternalName();
 
         s += "{";
-        s += (fmp.id === null ? "¤" : fmp.id);
+        s += (fmp.id === null ? "." : fmp.id);
         s += "}";
 
         s += "{";
 
         if (fmp.tms === null)
-            s += "¤";
+            s += ".";
         else if (fmp.tms.length > 0) {
             fmp.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3261,12 +3266,12 @@ function encodeProof(x: any): string {
         s += tmf.getInternalName();
 
         s += "{";
-        s += (tmf.id === null ? "¤" : tmf.id);
+        s += (tmf.id === null ? "." : tmf.id);
         s += "}";
         s += "{";
 
         if (tmf.tms === null)
-            s += "¤";
+            s += ".";
         else if (tmf.tms.length > 0) {
             tmf.tms.forEach(v => {
                 s += encodeProof(v) + ",";
@@ -3292,7 +3297,7 @@ function encodeProof(x: any): string {
 //
 function decodeProof(x: string): Inductive[] {
     // Remove comment lines and then white spaces
-    var y = x.replace(/\.[^\r\n]*/gm, "").split(/\s/);
+    var y = x.replace(/^(\.|\#)[^\r\n]*/gm, "").split(/\s/);
 
     y = y.filter(s => { return s !== "" });
 
@@ -3374,7 +3379,7 @@ function decodeProofAux(x: string): any {
     // Special unknown symbol
     //
 
-    if (x === "¤")
+    if (x === ".")
         return null;
 
     var m: string[];
@@ -3562,10 +3567,10 @@ function decodeProofAux(x: string): any {
 
         else if (fm instanceof fmPre) {
 
-            if (args[0] !== "¤")
+            if (args[0] !== ".")
                 (<fmPre> fm).id = args[0];
 
-            if (args[1] !== "¤") {
+            if (args[1] !== ".") {
                 (<fmPre> fm).tms = [];
 
                 if (args[1] !== undefined) {
@@ -3626,10 +3631,10 @@ function decodeProofAux(x: string): any {
         }
 
         else if (tm instanceof tmFun) {
-            if (args[0] !== "¤")
+            if (args[0] !== ".")
                 (<tmFun> tm).id = args[0];
 
-            if (args[1] !== "¤") {
+            if (args[1] !== ".") {
                 (<tmFun> tm).tms = [];
 
                 if (args[1] !== undefined) {
