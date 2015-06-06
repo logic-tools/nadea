@@ -11,85 +11,85 @@ primrec
 and
   semantics_list :: "(nat => 'u) => (id => 'u list => 'u) => tm list => 'u list"
 where
-"semantics_term e f (Var v) = e v" |
-"semantics_term e f (Fun i l) = f i (semantics_list e f l)" |
-"semantics_list e f [] = []" |
-"semantics_list e f (t # l) = semantics_term e f t # semantics_list e f l"
+  "semantics_term e f (Var v) = e v" |
+  "semantics_term e f (Fun i l) = f i (semantics_list e f l)" |
+  "semantics_list e f [] = []" |
+  "semantics_list e f (t # l) = semantics_term e f t # semantics_list e f l"
 
 primrec
   semantics :: "(nat => 'u) => (id => 'u list => 'u) => (id => 'u list => bool) => fm => bool"
 where
-"semantics e f g Falsity = False" |
-"semantics e f g (Pre i l) = g i (semantics_list e f l)" |
-"semantics e f g (Imp p q) = (if semantics e f g p then semantics e f g q else True)" |
-"semantics e f g (Dis p q) = (if semantics e f g p then True else semantics e f g q)" |
-"semantics e f g (Con p q) = (if semantics e f g p then semantics e f g q else False)" |
-"semantics e f g (Exi p) = (? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" |
-"semantics e f g (Uni p) = (! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)"
+  "semantics e f g Falsity = False" |
+  "semantics e f g (Pre i l) = g i (semantics_list e f l)" |
+  "semantics e f g (Imp p q) = (if semantics e f g p then semantics e f g q else True)" |
+  "semantics e f g (Dis p q) = (if semantics e f g p then True else semantics e f g q)" |
+  "semantics e f g (Con p q) = (if semantics e f g p then semantics e f g q else False)" |
+  "semantics e f g (Exi p) = (? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" |
+  "semantics e f g (Uni p) = (! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)"
 
 primrec
   member :: "fm => fm list => bool"
 where
-"member p [] = False" |
-"member p (q # a) = (if p = q then True else member p a)"
+  "member p [] = False" |
+  "member p (q # a) = (if p = q then True else member p a)"
 
 primrec
   new_term :: "id => tm => bool"
 and
   new_list :: "id => tm list => bool"
 where
-"new_term c (Var v) = True" |
-"new_term c (Fun i l) = (if i = c then False else new_list c l)" |
-"new_list c [] = True" |
-"new_list c (t # l) = (if new_term c t then new_list c l else False)"
+  "new_term c (Var v) = True" |
+  "new_term c (Fun i l) = (if i = c then False else new_list c l)" |
+  "new_list c [] = True" |
+  "new_list c (t # l) = (if new_term c t then new_list c l else False)"
 
 primrec
   new :: "id => fm => bool"
 where
-"new c Falsity = True" |
-"new c (Pre i l) = new_list c l" |
-"new c (Imp p q) = (if new c p then new c q else False)" |
-"new c (Dis p q) = (if new c p then new c q else False)" |
-"new c (Con p q) = (if new c p then new c q else False)" |
-"new c (Exi p) = new c p" |
-"new c (Uni p) = new c p"
+  "new c Falsity = True" |
+  "new c (Pre i l) = new_list c l" |
+  "new c (Imp p q) = (if new c p then new c q else False)" |
+  "new c (Dis p q) = (if new c p then new c q else False)" |
+  "new c (Con p q) = (if new c p then new c q else False)" |
+  "new c (Exi p) = new c p" |
+  "new c (Uni p) = new c p"
 
 primrec
   news :: "id => fm list => bool"
 where
-"news c [] = True" |
-"news c (p # a) = (if new c p then news c a else False)"
+  "news c [] = True" |
+  "news c (p # a) = (if new c p then news c a else False)"
 
 primrec
   inc_term :: "tm => tm"
 and
   inc_list :: "tm list => tm list"
 where
-"inc_term (Var v) = Var (v + 1)" |
-"inc_term (Fun i l) = Fun i (inc_list l)" |
-"inc_list [] = []" |
-"inc_list (t # l) = inc_term t # inc_list l"
+  "inc_term (Var v) = Var (v + 1)" |
+  "inc_term (Fun i l) = Fun i (inc_list l)" |
+  "inc_list [] = []" |
+  "inc_list (t # l) = inc_term t # inc_list l"
 
 primrec
   sub_term :: "nat => tm => tm => tm"
 and
   sub_list :: "nat => tm => tm list => tm list"
 where
-"sub_term n s (Var v) = (if v = n then s else if v > n then Var (v - 1) else Var v)" |
-"sub_term n s (Fun i l) = Fun i (sub_list n s l)" |
-"sub_list n s [] = []" |
-"sub_list n s (t # l) = sub_term n s t # sub_list n s l"
+  "sub_term n s (Var v) = (if v = n then s else if v > n then Var (v - 1) else Var v)" |
+  "sub_term n s (Fun i l) = Fun i (sub_list n s l)" |
+  "sub_list n s [] = []" |
+  "sub_list n s (t # l) = sub_term n s t # sub_list n s l"
 
 primrec
   sub :: "nat => tm => fm => fm"
 where
-"sub n s Falsity = Falsity" |
-"sub n s (Pre i l) = Pre i (sub_list n s l)" |
-"sub n s (Imp p q) = Imp (sub n s p) (sub n s q)" |
-"sub n s (Dis p q) = Dis (sub n s p) (sub n s q)" |
-"sub n s (Con p q) = Con (sub n s p) (sub n s q)" |
-"sub n s (Exi p) = Exi (sub (n + 1) (inc_term s) p)" |
-"sub n s (Uni p) = Uni (sub (n + 1) (inc_term s) p)"
+  "sub n s Falsity = Falsity" |
+  "sub n s (Pre i l) = Pre i (sub_list n s l)" |
+  "sub n s (Imp p q) = Imp (sub n s p) (sub n s q)" |
+  "sub n s (Dis p q) = Dis (sub n s p) (sub n s q)" |
+  "sub n s (Con p q) = Con (sub n s p) (sub n s q)" |
+  "sub n s (Exi p) = Exi (sub (n + 1) (inc_term s) p)" |
+  "sub n s (Uni p) = Uni (sub (n + 1) (inc_term s) p)"
 
 inductive
   OK :: "fm => fm list => bool"
@@ -126,7 +126,7 @@ Uni_I:
 definition
   shift :: "(nat \<Rightarrow> 'u) \<Rightarrow> nat \<Rightarrow> 'u \<Rightarrow> nat \<Rightarrow> 'u" ("_\<langle>_:_\<rangle>" [90, 0, 0] 91)
 where
-"e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
+  "e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
 
 lemma generalize_upd: "(%n. if n = 0 then z else e (n - 1)) = e\<langle>0:z\<rangle>"
 unfolding shift_def by simp
@@ -145,8 +145,8 @@ by (induct t and ts rule: semantics_term.induct semantics_list.induct, simp_all)
 lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
 by (induct p arbitrary: e, simp_all add: upd_lemma') metis+
 
-lemma list_upd_lemma: "news n a \<Longrightarrow>
-  list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
+lemma list_upd_lemma:
+  "news n a \<Longrightarrow> list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
 by (induct a, simp_all, metis upd_lemma)
 
 lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
