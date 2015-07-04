@@ -1,13 +1,13 @@
-// NaDeA - License, source code and further information at http://logic-tools.github.io/
+// NaDeA - License, source code and further information at https://logic-tools.github.io/
 //
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.5";
+var versionNumber = "0.1.6";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
-var indexNadeaURL = "http://nadea.compute.dtu.dk/index.nadea";
+var indexNadeaURL = "";
 var readNadeaFileLocally = window.location.protocol !== "file:";
 
 var INITIAL_PROOF = "OK{.}[]";
@@ -52,7 +52,7 @@ $(document).ready(() => {
     loadTestsAndHints();
 
     // Update
-    update(window.location.hash ? true : false);
+    update((indexNadeaURL && window.location.hash) ? true : false);
 });
 
 
@@ -164,12 +164,32 @@ function loadTestsAndHints() {
     // Initially the tests are the initial proof state
     proofCodes = {};
 
-    for (var i = 0; i <= 9; i++)
+    proofCodes["Test 0"] = ". The default proof\n.\n" + INITIAL_PROOF;
+
+    for (var i = 1; i <= 9; i++)
         proofCodes["Test " + i] = "";
 
-    proofCodes["Test suite"] = ". The test suite collects the final proof state for all tests but no tests are provided in the index.nadea file (or the file was not found)\n";
+    proofCodes["Test suite"] = ". The test suite collects the final proof state for all tests but no tests are provided in the index.nadea file (or the file was not found)";
 
     /* Get .nadea file contents */
+    var nadeaContents = ". The unofficial index.nadea file\n" +
+        "\n" +
+        "# Hint 0\n" +
+        "\n" +
+        "ImpI{Imp{Pre{A}{}}{Pre{A}{}}}[]:{OK{Pre{A}{}}[Pre{A}{}]}\n" +
+        "OK{Imp{Pre{A}{}}{Pre{A}{}}}[]\n" +
+        "OK{Imp{Pre{A}{}}{Pre{.}{}}}[]\n" +
+        "OK{Imp{Pre{.}{}}{Pre{.}{}}}[]\n" +
+        "OK{Imp{Pre{.}{}}{Pre{.}{.}}}[]\n" +
+        "OK{Imp{Pre{.}{.}}{Pre{.}{.}}}[]\n" +
+        "OK{Imp{Pre{.}{.}}{.}}[]\n" +
+        "OK{Imp{.}{.}}[]\n" +
+        "OK{.}[]";
+
+    if (!indexNadeaURL) {
+        readNadeaData(nadeaContents);
+        return;
+    }
 
     var xhr = new XMLHttpRequest();
 
@@ -271,14 +291,17 @@ function readNadeaData(rawFileText: string) {
 
     addProofCode(currentProofID, currentProofCode);
 
-    addProofCode("Test suite", ". The test suite collects the final proof state for all tests\n.\n" + testSuiteCodes.join("\n") + "\n");
+    if (testSuiteCodes.length > 0)
+        addProofCode("Test suite", ". The test suite collects the final proof state for all tests\n\n" + testSuiteCodes.join("\n") + "\n\n");
 
     var allProofCodes = "";
 
-    for (var key in proofCodes)
-        allProofCodes += ".\n# " + key + "\n" + proofCodes[key];
+    for (var key in proofCodes) {
+        if (proofCodes[key])
+            allProofCodes += "# " + key + "\n\n" + proofCodes[key] + "\n\n";
+    }
 
-    addProofCode("Online proofs", ". Online proofs in the index.nadea file\n" + allProofCodes, true);
+    addProofCode("All proofs", allProofCodes, true);
     
     // Wait for nadea-file
     $(window).trigger("hashchange");
@@ -857,14 +880,14 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
 
-    htmlString += "<div class='synGoal'><div class='ok'>OK</div><div class='arg'>" + getIsaSyntax(x.goal) + "</div><div class='arg'><div class='leftBracket'>[</div>";
+    htmlString += "<div class='synGoal'><div class='ok'>OK</div><div class='arg'>" + getInternalSyntaxHTML(x.goal) + "</div><div class='arg'><div class='leftBracket'>[</div>";
 
     // Assumptions
     var assumptionSyntaxLeft: string[] = [];
     var assumptionSyntaxRight: string[] = [];
 
     x.assumptions.forEach(v=> {
-        assumptionSyntaxLeft.push(getIsaSyntax(v));
+        assumptionSyntaxLeft.push(getInternalSyntaxHTML(v));
         assumptionSyntaxRight.push(getFormalSyntax(v, 0, null));
     });
 
@@ -904,11 +927,10 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
     });
 
     // Write "news" line
-    if (editModeOn)
-        if (x.premises.length > 0 && (x instanceof synUniI || x instanceof synExiE && !(<synExiE> x).waitingForPCompletion)) {
-            writeNewsLine(x, n + 1, i);
-            i++;
-        }
+    if (x.premises.length > 0 && (x instanceof synUniI || x instanceof synExiE && !(<synExiE> x).waitingForPCompletion)) {
+        writeNewsLine(x, n + 1, i);
+        i++;
+    }
 
     return i;
 }
@@ -920,7 +942,7 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     htmlString += '<div class="lineNumber">' + i + '</div>';
 
     // Left
-    htmlString += '<div class="left">';
+    htmlString += '<div class="left' + (!editModeOn ? ' hidden' : '') + '">';
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
 
@@ -928,24 +950,24 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     htmlString += "<div class='synGoal'><div class='news'>news</div>";
 
     if (x instanceof synUniI)
-        htmlString += '<div class="arg">' + getIsaSyntax((<synUniI> x).c) + '</div>';
+        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synUniI> x).c) + '</div>';
     else if (x instanceof synExiE)
-        htmlString += '<div class="arg">' + getIsaSyntax((<synExiE> x).c) + '</div>';
+        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synExiE> x).c) + '</div>';
 
     htmlString += '<div class="arg leftParantheses">(</div>';
 
     var newsList: string[][] = [];
 
     if (x instanceof synExiE)
-        newsList.push([getIsaSyntax((<fmExi> x.premises[0].goal).fm)]);
+        newsList.push([getInternalSyntaxHTML((<fmExi> x.premises[0].goal).fm)]);
 
     if (x instanceof synUniI || x instanceof synExiE) {
-        newsList.push([getIsaSyntax(x.goal)]);
+        newsList.push([getInternalSyntaxHTML(x.goal)]);
     }
 
     newsList.push([]);
     x.assumptions.forEach(v=> {
-        newsList[newsList.length - 1].push(getIsaSyntax(v));
+        newsList[newsList.length - 1].push(getInternalSyntaxHTML(v));
     });
 
     var htmlAppend: string[] = [];
@@ -954,21 +976,24 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
         htmlAppend.push("<div class='leftBracket'>[</div>" + v.join('<div class="comma">,</div><wbr />') + "<div class='rightBracket'>]</div>");
     });
 
-
     htmlString += htmlAppend.join("<div class='concat'>#</div>");
 
     htmlString += '<div class="rightParantheses">)</div>';
     htmlString += '</div></div></div>';
 
-    htmlString += '<div class="middle">news</div>';
+    htmlString += '<div class="middle' + (!editModeOn ? ' shrink' : '') + '">news</div>';
+    // End middle
 
-    htmlString += '<div class="right">';
+    // Right
+    htmlString += '<div class="right' + (!editModeOn ? ' fill' : '') + '">';
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
     htmlString += '&nbsp;';
     htmlString += '</div>';
 
     htmlString += "</div>";
+
+    console.log(htmlString);
 
     $(htmlString).appendTo($("#frameContainer"));
 }
@@ -1045,7 +1070,7 @@ function replaceFormatSpecialCodes(): void {
         $(e).html($(e).html().replace(/@true:assume/, '<span title="Goal is in list of assumptions.">Assume</span>'));
         $(e).html($(e).html().replace(/Exi_E:incomplete/, '<span title="Complete definition of unknown formula p to generate remaining premises.">Exi_E (!)</span>'));
         $(e).html($(e).html().replace(/Uni_E:incomplete/, '<a title="Complete selection of terms to quantify." class="selectTerms">Uni_E (!)</a>'));
-        $(e).html($(e).html().replace(/news/, '&nbsp;'));
+        $(e).html($(e).html().replace(/news/, '*'));
     });
 
 }
@@ -1690,7 +1715,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     var testSuite = $('<div class="button small exampleProof">Test suite</div>');
     btnMid.append(testSuite);
 
-    var onlineProofs = $('<div class="button small exampleProof">Online proofs</div>');
+    var onlineProofs = $('<div class="button small exampleProof">All proofs</div>');
     btnMid.append(onlineProofs);
 
     //btnMid.append(makeNewProof);
@@ -1740,8 +1765,8 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
         else if ($(v.currentTarget).html() === "Test suite")
             textarea.val(proofCodes["Test suite"]);
 
-        else if ($(v.currentTarget).html() === "Online proofs")
-            textarea.val(proofCodes["Online proofs"]);
+        else if ($(v.currentTarget).html() === "All proofs")
+            textarea.val(proofCodes["All proofs"]);
     });
 
     // Present proof code with prepended comment lines
@@ -1847,7 +1872,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     // Tabs
     /* Content: Welcome */
-    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: http://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn the edit mode on and off (by default the edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/ </div><div class="textline codeBlock"><strong>Notes</strong></div><div class="textline codeBlock">OK p a: The formula p follows from the assumptions a.</div><div class="textline codeBlock">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline codeBlock extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div><div class="textline codeBlock"><strong>Copyright notice and disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div>');
+    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: https://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn the edit mode on and off (by default the edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: https://people.compute.dtu.dk/jovi/ </div><div class="codeBlock"><div class="textline"><strong>Getting Started</strong></div><div class="textline">1. To build the sample formula A &rarr; A start by turning on edit mode and clicking <span style="color: red;">¤</span>. The square brackets <div class="leftBracket">[</div><div class="rightBracket">]</div> denote the current list of assumptions which is initially empty.</div><div class="textline">2. After building the complete goal formula, apply the rule <emph>Implication Introduction (Imp_I)</emph> to prove A by assumption of A. The rule is selected also by clicking <span style="color: red;">¤</span>.</div><div class="textline extraSpace">3. The proof finishes automatically by applying the <emph>Assume</emph> rule (since the goal formula is found in the list of assumptions).</div></div><div class="codeBlock"><div class="textline"><strong>Natural Deduction Primitives</strong></div><div class="textline">OK p a: The formula p follows from the assumptions a.</div><div class="textline">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div></div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
 
 
     /* Content: Def. of syntax and semantics */
@@ -1883,7 +1908,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     divBox3.append(getRuleTable("Exi_E", ["OK (Exi p) a", "OK q ((sub 0 (Fun c []) p) # a)", "news c (p # q # a)"], "OK q a"));
     divBox3.append(getRuleTable("Exi_I", ["OK (sub 0 t p) a"], "OK (Exi p) a"));
-    divBox3.append(getRuleTable("Uni_E", ["OK (Uni p)"], "OK (sub 0 t p) a"));
+    divBox3.append(getRuleTable("Uni_E", ["OK (Uni p) a"], "OK (sub 0 t p) a"));
     divBox3.append(getRuleTable("Uni_I", ["OK (sub 0 (Fun c []) p) a", "news c (p # a)"], "OK (Uni p) a"));
 
     sorContent.append(divBox1);
@@ -1967,6 +1992,10 @@ class Term {
     static getInternalName(): string {
         return "Term";
     }
+
+    getIsabelleTerm(nq: number): string {
+        throw new Error("Should not be called from abstract class");
+    }
 }
 
 class tmVar extends Term {
@@ -1990,6 +2019,10 @@ class tmVar extends Term {
     static getInternalName(): string {
         return "Var";
     }
+
+    getIsabelleTerm(nq: number): string {
+        return getQuantifiedVariable(nq+this.nat, true);
+    }
 }
 
 class tmFun extends Term {
@@ -2010,6 +2043,18 @@ class tmFun extends Term {
     static getInternalName(): string {
         return "Fun";
     }
+
+    getIsabelleFormula(nq: number): string {
+        var isaFm = this.id;
+
+        if (this.tms.length > 0) {
+            isaFm += "(";
+            isaFm += this.tms.map(t => { return t.getIsabelleTerm(nq) }).join(", ");
+            isaFm += ")";
+        }
+
+        return isaFm;
+    }
 }
 
 /* 
@@ -2024,6 +2069,10 @@ class Formula {
     static getInternalName(): string {
         return "Formula";
     }
+
+    getIsabelleFormula(nq: number): string {
+        throw new Error("Should not be called from abstract class");
+    }
 }
 
 class FormulaOneArg extends Formula {
@@ -2032,6 +2081,10 @@ class FormulaOneArg extends Formula {
     constructor(fm: Formula) {
         super();
         this.fm = fm;
+    }
+
+    getIsabelleFormula(nq: number): string {
+        throw new Error("Should not be called from abstract class");
     }
 }
 
@@ -2043,6 +2096,10 @@ class FormulaTwoArg extends Formula {
         super();
         this.lhs = lhs;
         this.rhs = rhs;
+    }
+
+    getIsabelleFormula(nq: number): string {
+        throw new Error("Should not be called from abstract class");
     }
 }
 
@@ -2058,6 +2115,10 @@ class fmFalsity extends Formula {
 
     static getInternalName(): string {
         return "Falsity";
+    }
+
+    getIsabelleFormula(nq: number): string {
+        return "False";
     }
 };
 
@@ -2079,6 +2140,18 @@ class fmPre extends Formula {
     static getInternalName(): string {
         return "Pre";
     }
+
+    getIsabelleFormula(nq: number): string {
+        var isaFm = this.id;
+
+        if (this.tms.length > 0) {
+            isaFm += "(";
+            isaFm += this.tms.map(t => { return t.getIsabelleTerm(nq) }).join(", ");
+            isaFm += ")";
+        }
+
+        return isaFm;
+    }
 }
 
 class fmImp extends FormulaTwoArg {
@@ -2092,6 +2165,10 @@ class fmImp extends FormulaTwoArg {
 
     static getInternalName(): string {
         return "Imp";
+    }
+
+    getIsabelleFormula(nq: number): string {
+        return "(" + this.lhs.getIsabelleFormula(nq) + " \<longrightarrow> " + this.rhs.getIsabelleFormula(nq) + ")";
     }
 }
 
@@ -2107,6 +2184,10 @@ class fmDis extends FormulaTwoArg {
     static getInternalName(): string {
         return "Dis";
     }
+
+    getIsabelleFormula(nq: number): string {
+        return "(" + this.lhs.getIsabelleFormula(nq) + " \<or> " + this.rhs.getIsabelleFormula(nq) + ")";
+    }
 }
 
 class fmCon extends FormulaTwoArg {
@@ -2120,6 +2201,10 @@ class fmCon extends FormulaTwoArg {
 
     static getInternalName(): string {
         return "Con";
+    }
+
+    getIsabelleFormula(nq: number): string {
+        return "(" + this.lhs.getIsabelleFormula(nq) + " \<and> " + this.rhs.getIsabelleFormula(nq) + ")";
     }
 }
 
@@ -2135,6 +2220,10 @@ class fmExi extends FormulaOneArg {
     static getInternalName(): string {
         return "Exi";
     }
+
+    getIsabelleFormula(nq: number): string {
+        return "(\<exists>" + getQuantifiedVariable(nq, true) + ". " + this.fm.getIsabelleFormula(nq+1) +")";
+    }
 }
 
 class fmUni extends FormulaOneArg {
@@ -2149,7 +2238,12 @@ class fmUni extends FormulaOneArg {
     static getInternalName(): string {
         return "Uni";
     }
+
+    getIsabelleFormula(nq: number): string {
+        return "(\<forall>" + getQuantifiedVariable(nq, true) + ". " + this.fm.getIsabelleFormula(nq + 1) + ")";
+    }
 }
+
 interface InductiveInterface {
     evaluate(): void;
     isApplicable(): boolean;
@@ -2234,6 +2328,10 @@ class Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "OK";
     }
+
+    getIsabelleProof(indent: number): string {
+        throw new Error("Method is abstract and must be overloaded");
+    }
 }
 
 class synBool extends Inductive implements InductiveInterface {
@@ -2242,7 +2340,7 @@ class synBool extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synBool) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synBool) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2276,6 +2374,12 @@ class synBool extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "Boole";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synImpE extends Inductive implements InductiveInterface {
@@ -2284,7 +2388,7 @@ class synImpE extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synImpE) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synImpE) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2323,6 +2427,16 @@ class synImpE extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ImpE";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+
+        var isaCode: string;
+
+        
+
+        return isaCode;
+    }
 }
 
 class synImpI extends Inductive implements InductiveInterface {
@@ -2331,7 +2445,7 @@ class synImpI extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synImpI) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synImpI) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2365,6 +2479,12 @@ class synImpI extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ImpI";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synDisE extends Inductive implements InductiveInterface {
@@ -2373,7 +2493,7 @@ class synDisE extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synDisE) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synDisE) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2422,6 +2542,12 @@ class synDisE extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "DisE";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synDisI1 extends Inductive implements InductiveInterface {
@@ -2430,7 +2556,7 @@ class synDisI1 extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synDisI1) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synDisI1) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2459,6 +2585,12 @@ class synDisI1 extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "DisI1";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synDisI2 extends Inductive implements InductiveInterface {
@@ -2467,7 +2599,7 @@ class synDisI2 extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synDisI2) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synDisI2) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2496,6 +2628,12 @@ class synDisI2 extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "DisI2";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synConE1 extends Inductive implements InductiveInterface {
@@ -2504,7 +2642,7 @@ class synConE1 extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synConE1) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synConE1) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2537,6 +2675,12 @@ class synConE1 extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ConE1";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synConE2 extends Inductive implements InductiveInterface {
@@ -2545,7 +2689,7 @@ class synConE2 extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synConE2) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synConE2) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2578,6 +2722,12 @@ class synConE2 extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ConE2";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synConI extends Inductive implements InductiveInterface {
@@ -2586,7 +2736,7 @@ class synConI extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synConI) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synConI) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2617,6 +2767,12 @@ class synConI extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ConI";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synExiE extends Inductive implements InductiveInterface {
@@ -2629,7 +2785,7 @@ class synExiE extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synExiE) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synExiE) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2695,6 +2851,12 @@ class synExiE extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ExiE";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synExiI extends Inductive implements InductiveInterface {
@@ -2703,7 +2865,7 @@ class synExiI extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synExiI) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synExiI) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2739,6 +2901,12 @@ class synExiI extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "ExiI";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synUniE extends Inductive implements InductiveInterface {
@@ -2748,7 +2916,7 @@ class synUniE extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synUniE) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synUniE) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2893,6 +3061,12 @@ class synUniE extends Inductive implements InductiveInterface {
     static getInternalName(): string {
         return "UniE";
     }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
+    }
 }
 
 class synUniI extends Inductive implements InductiveInterface {
@@ -2903,7 +3077,7 @@ class synUniI extends Inductive implements InductiveInterface {
         super(goal, assumptions);
 
         if (!this.isApplicable()) {
-            throw new Error("Could not apply rule (synUniI) to formula:\n" + getIsaSyntax(goal));
+            throw new Error("Could not apply rule (synUniI) to formula:\n" + getInternalSyntaxHTML(goal));
         }
     }
 
@@ -2950,6 +3124,12 @@ class synUniI extends Inductive implements InductiveInterface {
 
     static getInternalName(): string {
         return "UniI";
+    }
+
+    getIsabelleProof(indent: number): string {
+        var prepend = Array(indent).join("\t");
+        //
+        return "sorry";
     }
 }
 
@@ -3806,9 +3986,9 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
 
         var r: Formula = new fmPre((<fmPre> x).id, tms);
 
-        if (refs !== null && x.id === null)
+        if (refs !== null && (<fmPre> x).id === null)
             refs.push(r);
-        if (refs !== null && x.tms === null)
+        if (refs !== null && (<fmPre> x).tms === null)
             refs.push(r);
 
         return r;
@@ -3834,9 +4014,9 @@ function copyTerm(x: Term, refs: any[] = null): Term {
 
         var t = new tmFun((<tmFun> x).id, tms);
 
-        if (refs !== null && x.id === null)
+        if (refs !== null && (<tmFun> x).id === null)
             refs.push(t);
-        if (refs !== null && x.tms === null)
+        if (refs !== null && (<tmFun> x).tms === null)
             refs.push(t);
 
         return t;
@@ -4092,12 +4272,15 @@ function getTerms(x: any): Term[] {
 // Helper function to return an identifier for the quantified variable
 var variableSymbols = ["x", "y", "z", "u", "v", "w"];
 
-function getQuantifiedVariable(n: number): string {
+function getQuantifiedVariable(n: number, formal: boolean = false): string {
     if (variableSymbols.length <= n) {
         var s = variableSymbols[variableSymbols.length - 1];
 
-        for (var i = 0; i < n - variableSymbols.length + 1; i++)
-            s += "#";
+        if (formal)
+            s += new String(n - variableSymbols.length)
+        else
+            for (var i = 0; i < n - variableSymbols.length + 1; i++)
+                s += "#";
 
         return s;
     }
@@ -4358,33 +4541,33 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
 };
 
 // Gets the Isabelle (code) syntax for a proof
-function getIsaSyntax(x: any, isTerm: boolean = false): string {
+function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
 
     var fmIsa: string;
 
     if (x instanceof fmCon) {
         var fmC: fmCon = <fmCon> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="con">Con</div><div class="arg">' + getIsaSyntax(fmC.lhs) + '</div><div class="arg lastArg">' + getIsaSyntax(fmC.rhs) + '</div><div class="rightParantheses">)</div>';
+        fmIsa = '<div class="leftParantheses">(</div><div class="con">Con</div><div class="arg">' + getInternalSyntaxHTML(fmC.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmC.rhs) + '</div><div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmDis) {
         var fmD: fmDis = <fmDis> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="dis">Dis</div><div class="arg">' + getIsaSyntax(fmD.lhs) + '</div><div class="arg lastArg">' + getIsaSyntax(fmD.rhs) + '</div><div class="rightParantheses">)</div>';
+        fmIsa = '<div class="leftParantheses">(</div><div class="dis">Dis</div><div class="arg">' + getInternalSyntaxHTML(fmD.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmD.rhs) + '</div><div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmImp) {
         var fmI: fmImp = <fmImp> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="imp">Imp</div><div class="arg">' + getIsaSyntax(fmI.lhs) + '</div><div class="arg lastArg">' + getIsaSyntax(fmI.rhs) + '</div><div class="rightParantheses">)</div>';
+        fmIsa = '<div class="leftParantheses">(</div><div class="imp">Imp</div><div class="arg">' + getInternalSyntaxHTML(fmI.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmI.rhs) + '</div><div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmExi) {
         var fmE: fmExi = <fmExi> x;
-        fmIsa = '<div class="exi">Exi</div><div class="arg lastArg">' + getIsaSyntax(fmE.fm) + '</div>';
+        fmIsa = '<div class="exi">Exi</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmE.fm) + '</div>';
     }
 
     else if (x instanceof fmUni) {
         var fmU: fmUni = <fmUni> x;
-        fmIsa = '<div class="uni">Uni</div><div class="arg lastArg">' + getIsaSyntax(fmU.fm) + '</div>';
+        fmIsa = '<div class="uni">Uni</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmU.fm) + '</div>';
     }
 
     else if (x instanceof fmFalsity) {
@@ -4404,7 +4587,7 @@ function getIsaSyntax(x: any, isTerm: boolean = false): string {
             var elems: string[] = [];
 
             fmP.tms.forEach(function (v) {
-                elems.push(getIsaSyntax(v, true));
+                elems.push(getInternalSyntaxHTML(v, true));
             });
 
             fmIsa += '<div class="leftBracket">[</div>' + elems.join('<div class="comma">,</div>') + '<div class="rightBracket">]</div>';
@@ -4432,7 +4615,7 @@ function getIsaSyntax(x: any, isTerm: boolean = false): string {
             var elems: string[] = [];
 
             tmF.tms.forEach(function (v) {
-                elems.push(getIsaSyntax(v, true));
+                elems.push(getInternalSyntaxHTML(v, true));
             });
 
             fmIsa += '<div class="leftBracket">[</div>' + elems.join('<div class="comma">,</div>') + '<div class="rightBracket">]</div>';
@@ -4606,6 +4789,20 @@ function getRuleName(x: Inductive): string {
         console.log(x);
         throw new Error("Expected (sub-)class of Inductive");
     }
+}
+
+// Generate Isabelle file
+function generateIsabelleFile(i: Inductive) {
+    var isaCode: string = 'theory Scratch imports Main begin\n\n';
+
+    if (i.goal !== null) {
+        isaCode += 'lemma "' + i.goal.getIsabelleFormula(0) + '"\n'
+        isaCode += i.getIsabelleProof(0);
+    }
+
+    isaCode += '\nend';
+
+    return isaCode;
 }
 
 // Attach key bindings to application
@@ -4789,7 +4986,7 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
     else if (x instanceof synUniE) {
         i = new synUniE(g, cpas.as);
 
-        (<synUniE> i).waitingForTermSelection = x.waitingForTermSelection;
+        (<synUniE> i).waitingForTermSelection = (<synUniE> x).waitingForTermSelection;
     }
 
     else if (x instanceof synUniI) {

@@ -178,10 +178,6 @@ a {
     color: blue;
 }
 
-.line .synGoal { 
-    float: left;
-}
-
 .line .formalUnknown {
     color: green;
 }
@@ -243,6 +239,13 @@ a {
 
 .textline.extraSpace {
     padding-bottom: 1.30vw;
+}
+
+.textline ol {
+    margin-top: 0;
+    padding-top: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .centeredOverlayOuter {
@@ -432,7 +435,6 @@ a {
     width: 100%;
 }
 
-/* Buttons */
 .button {
     margin: 0.2vw;
     display: inline-block;
@@ -529,7 +531,6 @@ a {
     color: white;
 }
 
-/* Formula element classes */
 .ok, .leftParantheses, .rightParantheses, .leftBracket, .rightBracket, .imp, .con, .dis, .exi, .uni, .pre, .fun, .arg, .line .goal, .var, .id, .falsity, .news, .concat, .comma  {
     display: inline;
 }
