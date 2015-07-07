@@ -3,7 +3,7 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.6";
+var versionNumber = "0.1.7";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
@@ -4714,7 +4714,11 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
 
     else if (x instanceof tmVar) {
         var tmN: tmVar = <tmVar> x;
-        fmFormal = '<div class="var">' + (tmN.nat === null ? '@id' : getQuantifiedVariable(tmN.nat)) + '</div>';
+        var qvIndex = nq > 0 ? nq - tmN.nat - 1 : tmN.nat;
+        if (qvIndex < 0)
+            qvIndex = nq + Math.abs(qvIndex) - 1;
+
+        fmFormal = '<div class="var">' + (tmN.nat === null ? '@id' : getQuantifiedVariable(qvIndex)) + '</div>';
     }
 
     else if (x instanceof tmFun) {
