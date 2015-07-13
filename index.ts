@@ -3,7 +3,7 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.7";
+var versionNumber = "0.1.8";
 $(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
 
 // Set up index.nadea location
@@ -52,7 +52,7 @@ $(document).ready(() => {
     loadTestsAndHints();
 
     // Update
-    update((indexNadeaURL && window.location.hash) ? true : false);
+    update(indexNadeaURL.length > 0 && window.location.hash.length > 0);
 });
 
 
@@ -357,7 +357,7 @@ function attachEventHandlersUnknowns() {
         else
             x = parentInductive.parent.premises[parentInductive.premiseIndex];
 
-        newOverlay(e, "newSynRule",(x: Inductive) => {
+        newOverlay(e, "newSynRule", (x: Inductive) => {
 
             prepareCurrentStateUpdate();
             
@@ -660,16 +660,18 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
 
             var r: Unknown[] = [];
 
-            if (x instanceof FormulaOneArg)
+            if (x instanceof FormulaOneArg) {
                 r = getQuantifiedVarsAsUnknowns((<FormulaOneArg> x).fm, x);
+            }
 
-            else if (x instanceof FormulaTwoArg)
+            else if (x instanceof FormulaTwoArg) {
                 r = getQuantifiedVarsAsUnknowns((<FormulaTwoArg> x).lhs, x)
-                    .concat(getQuantifiedVarsAsUnknowns((<FormulaTwoArg> x).rhs), x);
+                    .concat(getQuantifiedVarsAsUnknowns((<FormulaTwoArg> x).rhs, x));
+            }
 
             else if (x instanceof fmPre) {
                 (<fmPre> x).tms.forEach((e, j) => {
-                    getQuantifiedVarsAsUnknowns(e, x, j).forEach(e => r.push(e));
+                    getQuantifiedVarsAsUnknowns(e, x, j).forEach(e => { r.push(e) });
                 });
             }
 
@@ -710,8 +712,7 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
     }
 }
 
-function replaceUnknownsFormula(u: Unknown, fm: Formula, updateLinked: boolean = true): Unknown[] {
-
+function replaceUnknownsFormula(u: Unknown, fm: Formula, updateLinked: boolean = true): Unknown[]{
     // Replace previous unknown with new formula
     if (u.x instanceof FormulaOneArg) {
         (<FormulaOneArg> u.x).fm = fm;
@@ -936,6 +937,7 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
 }
 
 function writeNewsLine(x: Inductive, n: number, i: number) {
+
     var htmlString: string = "<div class=\"line\">";
 
     // Line numbering
@@ -992,8 +994,6 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     htmlString += '</div>';
 
     htmlString += "</div>";
-
-    console.log(htmlString);
 
     $(htmlString).appendTo($("#frameContainer"));
 }
@@ -1669,7 +1669,7 @@ function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: F
         }
     });
 
-    replaceFormalSymbols(".overlay.formula");
+    replaceFormalSymbols(".overlay .formula");
 }
 
 function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
@@ -2780,7 +2780,6 @@ class synExiE extends Inductive implements InductiveInterface {
     cIsNew: boolean;
     waitingForPCompletion: boolean;
 
-
     constructor(goal: Formula, assumptions: Formula[]) {
         super(goal, assumptions);
 
@@ -2890,7 +2889,7 @@ class synExiI extends Inductive implements InductiveInterface {
 
         var p: Formula = (<fmExi> this.goal).fm;
         var indFm: Formula = sub(0, t, copyFormula(p));
-
+        
         this.premises.push(new Inductive(indFm, copyAssumptions(this).as));
     }
 
@@ -3907,7 +3906,7 @@ function isValidProofCode(x: string) {
 }
 
 // Deep copy of a list of assumptions
-function copyAssumptions(x: Inductive): { as: Formula[]; n: number } {
+function copyAssumptions(x: Inductive, refs: any[] = null): { as: Formula[]; n: number } {
     var assumptions: Formula[] = [];
 
     var numRefs = 0;
@@ -3916,7 +3915,7 @@ function copyAssumptions(x: Inductive): { as: Formula[]; n: number } {
         if (v === null)
             numRefs++;
 
-        assumptions.push(copyFormula(v));
+        assumptions.push(copyFormula(v, refs));
     });
 
     return { as: assumptions, n: numRefs };
@@ -3926,8 +3925,6 @@ function copyAssumptions(x: Inductive): { as: Formula[]; n: number } {
 function copyFormula(x: Formula, refs: any[] = null): Formula {
     if (x === null)
         return null;
-
-    var y: Formula;
 
     var fm: Formula, lhs: Formula, rhs: Formula;
 
@@ -3977,10 +3974,15 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
     else if (x instanceof fmPre) {
         var tms: Term[] = [];
 
+        var numUnknownArgs = 0;
+
         if ((<fmPre> x).tms === null)
             tms = null;
         else
             (<fmPre> x).tms.forEach(v => {
+                if (v === null)
+                    numUnknownArgs++;
+
                 tms.push(copyTerm(v, refs));
             });
 
@@ -3989,6 +3991,9 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
         if (refs !== null && (<fmPre> x).id === null)
             refs.push(r);
         if (refs !== null && (<fmPre> x).tms === null)
+            refs.push(r);
+
+        for (var i = 0; i < numUnknownArgs; i++)
             refs.push(r);
 
         return r;
@@ -4005,10 +4010,15 @@ function copyTerm(x: Term, refs: any[] = null): Term {
     else if (x instanceof tmFun) {
         var tms: Term[] = [];
 
+        var numUnknownArgs = 0;
+
         if ((<tmFun> x).tms === null)
             tms = null;
         else
-            (<tmFun> x).tms.forEach(v=> {
+            (<tmFun> x).tms.forEach(v => {
+                if (v === null)
+                    numUnknownArgs++;
+
                 tms.push(copyTerm(v, refs));
             });
 
@@ -4017,6 +4027,9 @@ function copyTerm(x: Term, refs: any[] = null): Term {
         if (refs !== null && (<tmFun> x).id === null)
             refs.push(t);
         if (refs !== null && (<tmFun> x).tms === null)
+            refs.push(t);
+
+        for (var i = 0; i < numUnknownArgs; i++)
             refs.push(t);
 
         return t;
@@ -4032,8 +4045,9 @@ function equalFormulas(fm1: any, fm2: any): boolean {
             return false;
     }
 
-    if (fm1.constructor !== fm2.constructor)
+    if (fm1.constructor.name !== fm2.constructor.name) {
         return false;
+    }
 
     if (fm1 instanceof fmCon) {
         var fmC1: fmCon = <fmCon> fm1;
@@ -4084,15 +4098,15 @@ function equalFormulas(fm1: any, fm2: any): boolean {
         if (fmP1.id === fmP2.id && fmP1.tms === null && fmP2.tms === null)
             return true;
 
-        if (fmP1.id != fmP2.id || (fmP1.tms === null || fmP2.tms === null) || fmP1.tms.length != fmP2.tms.length)
+        if (fmP1.id !== fmP2.id || (fmP1.tms === null || fmP2.tms === null) || fmP1.tms.length != fmP2.tms.length) {
             return false;
+        }
 
-        fmP1.tms.forEach(function (v, i) {
-            if (!equalFormulas(v, fmP2.tms[i]))
-                return false;
+        return !fmP1.tms.some(function (v, i) {
+            if (!equalFormulas(v, fmP2.tms[i])) {
+                return true;
+            }
         });
-
-        return true;
     }
 
     else if (fm1 instanceof tmVar) {
@@ -4106,18 +4120,18 @@ function equalFormulas(fm1: any, fm2: any): boolean {
         var tmF1: tmFun = <tmFun> fm1;
         var tmF2: tmFun = <tmFun> fm2;
 
-        if (fmP1.id === fmP2.id && fmP1.tms === null && fmP2.tms === null)
+        if (tmF1.id === tmF2.id && tmF1.tms === null && tmF2.tms === null)
             return true;
 
-        if (fmP1.id != fmP2.id || (fmP1.tms === null || fmP2.tms === null) || fmP1.tms.length != fmP2.tms.length)
+        if (tmF1.id != tmF2.id || (tmF1.tms === null || tmF2.tms === null) || tmF1.tms.length != tmF2.tms.length) {
             return false;
+        }
 
-        tmF1.tms.forEach(function (v, i) {
-            if (!equalFormulas(v, tmF2.tms[i]))
-                return false;
+        return !tmF1.tms.some(function (v, i) {
+            if (!equalFormulas(v, tmF2.tms[i])) {
+                return true;
+            }
         });
-
-        return true;
     }
 
     else
@@ -4326,6 +4340,7 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             var impPQ: fmImp = x.premises[0].goal;
 
             if (!equalFormulas(p, impPQ.lhs)) {
+                console.log(p, impPQ.lhs);
                 throw new Error("Linked formula p appears different despite being linked");
             }
 
@@ -4948,7 +4963,7 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
 
     // Copy
     var g = copyFormula(x.goal, refs);
-    var cpas = copyAssumptions(x);
+    var cpas = copyAssumptions(x, refs);
 
     // Inst. new object of same type
     if (x instanceof synBool) {
@@ -4981,6 +4996,10 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
 
     else if (x instanceof synExiE) {
         i = new synExiE(g, cpas.as);
+
+        (<synExiE> i).c = x.c;
+        (<synExiE> i).cIsNew = x.cIsNew;
+        (<synExiE> i).waitingForPCompletion = x.waitingForPCompletion;
     }
 
     else if (x instanceof synExiI) {
@@ -4995,6 +5014,9 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
 
     else if (x instanceof synUniI) {
         i = new synUniI(g, cpas.as);
+
+        (<synUniI> i).c = x.c;
+        (<synUniI> i).cIsNew = x.cIsNew;
     }
 
     else if (x instanceof synImpE) {
