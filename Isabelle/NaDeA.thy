@@ -150,7 +150,7 @@ lemma list_upd_lemma:
 by (induct a, simp_all, metis upd_lemma)
 
 lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
-unfolding shift_def by (rule ext) auto
+unfolding shift_def by force
 
 lemma lift_lemma:
   "semantics_term (e\<langle>0:z\<rangle>) f (inc_term t) = semantics_term e f t"
@@ -225,7 +225,7 @@ next
   then have "semantics e f g (sub 0 t p)" by simp
   then have "semantics (\<lambda>n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
     unfolding shift_def subst_lemma by simp
-  then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by blast
+  then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by metis
   then show ?case by simp
 next
   case (Uni_E p a t)
@@ -238,15 +238,15 @@ next
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
   from Exi_E have "semantics e f g (Exi p)" by simp
   then have "(? z. semantics (?upd e z) f g p)" by simp
-  then obtain z where z_def: "semantics (?upd e z) f g p" by blast
+  then obtain z where z_def: "semantics (?upd e z) f g p" by metis
   let ?f' = "f(c := \<lambda>x. z)"
   from z_def have "semantics (e\<langle>0:z\<rangle>) f g p" unfolding shift_def by simp
-  then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E upd_lemma newness by blast
+  then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E upd_lemma newness by metis
   then have "semantics (e\<langle>0:semantics_term e ?f' (Fun c [])\<rangle>)?f' g p" by simp
   then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" unfolding subst_lemma by simp
   then have a_holds: "list_all (semantics e ?f' g) a" using Exi_E list_upd_lemma newness by metis
   then have "semantics e ?f' g q" using Exi_E p_holds a_holds by simp
-  then show ?case using Exi_E upd_lemma newness by blast
+  then show ?case using Exi_E upd_lemma newness by metis
 next
   case (Uni_I c p a)
   let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
@@ -254,7 +254,7 @@ next
     proof
       fix x
       let ?f' = "f(c := \<lambda>y. x)"
-      from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by blast
+      from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by metis
       then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by simp
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
         unfolding generalize_upd subst_lemma by simp
