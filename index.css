@@ -577,3 +577,7 @@ a {
 .lastArg {
     padding-right: 0 !important;
 }
+
+.error {
+    color: red;
+}
