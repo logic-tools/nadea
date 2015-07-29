@@ -123,90 +123,92 @@ Uni_E:
 Uni_I:
         "OK (sub 0 (Fun c []) p) a ==> news c (p # a) ==> OK (Uni p) a"
 
-definition
-  shift :: "(nat \<Rightarrow> 'u) \<Rightarrow> nat \<Rightarrow> 'u \<Rightarrow> nat \<Rightarrow> 'u" ("_\<langle>_:_\<rangle>" [90, 0, 0] 91)
+fun
+  put :: "(nat => 'u) => nat => 'u => nat => 'u"
 where
-  "e\<langle>i:a\<rangle> = (\<lambda>j. if j < i then e j else if j = i then a else e (j - 1))"
+  "put e i x = (% n. if n < i then e n else if n = i then x else e (n - 1))"
 
-lemma generalize_upd: "(%n. if n = 0 then z else e (n - 1)) = e\<langle>0:z\<rangle>"
-unfolding shift_def by simp
+lemma put_special: "(% n. if n = 0 then x else e (n - 1)) = put e 0 x"
+by simp
 
-lemma newness: "news c (p # a) \<Longrightarrow> new c p" "news c (p # a) \<Longrightarrow> news c a"
+lemma newness: "news c (p # a) ==> new c p" "news c (p # a) ==> news c a"
 by simp_all metis+
 
-lemma membership: "member x xs \<Longrightarrow> x \<in> set xs"
-by (induct xs, simp_all) metis
+lemma membership: "member p a ==> p : set a"
+by (induct a, simp_all) metis
 
-lemma upd_lemma':
-  "new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t"
-  "new_list n ts \<Longrightarrow> semantics_list e (f(n := x)) ts = semantics_list e f ts"
-by (induct t and ts rule: semantics_term.induct semantics_list.induct, simp_all) metis+
+lemma update':
+  "new_term n t ==> semantics_term e (f(n := x)) t = semantics_term e f t"
+  "new_list n l ==> semantics_list e (f(n := x)) l = semantics_list e f l"
+by (induct t and l rule: semantics_term.induct semantics_list.induct, simp_all) metis+
 
-lemma upd_lemma: "new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p"
-by (induct p arbitrary: e, simp_all add: upd_lemma') metis+
+lemma update: "new n p ==> semantics e (f(n := x)) g p = semantics e f g p"
+by (induct p arbitrary: e, simp_all add: update') metis+
 
-lemma list_upd_lemma:
-  "news n a \<Longrightarrow> list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
-by (induct a, simp_all, metis upd_lemma)
+lemma list_update:
+  "news n a ==> list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
+by (induct a, simp_all, metis update)
 
-lemma shift_commute: "e\<langle>i:U\<rangle>\<langle>0:T\<rangle> = e\<langle>0:T\<rangle>\<langle>Suc i:U\<rangle>"
-unfolding shift_def by force
+lemma put_commute: "put (put e i x) 0 y = put (put e 0 y) (i + 1) x"
+by force
 
-lemma lift_lemma:
-  "semantics_term (e\<langle>0:z\<rangle>) f (inc_term t) = semantics_term e f t"
-  "semantics_list (e\<langle>0:z\<rangle>) f (inc_list ts) = semantics_list e f ts"
-unfolding shift_def by (induct t and ts rule: semantics_term.induct semantics_list.induct) simp_all
+lemma increment:
+  "semantics_term (put e 0 x) f (inc_term t) = semantics_term e f t"
+  "semantics_list (put e 0 x) f (inc_list l) = semantics_list e f l"
+by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
 
-lemma subst_lemma':
-  "semantics_term e f (sub_term i u t) = semantics_term (e\<langle>i:semantics_term e f u\<rangle>) f t"
-  "semantics_list e f (sub_list i u ts) = semantics_list (e\<langle>i:semantics_term e f u\<rangle>) f ts"
-unfolding shift_def by (induct t and ts rule: semantics_term.induct semantics_list.induct) simp_all
+lemma substitute':
+  "semantics_term e f (sub_term i u t) = semantics_term (put e i (semantics_term e f u)) f t"
+  "semantics_list e f (sub_list i u l) = semantics_list (put e i (semantics_term e f u)) f l"
+by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
 
-lemma subst_lemma: "semantics e f g (sub i t a) = semantics (e\<langle>i:semantics_term e f t\<rangle>) f g a"
+lemma substitute: "semantics e f g (sub i t a) = semantics (put e i (semantics_term e f t)) f g a"
 proof (induct a arbitrary: e t i)
-  case (Pre p ts)
-  show ?case by (simp add: subst_lemma')
+  case (Pre p l)
+  show ?case by (simp add: substitute')
 next
   case (Uni a)
-  have "semantics (e\<langle>i:semantics_term e f t\<rangle>) f g (Uni a)
-            = (\<forall>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)"
-    unfolding shift_def by simp
+  have "semantics (put e i (semantics_term e f t)) f g (Uni a)
+            = (! x. semantics (put (put e i (semantics_term e f t)) 0 x) f g a)"
+    by simp
   also
-  have "... = (\<forall>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term e f t\<rangle>) f g a)" 
-    unfolding shift_commute by simp
+  have "... = (! x. semantics (put (put e 0 x) (i + 1) (semantics_term e f t)) f g a)" 
+    unfolding put_commute by simp
   also
-  have "... = (\<forall>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term (e\<langle>0:z\<rangle>) f (inc_term t)\<rangle>) f g a)"
-    unfolding lift_lemma by simp
+  have "... = (! x. semantics
+            (put (put e 0 x) (i + 1) (semantics_term (put e 0 x) f (inc_term t))) f g a)"
+    unfolding increment by simp
   also
-  have "... = (\<forall>z. semantics (e\<langle>0:z\<rangle>) f g (sub (i + 1) (inc_term t) a))" using Uni by simp
+  have "... = (! x. semantics (put e 0 x) f g (sub (i + 1) (inc_term t) a))" using Uni by simp
   also
-  have "... = semantics e f g (Uni (sub (i + 1) (inc_term t) a))" unfolding shift_def by simp
+  have "... = semantics e f g (Uni (sub (i + 1) (inc_term t) a))" by simp
   also
   have "... = semantics e f g (sub i t (Uni a))" by simp
   finally show ?case by simp
 next
   case (Exi a)
-  have "semantics (e\<langle>i:semantics_term e f t\<rangle>) f g (Exi a)
-            = (\<exists>z. semantics (e\<langle>i:semantics_term e f t\<rangle>\<langle>0:z\<rangle>) f g a)" unfolding shift_def by simp
+  have "semantics (put e i (semantics_term e f t)) f g (Exi a)
+            = (? x. semantics (put (put e i (semantics_term e f t)) 0 x) f g a)" by simp
   also
-  have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term e f t\<rangle>) f g a)" 
-    unfolding shift_commute by simp
+  have "... = (? x. semantics (put (put e 0 x) (i + 1) (semantics_term e f t)) f g a)" 
+    unfolding put_commute by simp
   also
-  have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>\<langle>i + 1:semantics_term (e\<langle>0:z\<rangle>) f (inc_term t)\<rangle>) f g a)"
-    unfolding lift_lemma by simp
+  have "... = (? x. semantics
+            (put (put e 0 x) (i + 1) (semantics_term (put e 0 x) f (inc_term t))) f g a)"
+    unfolding increment by simp
   also
-  have "... = (\<exists>z. semantics (e\<langle>0:z\<rangle>) f g (sub (i + 1) (inc_term t) a))" using Exi by simp
+  have "... = (? x. semantics (put e 0 x) f g (sub (i + 1) (inc_term t) a))" using Exi by simp
   also
-  have "... = semantics e f g (Exi (sub (i + 1) (inc_term t) a))" unfolding shift_def by simp
+  have "... = semantics e f g (Exi (sub (i + 1) (inc_term t) a))" by simp
   finally show ?case by simp
 qed simp_all
 
-lemma soundness': "OK p a \<Longrightarrow> list_all (semantics e f g) a \<Longrightarrow> semantics e f g p"
+lemma soundness': "OK p a ==> list_all (semantics e f g) a ==> semantics e f g p"
 proof (induct arbitrary: e f rule: OK.induct)
   case (Assume p a)
-  then have "p \<in> set a" using membership by simp
+  then have "p : set a" using membership by simp
   moreover
-  from Assume have "\<forall>p \<in> set a. semantics e f g p" unfolding list_all_iff by simp
+  from Assume have "p : set a ==> semantics e f g p" unfolding list_all_iff by simp
   ultimately show ?case by simp
 next
   case (Boole p a)
@@ -223,53 +225,50 @@ next
 next
   case (Exi_I t p a)
   then have "semantics e f g (sub 0 t p)" by simp
-  then have "semantics (\<lambda>n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
-    unfolding shift_def subst_lemma by simp
+  then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
+    unfolding substitute by simp
   then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by metis
   then show ?case by simp
 next
   case (Uni_E p a t)
   then have "semantics e f g (Uni p)" by simp
-  then have "!x. semantics (% n. if n = 0 then x else e (n - 1)) f g p" by simp
+  then have "! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p" by simp
   then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p" by simp
-  then show ?case unfolding shift_def subst_lemma by simp
+  then show ?case unfolding substitute by simp
 next
   case (Exi_E p a q c)
-  let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
+  let ?upd = "% e x.(% n. if n = 0 then x else e (n - 1))"
   from Exi_E have "semantics e f g (Exi p)" by simp
   then have "(? z. semantics (?upd e z) f g p)" by simp
   then obtain z where z_def: "semantics (?upd e z) f g p" by metis
-  let ?f' = "f(c := \<lambda>x. z)"
-  from z_def have "semantics (e\<langle>0:z\<rangle>) f g p" unfolding shift_def by simp
-  then have "semantics (e\<langle>0:z\<rangle>) ?f' g p" using Exi_E upd_lemma newness by metis
-  then have "semantics (e\<langle>0:semantics_term e ?f' (Fun c [])\<rangle>)?f' g p" by simp
-  then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" unfolding subst_lemma by simp
-  then have a_holds: "list_all (semantics e ?f' g) a" using Exi_E list_upd_lemma newness by metis
+  let ?f' = "f(c := % x. z)"
+  from z_def have "semantics (put e 0 z) f g p" by simp
+  then have "semantics (put e 0 z) ?f' g p" using Exi_E update newness by metis
+  then have "semantics (put e 0 (semantics_term e ?f' (Fun c [])))?f' g p" by simp
+  then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" unfolding substitute by simp
+  then have a_holds: "list_all (semantics e ?f' g) a" using Exi_E list_update newness by metis
   then have "semantics e ?f' g q" using Exi_E p_holds a_holds by simp
-  then show ?case using Exi_E upd_lemma newness by metis
+  then show ?case using Exi_E update newness by metis
 next
   case (Uni_I c p a)
-  let ?upd = "%e x.(% n. if n = 0 then x else e (n - 1))"
+  let ?upd = "% e x.(% n. if n = 0 then x else e (n - 1))"
   have "! x. semantics (?upd e x) f g p"
     proof
       fix x
-      let ?f' = "f(c := \<lambda>y. x)"
-      from Uni_I have "list_all (semantics e ?f' g) a" using list_upd_lemma newness by metis
+      let ?f' = "f(c := % y. x)"
+      from Uni_I have "list_all (semantics e ?f' g) a" using list_update newness by metis
       then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by simp
       then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
-        unfolding generalize_upd subst_lemma by simp
+        unfolding put_special substitute by simp
       then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
-        unfolding generalize_upd by simp
+        unfolding put_special by simp
       then have "semantics (?upd e x) ?f' g p" using fun_upd_apply by metis
-      then show "semantics (?upd e x) f g p" using Uni_I upd_lemma newness by blast
+      then show "semantics (?upd e x) f g p" using Uni_I update newness by blast
     qed
   then show ?case by simp
 qed simp_all
 
 theorem soundness: "OK p [] ==> semantics e f g p"
-by (simp add: soundness')
-
-corollary "OK p [] \<longrightarrow> (\<forall>e f g. semantics e f g p)"
-by (simp add: soundness)
+using soundness' by force
 
 end
