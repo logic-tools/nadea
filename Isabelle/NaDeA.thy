@@ -1,274 +1,255 @@
-theory NaDeA imports Main begin
-
-type_synonym id = string
-
-datatype tm = Var nat | Fun id "tm list"
-
-datatype fm = Falsity | Pre id "tm list" | Imp fm fm | Dis fm fm | Con fm fm | Exi fm | Uni fm
-
-primrec
-  semantics_term :: "(nat => 'u) => (id => 'u list => 'u) => tm => 'u"
-and
-  semantics_list :: "(nat => 'u) => (id => 'u list => 'u) => tm list => 'u list"
-where
-  "semantics_term e f (Var v) = e v" |
-  "semantics_term e f (Fun i l) = f i (semantics_list e f l)" |
-  "semantics_list e f [] = []" |
-  "semantics_list e f (t # l) = semantics_term e f t # semantics_list e f l"
-
-primrec
-  semantics :: "(nat => 'u) => (id => 'u list => 'u) => (id => 'u list => bool) => fm => bool"
-where
-  "semantics e f g Falsity = False" |
-  "semantics e f g (Pre i l) = g i (semantics_list e f l)" |
-  "semantics e f g (Imp p q) = (if semantics e f g p then semantics e f g q else True)" |
-  "semantics e f g (Dis p q) = (if semantics e f g p then True else semantics e f g q)" |
-  "semantics e f g (Con p q) = (if semantics e f g p then semantics e f g q else False)" |
-  "semantics e f g (Exi p) = (? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" |
-  "semantics e f g (Uni p) = (! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)"
-
-primrec
-  member :: "fm => fm list => bool"
-where
-  "member p [] = False" |
-  "member p (q # a) = (if p = q then True else member p a)"
-
-primrec
-  new_term :: "id => tm => bool"
-and
-  new_list :: "id => tm list => bool"
-where
-  "new_term c (Var v) = True" |
-  "new_term c (Fun i l) = (if i = c then False else new_list c l)" |
-  "new_list c [] = True" |
-  "new_list c (t # l) = (if new_term c t then new_list c l else False)"
-
-primrec
-  new :: "id => fm => bool"
-where
-  "new c Falsity = True" |
-  "new c (Pre i l) = new_list c l" |
-  "new c (Imp p q) = (if new c p then new c q else False)" |
-  "new c (Dis p q) = (if new c p then new c q else False)" |
-  "new c (Con p q) = (if new c p then new c q else False)" |
-  "new c (Exi p) = new c p" |
-  "new c (Uni p) = new c p"
-
-primrec
-  news :: "id => fm list => bool"
-where
-  "news c [] = True" |
-  "news c (p # a) = (if new c p then news c a else False)"
-
-primrec
-  inc_term :: "tm => tm"
-and
-  inc_list :: "tm list => tm list"
-where
-  "inc_term (Var v) = Var (v + 1)" |
-  "inc_term (Fun i l) = Fun i (inc_list l)" |
-  "inc_list [] = []" |
-  "inc_list (t # l) = inc_term t # inc_list l"
-
-primrec
-  sub_term :: "nat => tm => tm => tm"
-and
-  sub_list :: "nat => tm => tm list => tm list"
-where
-  "sub_term n s (Var v) = (if v = n then s else if v > n then Var (v - 1) else Var v)" |
-  "sub_term n s (Fun i l) = Fun i (sub_list n s l)" |
-  "sub_list n s [] = []" |
-  "sub_list n s (t # l) = sub_term n s t # sub_list n s l"
-
-primrec
-  sub :: "nat => tm => fm => fm"
-where
-  "sub n s Falsity = Falsity" |
-  "sub n s (Pre i l) = Pre i (sub_list n s l)" |
-  "sub n s (Imp p q) = Imp (sub n s p) (sub n s q)" |
-  "sub n s (Dis p q) = Dis (sub n s p) (sub n s q)" |
-  "sub n s (Con p q) = Con (sub n s p) (sub n s q)" |
-  "sub n s (Exi p) = Exi (sub (n + 1) (inc_term s) p)" |
-  "sub n s (Uni p) = Uni (sub (n + 1) (inc_term s) p)"
-
-inductive
-  OK :: "fm => fm list => bool"
-where
-Assume:
-        "member p a ==> OK p a" |
-Boole:
-        "OK Falsity ((Imp p Falsity) # a) ==> OK p a" |
-Imp_E:
-        "OK (Imp p q) a ==> OK p a ==> OK q a" |
-Imp_I:
-        "OK q (p # a) ==> OK (Imp p q) a" |
-Dis_E:
-        "OK (Dis p q) a ==> OK r (p # a) ==> OK r (q # a) ==> OK r a" |
-Dis_I1:
-        "OK p a ==> OK (Dis p q) a" |
-Dis_I2:
-        "OK q a ==> OK (Dis p q) a" |
-Con_E1:
-        "OK (Con p q) a ==> OK p a" |
-Con_E2:
-        "OK (Con p q) a ==> OK q a" |
-Con_I:
-        "OK p a ==> OK q a ==> OK (Con p q) a" |
-Exi_E:
-        "OK (Exi p) a ==> OK q ((sub 0 (Fun c []) p) # a) ==> news c (p # q # a) ==> OK q a" |
-Exi_I:
-        "OK (sub 0 t p) a ==> OK (Exi p) a" |
-Uni_E:
-        "OK (Uni p) a ==> OK (sub 0 t p) a" |
-Uni_I:
-        "OK (sub 0 (Fun c []) p) a ==> news c (p # a) ==> OK (Uni p) a"
-
-fun
-  put :: "(nat => 'u) => nat => 'u => nat => 'u"
-where
-  "put e i x = (% n. if n < i then e n else if n = i then x else e (n - 1))"
-
-lemma put_special: "(% n. if n = 0 then x else e (n - 1)) = put e 0 x"
-by simp
-
-lemma newness: "news c (p # a) ==> new c p" "news c (p # a) ==> news c a"
-by simp_all metis+
-
-lemma membership: "member p a ==> p : set a"
-by (induct a, simp_all) metis
-
-lemma update':
-  "new_term n t ==> semantics_term e (f(n := x)) t = semantics_term e f t"
-  "new_list n l ==> semantics_list e (f(n := x)) l = semantics_list e f l"
-by (induct t and l rule: semantics_term.induct semantics_list.induct, simp_all) metis+
-
-lemma update: "new n p ==> semantics e (f(n := x)) g p = semantics e f g p"
-by (induct p arbitrary: e, simp_all add: update') metis+
-
-lemma list_update:
-  "news n a ==> list_all (semantics e (f(n := x)) g) a = list_all (semantics e f g) a"
-by (induct a, simp_all, metis update)
-
-lemma put_commute: "put (put e i x) 0 y = put (put e 0 y) (i + 1) x"
-by force
-
-lemma increment:
-  "semantics_term (put e 0 x) f (inc_term t) = semantics_term e f t"
-  "semantics_list (put e 0 x) f (inc_list l) = semantics_list e f l"
-by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
-
-lemma substitute':
-  "semantics_term e f (sub_term i u t) = semantics_term (put e i (semantics_term e f u)) f t"
-  "semantics_list e f (sub_list i u l) = semantics_list (put e i (semantics_term e f u)) f l"
-by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
-
-lemma substitute: "semantics e f g (sub i t a) = semantics (put e i (semantics_term e f t)) f g a"
-proof (induct a arbitrary: e t i)
-  case (Pre p l)
-  show ?case by (simp add: substitute')
-next
-  case (Uni a)
-  have "semantics (put e i (semantics_term e f t)) f g (Uni a)
-            = (! x. semantics (put (put e i (semantics_term e f t)) 0 x) f g a)"
-    by simp
-  also
-  have "... = (! x. semantics (put (put e 0 x) (i + 1) (semantics_term e f t)) f g a)" 
-    unfolding put_commute by simp
-  also
-  have "... = (! x. semantics
-            (put (put e 0 x) (i + 1) (semantics_term (put e 0 x) f (inc_term t))) f g a)"
-    unfolding increment by simp
-  also
-  have "... = (! x. semantics (put e 0 x) f g (sub (i + 1) (inc_term t) a))" using Uni by simp
-  also
-  have "... = semantics e f g (Uni (sub (i + 1) (inc_term t) a))" by simp
-  also
-  have "... = semantics e f g (sub i t (Uni a))" by simp
-  finally show ?case by simp
-next
-  case (Exi a)
-  have "semantics (put e i (semantics_term e f t)) f g (Exi a)
-            = (? x. semantics (put (put e i (semantics_term e f t)) 0 x) f g a)" by simp
-  also
-  have "... = (? x. semantics (put (put e 0 x) (i + 1) (semantics_term e f t)) f g a)" 
-    unfolding put_commute by simp
-  also
-  have "... = (? x. semantics
-            (put (put e 0 x) (i + 1) (semantics_term (put e 0 x) f (inc_term t))) f g a)"
-    unfolding increment by simp
-  also
-  have "... = (? x. semantics (put e 0 x) f g (sub (i + 1) (inc_term t) a))" using Exi by simp
-  also
-  have "... = semantics e f g (Exi (sub (i + 1) (inc_term t) a))" by simp
-  finally show ?case by simp
-qed simp_all
-
-lemma soundness': "OK p a ==> list_all (semantics e f g) a ==> semantics e f g p"
-proof (induct arbitrary: e f rule: OK.induct)
-  case (Assume p a)
-  then have "p : set a" using membership by simp
-  moreover
-  from Assume have "p : set a ==> semantics e f g p" unfolding list_all_iff by simp
-  ultimately show ?case by simp
-next
-  case (Boole p a)
-  then show ?case by simp metis
-next
-  case (Dis_E p q a r)
-  then show ?case by simp metis
-next
-  case (Con_E1 p q a)
-  then show ?case by simp metis
-next
-  case (Con_E2 p q a)
-  then show ?case by simp metis
-next
-  case (Exi_I t p a)
-  then have "semantics e f g (sub 0 t p)" by simp
-  then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p"
-    unfolding substitute by simp
-  then have "(? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" by metis
-  then show ?case by simp
-next
-  case (Uni_E p a t)
-  then have "semantics e f g (Uni p)" by simp
-  then have "! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p" by simp
-  then have "semantics (% n. if n = 0 then semantics_term e f t else e (n - 1)) f g p" by simp
-  then show ?case unfolding substitute by simp
-next
-  case (Exi_E p a q c)
-  let ?upd = "% e x.(% n. if n = 0 then x else e (n - 1))"
-  from Exi_E have "semantics e f g (Exi p)" by simp
-  then have "(? z. semantics (?upd e z) f g p)" by simp
-  then obtain z where z_def: "semantics (?upd e z) f g p" by metis
-  let ?f' = "f(c := % x. z)"
-  from z_def have "semantics (put e 0 z) f g p" by simp
-  then have "semantics (put e 0 z) ?f' g p" using Exi_E update newness by metis
-  then have "semantics (put e 0 (semantics_term e ?f' (Fun c [])))?f' g p" by simp
-  then have p_holds: "semantics e ?f' g (sub 0 (Fun c []) p)" unfolding substitute by simp
-  then have a_holds: "list_all (semantics e ?f' g) a" using Exi_E list_update newness by metis
-  then have "semantics e ?f' g q" using Exi_E p_holds a_holds by simp
-  then show ?case using Exi_E update newness by metis
-next
-  case (Uni_I c p a)
-  let ?upd = "% e x.(% n. if n = 0 then x else e (n - 1))"
-  have "! x. semantics (?upd e x) f g p"
-    proof
-      fix x
-      let ?f' = "f(c := % y. x)"
-      from Uni_I have "list_all (semantics e ?f' g) a" using list_update newness by metis
-      then have "semantics e ?f' g (sub 0 (Fun c []) p)" using Uni_I by simp
-      then have "semantics (?upd e (semantics_term e ?f' (Fun c []))) ?f' g p"
-        unfolding put_special substitute by simp
-      then have "semantics (?upd e (?f' c (semantics_list e ?f' []))) ?f' g p"
-        unfolding put_special by simp
-      then have "semantics (?upd e x) ?f' g p" using fun_upd_apply by metis
-      then show "semantics (?upd e x) f g p" using Uni_I update newness by blast
-    qed
-  then show ?case by simp
-qed simp_all
-
-theorem soundness: "OK p [] ==> semantics e f g p"
-using soundness' by force
-
-end
+theory NaDeA imports Main begin                                                                     (*  Isabelle theory file (Isabelle2015)                                       *)
+                                                                                                    (*                                                                            *)
+type_synonym id = "char list"                                                                       (*  A function/predicate identifier is a list of characters.                  *)
+                                                                                                    (*                                                                            *)
+datatype tm = Var nat | Fun id "tm list"                                                            (*                                                                            *)
+                                                                                                    (*                                                                            *)
+datatype fm = Falsity | Pre id "tm list" | Imp fm fm | Dis fm fm | Con fm fm | Exi fm | Uni fm      (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  semantics_term :: "(nat => 'a) => (id => 'a list => 'a) => tm => 'a"                              (*                                                                            *)
+and                                                                                                 (*                                                                            *)
+  semantics_list :: "(nat => 'a) => (id => 'a list => 'a) => tm list => 'a list"                    (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "semantics_term e f (Var n) = e n" |                                                              (*                                                                            *)
+  "semantics_term e f (Fun i l) = f i (semantics_list e f l)" |                                     (*                                                                            *)
+  "semantics_list e f [] = []" |                                                                    (*                                                                            *)
+  "semantics_list e f (t # l) = semantics_term e f t # semantics_list e f l"                        (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  semantics :: "(nat => 'a) => (id => 'a list => 'a) => (id => 'a list => bool) => fm => bool"      (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "semantics e f g Falsity = False" |                                                               (*                                                                            *)
+  "semantics e f g (Pre i l) = g i (semantics_list e f l)" |                                        (*                                                                            *)
+  "semantics e f g (Imp p q) = (if semantics e f g p then semantics e f g q else True)" |           (*                                                                            *)
+  "semantics e f g (Dis p q) = (if semantics e f g p then True else semantics e f g q)" |           (*                                                                            *)
+  "semantics e f g (Con p q) = (if semantics e f g p then semantics e f g q else False)" |          (*                                                                            *)
+  "semantics e f g (Exi p) = (? x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)" |        (*                                                                            *)
+  "semantics e f g (Uni p) = (! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)"          (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  member :: "fm => fm list => bool"                                                                 (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "member p [] = False" |                                                                           (*                                                                            *)
+  "member p (q # z) = (if p = q then True else member p z)"                                         (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  new_term :: "id => tm => bool"                                                                    (*                                                                            *)
+and                                                                                                 (*                                                                            *)
+  new_list :: "id => tm list => bool"                                                               (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "new_term c (Var n) = True" |                                                                     (*                                                                            *)
+  "new_term c (Fun i l) = (if i = c then False else new_list c l)" |                                (*                                                                            *)
+  "new_list c [] = True" |                                                                          (*                                                                            *)
+  "new_list c (t # l) = (if new_term c t then new_list c l else False)"                             (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  new :: "id => fm => bool"                                                                         (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "new c Falsity = True" |                                                                          (*                                                                            *)
+  "new c (Pre i l) = new_list c l" |                                                                (*                                                                            *)
+  "new c (Imp p q) = (if new c p then new c q else False)" |                                        (*                                                                            *)
+  "new c (Dis p q) = (if new c p then new c q else False)" |                                        (*                                                                            *)
+  "new c (Con p q) = (if new c p then new c q else False)" |                                        (*                                                                            *)
+  "new c (Exi p) = new c p" |                                                                       (*                                                                            *)
+  "new c (Uni p) = new c p"                                                                         (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  news :: "id => fm list => bool"                                                                   (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "news c [] = True" |                                                                              (*                                                                            *)
+  "news c (p # z) = (if new c p then news c z else False)"                                          (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  inc_term :: "tm => tm"                                                                            (*                                                                            *)
+and                                                                                                 (*                                                                            *)
+  inc_list :: "tm list => tm list"                                                                  (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "inc_term (Var n) = Var (n + 1)" |                                                                (*                                                                            *)
+  "inc_term (Fun i l) = Fun i (inc_list l)" |                                                       (*                                                                            *)
+  "inc_list [] = []" |                                                                              (*                                                                            *)
+  "inc_list (t # l) = inc_term t # inc_list l"                                                      (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  sub_term :: "nat => tm => tm => tm"                                                               (*                                                                            *)
+and                                                                                                 (*                                                                            *)
+  sub_list :: "nat => tm => tm list => tm list"                                                     (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "sub_term v s (Var n) = (if n < v then Var n else if n = v then s else Var (n - 1))" |            (*                                                                            *)
+  "sub_term v s (Fun i l) = Fun i (sub_list v s l)" |                                               (*                                                                            *)
+  "sub_list v s [] = []" |                                                                          (*                                                                            *)
+  "sub_list v s (t # l) = sub_term v s t # sub_list v s l"                                          (*                                                                            *)
+                                                                                                    (*                                                                            *)
+primrec                                                                                             (*                                                                            *)
+  sub :: "nat => tm => fm => fm"                                                                    (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "sub v s Falsity = Falsity" |                                                                     (*                                                                            *)
+  "sub v s (Pre i l) = Pre i (sub_list v s l)" |                                                    (*                                                                            *)
+  "sub v s (Imp p q) = Imp (sub v s p) (sub v s q)" |                                               (*                                                                            *)
+  "sub v s (Dis p q) = Dis (sub v s p) (sub v s q)" |                                               (*                                                                            *)
+  "sub v s (Con p q) = Con (sub v s p) (sub v s q)" |                                               (*                                                                            *)
+  "sub v s (Exi p) = Exi (sub (v + 1) (inc_term s) p)" |                                            (*                                                                            *)
+  "sub v s (Uni p) = Uni (sub (v + 1) (inc_term s) p)"                                              (*                                                                            *)
+                                                                                                    (*                                                                            *)
+inductive                                                                                           (*                                                                            *)
+  OK :: "fm => fm list => bool"                                                                     (*                                                                            *)
+where                                                                                               (*                                                                            *)
+Assume:                                                                                             (*                                                                            *)
+        "member p z ==> OK p z" |                                                                   (*                                                                            *)
+Boole:                                                                                              (*                                                                            *)
+        "OK Falsity ((Imp p Falsity) # z) ==> OK p z" |                                             (*                                                                            *)
+Imp_E:                                                                                              (*                                                                            *)
+        "OK (Imp p q) z ==> OK p z ==> OK q z" |                                                    (*                                                                            *)
+Imp_I:                                                                                              (*                                                                            *)
+        "OK q (p # z) ==> OK (Imp p q) z" |                                                         (*                                                                            *)
+Dis_E:                                                                                              (*                                                                            *)
+        "OK (Dis p q) z ==> OK r (p # z) ==> OK r (q # z) ==> OK r z" |                             (*                                                                            *)
+Dis_I1:                                                                                             (*                                                                            *)
+        "OK p z ==> OK (Dis p q) z" |                                                               (*                                                                            *)
+Dis_I2:                                                                                             (*                                                                            *)
+        "OK q z ==> OK (Dis p q) z" |                                                               (*                                                                            *)
+Con_E1:                                                                                             (*                                                                            *)
+        "OK (Con p q) z ==> OK p z" |                                                               (*                                                                            *)
+Con_E2:                                                                                             (*                                                                            *)
+        "OK (Con p q) z ==> OK q z" |                                                               (*                                                                            *)
+Con_I:                                                                                              (*                                                                            *)
+        "OK p z ==> OK q z ==> OK (Con p q) z" |                                                    (*                                                                            *)
+Exi_E:                                                                                              (*                                                                            *)
+        "OK (Exi p) z ==> OK q ((sub 0 (Fun c []) p) # z) ==> news c (p # q # z) ==> OK q z" |      (*                                                                            *)
+Exi_I:                                                                                              (*                                                                            *)
+        "OK (sub 0 t p) z ==> OK (Exi p) z" |                                                       (*                                                                            *)
+Uni_E:                                                                                              (*                                                                            *)
+        "OK (Uni p) z ==> OK (sub 0 t p) z" |                                                       (*                                                                            *)
+Uni_I:                                                                                              (*                                                                            *)
+        "OK (sub 0 (Fun c []) p) z ==> news c (p # z) ==> OK (Uni p) z"                             (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma "OK (Imp (Pre ''A'' []) (Pre ''A'' [])) []" proof (rule Imp_I, rule Assume, simp) qed         (*  Formula "A --> A" example but not declarative style...                    *)
+                                                                                                    (*                                                                            *)
+lemma "OK (Imp (Pre ''A'' []) (Pre ''A'' [])) []"                                                   (*  Formula "A --> A" example.                                                *)
+proof -                                                                                             (*  Note "-" to start from nothing.                                           *)
+  have "OK (Pre ''A'' []) [(Pre ''A'' [])]" proof (rule Assume) qed simp                            (*                                                                            *)
+  then show "OK (Imp (Pre ''A'' []) (Pre ''A'' [])) []" proof (rule Imp_I) qed                      (*                                                                            *)
+qed                                                                                                 (*                                                                            *)
+                                                                                                    (*                                                                            *)
+fun                                                                                                 (*                                                                            *)
+  put :: "(nat => 'a) => nat => 'a => nat => 'a"                                                    (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "put e v x = (% n. if n < v then e n else if n = v then x else e (n - 1))"                        (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma "put e 0 x = (% n. if n = 0 then x else e (n - 1))" proof simp qed                            (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma increment:                                                                                    (*                                                                            *)
+  "semantics_term (put e 0 x) f (inc_term t) = semantics_term e f t"                                (*                                                                            *)
+  "semantics_list (put e 0 x) f (inc_list l) = semantics_list e f l"                                (*                                                                            *)
+proof (induct t and l rule: semantics_term.induct semantics_list.induct) qed auto                   (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma commute: "put (put e v x) 0 y = put (put e 0 y) (v + 1) x" proof force qed                    (*                                                                            *)
+                                                                                                    (*                                                                            *)
+fun                                                                                                 (*                                                                            *)
+  all :: "(fm => bool) => fm list => bool"                                                          (*                                                                            *)
+where                                                                                               (*                                                                            *)
+  "all b z = (! p. if member p z then b p else True)"                                               (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma allhead: "all b (p # z) ==> b p" proof simp qed                                               (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma alltail: "all b (p # z) ==> all b z" proof simp qed                                           (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma allnew: "all (new c) z = news c z" proof (induct z) qed (auto, metis)                         (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma map':                                                                                         (*                                                                            *)
+  "new_term c t ==> semantics_term e (f(c := m)) t = semantics_term e f t"                          (*                                                                            *)
+  "new_list c l ==> semantics_list e (f(c := m)) l = semantics_list e f l"                          (*                                                                            *)
+proof (induct t and l rule: semantics_term.induct semantics_list.induct) qed (auto, metis+)         (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma map: "new c p ==> semantics e (f(c := m)) g p = semantics e f g p"                            (*                                                                            *)
+proof (induct p arbitrary: e) qed (auto simp add: map'(2), metis+)                                  (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma allmap: "news c z ==> all (semantics e (f(c := m)) g) z = all (semantics e f g) z"            (*                                                                            *)
+proof (induct z) qed (simp+, metis map)                                                             (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma substitute':                                                                                  (*                                                                            *)
+  "semantics_term e f (sub_term v s t) = semantics_term (put e v (semantics_term e f s)) f t"       (*                                                                            *)
+  "semantics_list e f (sub_list v s l) = semantics_list (put e v (semantics_term e f s)) f l"       (*                                                                            *)
+proof (induct t and l rule: semantics_term.induct semantics_list.induct) qed auto                   (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma substitute: "semantics e f g (sub v t p) = semantics (put e v (semantics_term e f t)) f g p"  (*                                                                            *)
+proof (induct p arbitrary: e v t)                                                                   (*                                                                            *)
+  fix p e v t assume *:                                                                             (*                                                                            *)
+      "!! e v t. semantics e f g (sub v t p) = semantics (put e v (semantics_term e f t)) f g p"    (*                                                                            *)
+  have "semantics e f g (sub v t (Exi p)) =                                                         (*                                                                            *)
+      (? x. semantics (put (put e 0 x) (v + 1) (semantics_term (put e 0 x) f (inc_term t))) f g p)" (*                                                                            *)
+  using * proof simp qed                                                                            (*                                                                            *)
+  also have "... = (? x. semantics (put (put e v (semantics_term e f t)) 0 x) f g p)"               (*                                                                            *)
+  using commute increment(1) proof metis qed                                                        (*                                                                            *)
+  finally show "semantics e f g (sub v t (Exi p)) =                                                 (*                                                                            *)
+      semantics (put e v (semantics_term e f t)) f g (Exi p)" proof simp qed                        (*                                                                            *)
+  have "semantics e f g (sub v t (Uni p)) =                                                         (*                                                                            *)
+      (! x. semantics (put (put e 0 x) (v + 1) (semantics_term (put e 0 x) f (inc_term t))) f g p)" (*                                                                            *)
+  using * proof simp qed                                                                            (*                                                                            *)
+  also have "... = (! x. semantics (put (put e v (semantics_term e f t)) 0 x) f g p)"               (*                                                                            *)
+  using commute increment(1) proof metis qed                                                        (*                                                                            *)
+  finally show "semantics e f g (sub v t (Uni p)) =                                                 (*                                                                            *)
+      semantics (put e v (semantics_term e f t)) f g (Uni p)" proof simp qed                        (*                                                                            *)
+qed (auto simp add: substitute'(2))                                                                 (*                                                                            *)
+                                                                                                    (*                                                                            *)
+lemma soundness': "OK p z ==> all (semantics e f g) z ==> semantics e f g p"                        (*                                                                            *)
+proof (induct arbitrary: f rule: OK.induct)                                                         (*                                                                            *)
+  fix f p z assume "all (semantics e f g) z"                                                        (*                                                                            *)
+      "!! f. all (semantics e f g) (Imp p Falsity # z) ==> semantics e f g Falsity"                 (*                                                                            *)
+  then show "semantics e f g p" proof force qed                                                     (*                                                                            *)
+next                                                                                                (*                                                                            *)
+  fix f p q z r assume "all (semantics e f g) z"                                                    (*                                                                            *)
+      "!! f. all (semantics e f g) z ==> semantics e f g (Dis p q)"                                 (*                                                                            *)
+      "!! f. all (semantics e f g) (p # z) ==> semantics e f g r"                                   (*                                                                            *)
+      "!! f. all (semantics e f g) (q # z) ==> semantics e f g r"                                   (*                                                                            *)
+  then show "semantics e f g r" proof (simp, metis) qed                                             (*                                                                            *)
+next                                                                                                (*                                                                            *)
+  fix f p q z assume *: "all (semantics e f g) z"                                                   (*                                                                            *)
+      "!! f. all (semantics e f g) z ==> semantics e f g (Con p q)"                                 (*                                                                            *)
+  then show "semantics e f g p" "semantics e f g q" proof (simp, metis)+ qed                        (*                                                                            *)
+next                                                                                                (*                                                                            *)
+  fix f p z q c assume *: "all (semantics e f g) z"                                                 (*                                                                            *)
+      "!! f. all (semantics e f g) z ==> semantics e f g (Exi p)"                                   (*                                                                            *)
+      "!! f. all (semantics e f g) (sub 0 (Fun c []) p # z) ==> semantics e f g q"                  (*                                                                            *)
+      "news c (p # q # z)"                                                                          (*                                                                            *)
+  then obtain x where "semantics (% n. if n = 0 then x else e (n - 1)) f g p" proof force qed       (*                                                                            *)
+  then have "semantics (put e 0 x) f g p" proof simp qed                                            (*                                                                            *)
+  then have "semantics (put e 0 x) (f(c := % w. x)) g p"                                            (*                                                                            *)
+  using * allhead allnew map proof blast qed                                                        (*                                                                            *)
+  then have "semantics e (f(c := % w. x)) g (sub 0 (Fun c []) p)"                                   (*                                                                            *)
+  proof (simp add: substitute) qed                                                                  (*                                                                            *)
+  moreover have "all (semantics e (f(c := % w. x)) g) z"                                            (*                                                                            *)
+  using * alltail allnew allmap proof blast qed                                                     (*                                                                            *)
+  ultimately have "semantics e (f(c := % w. x)) g q" using * proof simp qed                         (*                                                                            *)
+  then show "semantics e f g q" using * allhead alltail allnew map proof blast qed                  (*                                                                            *)
+next                                                                                                (*                                                                            *)
+  fix f c p z assume *: "all (semantics e f g) z"                                                   (*                                                                            *)
+      "!! f. all (semantics e f g) z ==> semantics e f g (sub 0 (Fun c []) p)"                      (*                                                                            *)
+      "news c (p # z)"                                                                              (*                                                                            *)
+  have "! x. semantics (% n. if n = 0 then x else e (n - 1)) f g p"                                 (*                                                                            *)
+  proof                                                                                             (*                                                                            *)
+    fix x                                                                                           (*                                                                            *)
+    have "all (semantics e (f(c := % w. x)) g) z"                                                   (*                                                                            *)
+    using * alltail allnew allmap proof blast qed                                                   (*                                                                            *)
+    then have "semantics e (f(c := % w. x)) g (sub 0 (Fun c []) p)" using * proof simp qed          (*                                                                            *)
+    then have "semantics (% n. if n = 0 then x else e (n - 1)) (f(c := % w. x)) g p"                (*                                                                            *)
+    proof (simp add: substitute) qed                                                                (*                                                                            *)
+    then show "semantics (% n. if n = 0 then x else e (n - 1)) f g p"                               (*                                                                            *)
+    using * allhead alltail allnew map proof blast qed                                              (*                                                                            *)
+  qed                                                                                               (*                                                                            *)
+  then show "semantics e f g (Uni p)" proof simp qed                                                (*                                                                            *)
+qed (auto simp add: substitute)                                                                     (*                                                                            *)
+                                                                                                    (*                                                                            *)
+theorem soundness: "OK p [] ==> semantics e f g p" proof (simp add: soundness') qed                 (*                                                                            *)
+                                                                                                    (*                                                                            *)
+corollary "? p. OK p []" "? p. ~ OK p []"                                                           (*                                                                            *)
+proof -                                                                                             (*                                                                            *)
+  have "OK (Imp p p) []" proof (rule Imp_I, rule Assume, simp) qed                                  (*                                                                            *)
+  then show "? p. OK p []" proof iprover qed                                                        (*                                                                            *)
+  have "~ semantics (e :: nat => unit) f g Falsity" proof simp qed                                  (*                                                                            *)
+  then show "? p. ~ OK p []" using soundness proof iprover qed                                      (*                                                                            *)
+qed                                                                                                 (*                                                                            *)
+                                                                                                    (*                                                                            *)
+theorem "OK p [] = (! e f g. semantics e f g p)" oops                                               (*  A completeness proof must be developed.                                   *)
+                                                                                                    (*                                                                            *)
+end                                                                                                 (*                                                                            *)

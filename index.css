@@ -32,36 +32,36 @@ a {
     padding: 0.6vw;
 }
 
-#header #logo {
+#header #leftbar {
     display: table-cell;
     font-size: 2.0vw;
     width: 30vw;
 }
 
-#header #logo span:nth-child(1) {
+#header #leftbar span:nth-child(1) {
     color: red;
 }
 
-#header #logo span:nth-child(2) {
+#header #leftbar span:nth-child(2) {
     color: green;
 }
 
-#header #logo span:nth-child(3) {
+#header #leftbar span:nth-child(3) {
     color: blue;
 }
 
-#header #buttons {
+#header #midbar, #header #rightbar {
     display: table-cell;
     text-align: center;
     font-size: 2.0vw;
 }
 
-#header #buttons > div {
+#header #midbar > div {
     width: 3.6vw;
     text-align: center;
 }
 
-#header .load {
+#header .load, .loadStatic {
     color: red;
     border-color: red;
 }
@@ -71,17 +71,17 @@ a {
     background: red;
 }
 
-#header .edit {
+#header .code, .codeStatic {
     color: green;
     border-color: green;
 }
 
-#header .edit:hover, #header .editHover {
+#header .code:hover {
     color: white;
     background: green;
 }
 
-#header .help {
+#header .help, .helpStatic {
     color: blue;
     border-color: blue;
 }
@@ -91,16 +91,21 @@ a {
     background: blue;
 }
 
-#header #info {
+#header #rightbar {
     display: table-cell;
-    font-size: 0.75vw;
+    font-size: 2vw;
     width: 30vw;
     vertical-align: middle;
     text-align: right;
 }
 
-#header #info span:first-child {
+#header #rightbar span:first-child {
     font-weight: bold;
+}
+
+#header #rightbar .smiley {
+    display: inline-block;
+    vertical-align: text-top;
 }
 
 #frame {
@@ -174,7 +179,7 @@ a {
     color: blue;
 }
 
-.line .formalUnknown {
+.formalUnknown {
     color: green;
 }
 
@@ -223,6 +228,10 @@ a {
     font-weight: bold;
     padding-bottom: 1.5vw;
     vertical-align: top;
+}
+
+.textline.formal {
+    line-height: 1.3vw;
 }
 
 .textline {
@@ -282,8 +291,6 @@ a {
 }
 
 .helpContent {
-    margin-top: 0.5vw;
-    padding: 0px 3vw 1.2vw 0.6vw;
     font-size: 1.15vw;
     display: flex;
     flex-direction: column;
@@ -295,7 +302,7 @@ a {
 .helpContent > div {
     position: absolute;
     top: 0;
-    left: 1.2vw;
+    left: 0.6vw;
     right: 0.6vw;
 }
 
@@ -353,7 +360,7 @@ a {
     padding-left: 0.135vw !important;
 }
 
-.helpContent .floatRight {
+.helpContent .floatRightComment {
     float: right;
     padding: 0.3vw 0.4vw;
     margin: 1vw;
@@ -431,6 +438,14 @@ a {
     width: 100%;
 }
 
+.proofInfo {
+    display: inline-block;
+    vertical-align: text-top;
+    font-size: 1.2vw;
+    line-height: 1.5vw;
+    margin: 0.55vw;
+}
+
 .button {
     margin: 0.2vw;
     display: inline-block;
@@ -440,6 +455,22 @@ a {
     padding: 0.15vw 0.6vw;
     white-space: nowrap;
     vertical-align: top;
+}
+
+.buttonStatic {
+    margin: 0.2vw;
+    display: inline-block;
+    background: #fff;
+    border: 0.1vw solid;
+    border-radius: 0.6vw;
+    padding: 0.15vw 0.6vw;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.buttonStatic.big {    
+    line-height: 1.6vw;
+    font-size: 1.6vw;
 }
 
 .button.small {
@@ -452,7 +483,7 @@ a {
     text-align: center;
 }
 
-.button.big {    
+.button.big {
     line-height: 1.6vw;
     font-size: 1.6vw;
 }
@@ -461,6 +492,24 @@ a {
     cursor: pointer;
     background: black;
     color: white;
+}
+
+#header .undo, #header .stop {
+    color: white;
+    border-color: black;
+    background-color: black;
+}
+
+#header .undo:hover, #header .stop:hover {
+    color: black;
+    background: white;
+}
+
+#header .disabled, #header .disabled:hover {
+    color: white;
+    background: lightgray;
+    border-color: lightgray;
+    cursor: default;
 }
 
 .buttonContainer {
@@ -522,9 +571,9 @@ a {
     color: blue;
 }
 
-.btnRight .button:hover {
-    background: blue;
-    color: white;
+.btnRight .button:hover, .buttonRightHover {
+    background: blue !important;
+    color: white !important;
 }
 
 .ok, .leftParantheses, .rightParantheses, .leftBracket, .rightBracket, .imp, .con, .dis, .exi, .uni, .pre, .fun, .arg, .line .goal, .var, .id, .falsity, .news, .concat, .comma  {
@@ -552,25 +601,25 @@ a {
     padding-left: 0.18vw;
 }
 
-.left .ok, 
-.left .imp, 
-.left .con, 
-.left .dis, 
-.left .exi, 
-.left .uni, 
-.left .pre, 
-.left .fun, 
-.left .arg, 
-.line .left .goal, 
-.left .var, 
-.left .id, 
-.left .news, 
-.left .concat,
+.code .ok, 
+.code .imp, 
+.code .con, 
+.code .dis, 
+.code .exi, 
+.code .uni, 
+.code .pre, 
+.code .fun, 
+.code .arg, 
+.line .code .goal, 
+.code .var, 
+.code .id, 
+.code .news, 
+.code .concat,
 .comma {
     padding-right: 0.4vw;
 }
 
-.right .con, .right .dis, .right .imp, .left .concat {
+.formal .con, .formal .dis, .formal .imp, .code .concat {
     padding: 0 0.2vw;
 }
 
@@ -580,4 +629,76 @@ a {
 
 .error {
     color: red;
+}
+
+#isabelleFileView {
+    font-size: 0.875vw;
+    font-family: Courier New, Courier, monospace;
+}
+
+.columnContainer {
+    padding-bottom: 1.30vw;
+}
+
+.column3 {    
+    width: 30%;
+    float: left;
+}
+
+.column3:not(:first-child) {
+    margin-left: 5%;
+}
+
+.column2 {    
+    width: 48%;
+    float: left;
+}
+
+.floatLeft {
+    float: left;
+}
+
+.floatRight {
+    float: right;
+}
+
+.column2:not(:first-child) {
+    margin-left: 4%;
+}
+
+div.buttonStaticContainer {
+    text-align: center;
+    padding-bottom: 0.5vw;
+}
+
+div.table {
+    display: table;
+    border-collapse: collapse;
+    border-spacing: 1vw;
+}
+
+div.tableRow {
+    display: table-row;
+}
+
+div.tableCell {
+    display: table-cell;
+    padding: 0.2vw 0.5vw;
+}
+
+div.tableCell.alignRight {
+    text-align: right;
+}
+
+div.tableRow.borderBottom {
+    border-bottom: 0.1vw solid black;
+}
+
+.hintStarContainer {
+    font-size: 3vw;
+    cursor: pointer;
+}
+
+.hintStarContainer.allUsed {
+    cursor: default;
 }

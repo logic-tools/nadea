@@ -3,15 +3,17 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.1.9";
-$(document).ready(() => $("title, #info span").html("NaDeA " + versionNumber));
+var versionNumber = "0.2.0";
+$(document).ready(() => setTitle());
 
 // Set up index.nadea location
 var isNadeaOnline = false;
 var indexNadeaURL = isNadeaOnline ? "http://nadea.compute.dtu.dk/index.nadea" : "";
 var readNadeaFileLocally = window.location.protocol !== "file:";
+var nadeaQuot = "''";
 
 var INITIAL_PROOF = "OK{.}[]";
+var isabelleFileFormated = "";
 
 // Unknown interface stores information about
 // the unknowns in an uncompleted proof
@@ -45,17 +47,38 @@ $(document).ready(() => {
 
     /* jQuery event handlers */
     attachEventHandlersUnknowns();
-    attachMenuEvents();
+    attachClickEvents();
     attachHashEventListeners();
     attachKeyBindings();
 
     // Load examples
-    loadTestsAndHints();
+    loadOnlineContents();
 
     // Update
     update(indexNadeaURL.length > 0 && window.location.hash.length > 0);
 });
 
+function setTitle(append: string = null) {
+    var titleString = "NaDeA " + versionNumber + (append !== null ? " " + append : "");
+
+    if (window.location.hash) {
+        // Remove leading #
+        var hashValue = window.location.hash.substring(1);
+
+        // Match against number value
+        var match = hashValue.search(/^([0-9]+)$/) !== -1;
+
+        // No match
+        if (match) {
+            var proofID = "Hint " + hashValue;
+
+            if (proofCodes[proofID] !== undefined)
+                titleString += " #" + hashValue;
+        }
+    }
+
+    $("title").html(titleString);
+}
 
 function initNewProof() {
     currentState = new State;
@@ -67,7 +90,6 @@ function initNewProof() {
 }
 
 function loadProof(x: Inductive[], reverse = false) {
-
     var states = [];
     x.forEach(ind => {
         var s = new State();
@@ -126,7 +148,49 @@ function update(hidden: boolean = false) {
                 v.self.checkGoal();
     });
 
+    updateHeader();
     updateFrame(hidden);
+}
+
+function updateHeader() {
+    // Retrieve data
+    var numUnknowns: number = countUnknowns(currentState.p);
+    var stateStackSize: number = stateStack.stack.length;
+    var stateStackMark: number = stateStack.markedIndex === null ? stateStackSize : stateStack.markedIndex + 1;
+
+    // Infer actions
+    var disableUndo: boolean = stateStackMark < 2;
+    var disableStop: boolean = stateStackMark === stateStackSize;
+
+    // Prepare iceberg info string
+    var ibInfo: string = numUnknowns + " &nbsp; ";
+    ibInfo += stateStackMark + "/" + stateStackSize;
+
+    // Update header
+    $("#header #rightbar .proofInfo").html(ibInfo);
+
+
+    if (numUnknowns === 0)
+        $("#header #rightbar .smiley").html("&#9786;");
+    else
+        $("#header #rightbar .smiley").html("");
+
+    var undoBtn = $("#header #rightbar .undo");
+    var stopBtn = $("#header #rightbar .stop");
+
+    // Disable undo
+    if (disableUndo) {
+        undoBtn.addClass("disabled");
+    } else {
+        undoBtn.removeClass("disabled");
+    }
+
+    // Disable stop
+    if (disableStop) {
+        stopBtn.addClass("disabled");
+    } else {
+        stopBtn.removeClass("disabled");
+    }
 }
 
 function updateFrame(hidden: boolean) {
@@ -159,9 +223,11 @@ function updateFrame(hidden: boolean) {
 
 
 // Dict to proof codes stored
-var proofCodes: { [id: string]: string };
+var proofCodes: { [id: string]: string } = {};
 
-function loadTestsAndHints() {
+function loadOnlineContents() {
+    /* Tests and hints */
+
     // Initially the tests are the initial proof state
     proofCodes = {};
 
@@ -170,7 +236,7 @@ function loadTestsAndHints() {
     for (var i = 1; i <= 9; i++)
         proofCodes["Test " + i] = "";
 
-    proofCodes["Test suite"] = ". The test suite collects the final proof state for all tests but no tests was provided.\n";
+    proofCodes["Proof index"] = ". The proof index collects the final proof state for all tests but no tests was provided.\n";
 
     var nadeaContents = ". Ignored line...\n" +
         "# Hint 0\n" +
@@ -187,7 +253,7 @@ function loadTestsAndHints() {
         "OK{.}[]";
 
     if (indexNadeaURL == "") {
-        readNadeaData(nadeaContents);
+        readNadeaTestData(nadeaContents);
         return;
     }
 
@@ -198,13 +264,13 @@ function loadTestsAndHints() {
 
         xhr.onreadystatechange = () => {
             if (xhr.readyState == 4 && xhr.status === 200) {
-                readNadeaData(xhr.responseText);
+                readNadeaTestData(xhr.responseText);
             }
         }
 
         xhr.ontimeout = () => {
             readNadeaFileLocally = false;
-            loadTestsAndHints();
+            loadOnlineContents();
         }
 
         xhr.open("GET", "index.nadea", true);
@@ -217,7 +283,7 @@ function loadTestsAndHints() {
         // Load file from the net if not yet loaded
         xhr.onreadystatechange = () => {
             if (xhr.readyState == 4 && xhr.status === 200) {
-                readNadeaData(decodeURI(xhr.responseText));
+                readNadeaTestData(decodeURI(xhr.responseText));
             }
         }
 
@@ -230,14 +296,55 @@ function loadTestsAndHints() {
         xhr.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
         xhr.send(null);
     }
+
+    /* Isabelle NaDeA file */
+    var xhr2 = new XMLHttpRequest();
+
+    if (readNadeaFileLocally) {
+        // Try to fetch from server file system
+
+        xhr2.onreadystatechange = () => {
+            if (xhr2.readyState == 4 && xhr2.status === 200) {
+                readNadeaIsabelleFile(decodeURI(xhr2.responseText));
+            }
+        }
+
+        xhr2.ontimeout = () => {
+            readNadeaFileLocally = false;
+            loadOnlineContents();
+        }
+
+        xhr2.open("GET", "NaDeA.thy", true);
+        xhr2.timeout = 5000;
+        xhr2.setRequestHeader('Content-type', 'text/plain; charset=utf-8');
+        xhr2.send(null);
+    }
+
+    else {
+        // Load file from the net if not yet loaded
+        xhr2.onreadystatechange = () => {
+            if (xhr2.readyState == 4 && xhr2.status === 200) {
+                readNadeaIsabelleFile(xhr2.responseText);
+            }
+        }
+
+        xhr2.ontimeout = () => {
+            console.log("Failed to load isabelle file.");
+        }
+
+        xhr2.open("GET", indexNadeaURL.replace("index.nadea", "NaDeA.thy"), true);
+        xhr2.timeout = 5000;
+        xhr2.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
+        xhr2.send(null);
+    }
 }
 
-function readNadeaData(rawFileText: string) {
+function readNadeaTestData(rawFileText: string) {
     // Go through each line of the loaded .nadea file
 
     var currentProofID: string = null;
     var currentProofCode: string = null;
-    var testSuiteCodes: string[] = [];
+    var proofIndexData: { key: string, value: string }[] = [];
 
     var endOfComments: boolean = null;
 
@@ -274,10 +381,11 @@ function readNadeaData(rawFileText: string) {
             if (!endOfComments && !isComment) {
                 endOfComments = true;
 
-                var idMatch2 = currentProofID.match(/Test ([0-9]+)/);
+                var idMatch2 = currentProofID.match(/((Test)|(Hint)) ([0-9]+)/);
 
-                if (idMatch2 !== null)
-                    testSuiteCodes[+idMatch2[1]] = x;
+                if (idMatch2 !== null) {
+                    proofIndexData.push({ key: idMatch2[0], value: x });
+                }
             }
 
             if (endOfComments && isComment)
@@ -288,15 +396,37 @@ function readNadeaData(rawFileText: string) {
         }
     });
 
+    var regex = /((Test)|(Hint)) ([0-9]+)/;
+    proofIndexData.sort((x, y) => {
+        var xm = regex.exec(x.key);
+        var ym = regex.exec(y.key);
+
+        if (xm[1] == "Test" && ym[1] == "Hint")
+            return -1;
+        else if (ym[1] == "Test" && xm[1] == "Hint")
+            return 1;
+
+        if (+ym[4] > +xm[4])
+            return -1;
+        else if (+xm[4] > +ym[4])
+            return 1;
+
+        return 0;
+    });
+
+    var proofIndexCodes = proofIndexData.map((x, i) => {
+        return x.value;
+    });
+
     addProofCode(currentProofID, currentProofCode);
 
-    if (testSuiteCodes.length > 0)
-        addProofCode("Test suite", ". The test suite collects the final proof state for all tests (not only 0-9).\n\n" + testSuiteCodes.join("\n") + "\n\n. Load and press Delete to show the proof states.\n");
+    if (proofIndexData.length > 0)
+        addProofCode("Proof index", ". The proof index collects the final proof state for all tests (not only 0-9).\n\n" + proofIndexCodes.join("\n") + "\n\n. Load and press Delete to show the proof states.\n");
 
     var allProofCodes = ". NaDeA index file: \"" + indexNadeaURL + "\"\n\n";
 
     for (var key in proofCodes) {
-        if (key != "Test suite" && proofCodes[key].length > 0)
+        if (key != "Proof index" && proofCodes[key].length > 0)
             allProofCodes += "# " + key + "\n\n" + proofCodes[key] + "\n";
     }
 
@@ -306,6 +436,129 @@ function readNadeaData(rawFileText: string) {
 
     // Wait for nadea-file
     $(window).trigger("hashchange");
+
+    // Update exercise page
+    setupExerciseAndHintData();
+}
+
+function readNadeaIsabelleFile(rawTextFile: string) {
+    // Keywords in bold
+
+    var isabelleKeyWords = [
+        "theory",
+        "imports",
+        "begin",
+        "type_synonym",
+        "datatype",
+        "primrec",
+        "and",
+        "where",
+        "inductive",
+        "lemma",
+        "proof",
+        "have",
+        "qed",
+        "then",
+        "show",
+        "fun",
+        "fix",
+        "assume",
+        "also",
+        "using",
+        "unfolding",
+        "finally",
+        "next",
+        "obtain",
+        "moreover",
+        "ultimately",
+        "theorem",
+        "apply",
+        "done",
+        "end",
+        "oops",
+        "corollary"
+    ];
+
+    var rawTextFileLines = rawTextFile.split(/(?:\r\n|\r|\n)/);
+
+    var isabelleFileLines: string[][] = [];
+    rawTextFileLines.forEach((l, i) => {
+        var split = l.match(/(.*)\s+\(\*(.*)\*\)/);
+
+        if (split === null)
+            return true;
+
+        isabelleFileLines[i] = [split[1], split[2]];
+    });
+
+
+    var regexStr = "(";
+    isabelleKeyWords.forEach((k, i) => {
+        regexStr += "(\\s(" + k + ")\\s)|(\\s(" + k + "))|((" + k + "\\s))";
+
+        if (i !== isabelleKeyWords.length - 1)
+            regexStr += "|";
+    });
+    regexStr += ")";
+    var regex = new RegExp(regexStr, "g");
+
+    var isabelleFileLinesFormatted: string[] = [];
+
+    isabelleFileLines.forEach((l, i) => {
+        // Check for strings: ""
+
+        isabelleFileLinesFormatted[i] = l[0];
+
+        var stringIndices: { s: number, e: number }[] = [];
+
+        var inString = false;
+        var stringStart: number = null;
+
+        for (var j = 0; j < isabelleFileLines[i][0].length; j++) {
+            var c = isabelleFileLines[i][0].charAt(j);
+
+            if (c == '"') {
+                inString = !inString;
+
+                if (inString) {
+                    stringStart = j;
+                } else {
+                    stringIndices.push({ s: stringStart, e: j });
+                }
+            }
+        }
+
+        var m: string[] = isabelleFileLines[i][0].match(regex);
+
+        if (m !== null) {
+            var startIndex = 0;
+
+            m.forEach((v, j) => {
+                var replaceIndex = isabelleFileLines[i][0].indexOf(v, startIndex);
+
+                var inString = false;
+                stringIndices.forEach(x => {
+                    if (replaceIndex >= x.s && replaceIndex < x.e) {
+                        inString = true;
+                    }
+                });
+
+                if (!inString) {
+                    var replace = m[j].replace(/(\s?)([^\s]*)(\s?)/, "$1<strong>$2</strong>$3");
+                    isabelleFileLinesFormatted[i] = isabelleFileLinesFormatted[i].replace(m[j], replace);
+                }
+
+                startIndex = replaceIndex + 1;
+            });
+        }
+    });
+
+    isabelleFileFormated = "";
+
+    isabelleFileLines.forEach((l, i) => {
+        var left = isabelleFileLinesFormatted[i] === undefined ? l[0] : isabelleFileLinesFormatted[i];
+        isabelleFileFormated += left + " (*" + l[1] + "*)\n";
+    });
 }
 
 $(document).ready(() => {
@@ -629,8 +882,8 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
 
         var unk1: Unknown = { x: x.premises[0].goal, inFm: 1 };
         var unk2: Unknown = { x: x.premises[0].goal, inFm: 2 };
-        var unk3: Unknown = { x: x.premises[1], inAssumption: x.premises[1].assumptions.length - 1, linkedTo: [unk1] };
-        var unk4: Unknown = { x: x.premises[2], inAssumption: x.premises[2].assumptions.length - 1, linkedTo: [unk2] };
+        var unk3: Unknown = { x: x.premises[1], inAssumption: 0, linkedTo: [unk1] };
+        var unk4: Unknown = { x: x.premises[2], inAssumption: 0, linkedTo: [unk2] };
 
         unk1.linkedTo = [unk3];
         unk2.linkedTo = [unk4];
@@ -878,7 +1131,7 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
     htmlString += '<div class="lineNumber">' + i + '</div>';
 
     // Left
-    htmlString += '<div class="left' + (!editModeOn ? ' hidden' : '') + '">';
+    htmlString += '<div class="left code' + (!editModeOn ? ' hidden' : '') + '">';
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
 
@@ -900,10 +1153,11 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
 
     // Middle
     htmlString += '<div class="middle' + (!editModeOn ? ' shrink' : '') + '">' + getRuleName(x) + '</div>';
+
     // End middle
 
     // Right
-    htmlString += '<div class="right' + (!editModeOn ? ' fill' : '') + '">';
+    htmlString += '<div class="right formal' + (!editModeOn ? ' fill' : '') + '">';
 
     // Indention
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
@@ -945,7 +1199,7 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     htmlString += '<div class="lineNumber">' + i + '</div>';
 
     // Left
-    htmlString += '<div class="left' + (!editModeOn ? ' hidden' : '') + '">';
+    htmlString += '<div class="left code' + (!editModeOn ? ' hidden' : '') + '">';
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
 
@@ -988,7 +1242,7 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     // End middle
 
     // Right
-    htmlString += '<div class="right' + (!editModeOn ? ' fill' : '') + '">';
+    htmlString += '<div class="right formal' + (!editModeOn ? ' fill' : '') + '">';
 
     htmlString += '<div class="indentProof" data-indent="' + n + '">';
     htmlString += '&nbsp;';
@@ -1042,7 +1296,7 @@ function replaceUnknowns() {
     replaceHTML("#frameContainer .line .right", /\@tm/g, '<span title="Unknown term" class="formalUnknown">¤</span>');
 }
 
-function replaceFormalSymbols(selection: string): void {
+function replaceFormalSymbols(selection: any, customReplaces: { s: RegExp; r: string }[] = []): void {
     $(selection).each((i, e) => {
         // False/bottom
         $(e).html(($(e).html().replace(/\@false/g, '&perp;')));
@@ -1064,6 +1318,10 @@ function replaceFormalSymbols(selection: string): void {
 
         // Subscript
         $(e).html(($(e).html().replace(/\*/g, '\'')));
+
+        customReplaces.forEach(rp => {
+            $(e).html(($(e).html().replace(rp.s, rp.r)));
+        })
     });
 }
 
@@ -1099,35 +1357,59 @@ function updateExistingIndexUnknowns() {
 
 var editModeOn = false;
 
-function attachMenuEvents() {
+function attachClickEvents() {
     // Attach click handlers to menu elements
     $("#header .load").on("click", e => {
+        setTitle("Load");
+
         closeOverlays();
 
-        newCenteredOverlay("load", (x: Inductive[]) => loadProof(x));
+        newCenteredOverlay("load", (x: Inductive[]) => {
+            loadProof(x);
+        });
     });
 
-    $("#header .edit").on("click", e => {
-        editModeOn = !editModeOn;
+    $("#header .code").on("click", e => {
+        setTitle("Code");
 
-        if (editModeOn) {
-            // Is now toggled
-            $(e.currentTarget).addClass("editHover");
-        } else {
-            // Is now untoggled
-            $(e.currentTarget).removeClass("editHover");
-        }
-
-        update();
+        newCenteredOverlay("code", () => {
+        });
     });
 
     $("#header .help").on("click", e => {
-        newCenteredOverlay("help", () => { });
+        setTitle("Help");
+
+        newCenteredOverlay("help", () => {
+        });
     });
 
     $(document).ready(function () {
         if (!window.location.hash)
             $("#header .help").click();
+    });
+
+    $("#header .undo").click(e => {
+        var e = jQuery.Event("keydown");
+        e.which = 46;
+        e.keyCode = 46;
+        $(document).trigger(e);
+    });
+
+    $("#header .stop").click(e => {
+        var e = jQuery.Event("keydown");
+        e.which = 45;
+        e.keyCode = 45;
+        $(document).trigger(e);
+    });
+
+    $(document).on("click", "#frame", e => {
+        editModeOn = !editModeOn;
+
+        update();
+    });
+
+    $(document).on("click", "a", e => {
+        e.stopImmediatePropagation();
     });
 }
 
@@ -1166,6 +1448,8 @@ function attachHashEventListeners() {
 
             loadProof(proof, true);
         }
+
+        setTitle();
     });
 }
 
@@ -1266,6 +1550,11 @@ function newCenteredOverlay(olType: string, cb: (...input) => any, ...input): vo
             loadInner(content, cb);
 
             break;
+        case "code":
+
+            codeInner(content, cb);
+
+            break;
         case "help":
 
             helpInner(content, cb);
@@ -1281,6 +1570,7 @@ function newCenteredOverlay(olType: string, cb: (...input) => any, ...input): vo
 
     $(".closeCenteredOverlay", content).click(function (e) {
         $(outer).remove();
+        setTitle();
     });
 }
 
@@ -1509,6 +1799,7 @@ function addInnerNewTms(overlay: JQuery, callback: (x: number[]) => void): void 
     }
     select.append("</optgroup>");
 
+
     r.append("<div class=\"buttons\">");
     r.append("<input type=\"submit\" value=\"Done\" />");
     r.append("<input type=\"button\" class=\"addTerm\" value=\"Add term\" />");
@@ -1523,6 +1814,12 @@ function addInnerNewTms(overlay: JQuery, callback: (x: number[]) => void): void 
         // Check if same term has been selected more than once
         var interrupt = false;
         $("select", r).each((i, e) => {
+            if ($(e).val() === null) {
+                alert("Please select all terms");
+                interrupt = true;
+                return false;
+            }
+
             var v = parseInt($(e).val(), 10);
 
             tms.push(v);
@@ -1548,7 +1845,7 @@ function addInnerNewTms(overlay: JQuery, callback: (x: number[]) => void): void 
     });
 
     $(".addTerm:button").click(() => {
-        select.clone().val("").appendTo($(".terms", r));
+        select.clone().val("-1").appendTo($(".terms", r));
     });
 
     $(".removeTerm:button").click(() => {
@@ -1713,10 +2010,13 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
 
     var cancel = $('<div class="button small">Cancel load</div>');
     var update = $('<div class="button small">Load shown proof</div>');
-    var presentProof = $('<div class="button small">The present proof</div>');
+    var currentProof = $('<div class="button small">The current proof</div>');
+
+    var allProofs = $('<div class="button small exampleProof">All proofs</div>');
 
     btnLeft.append(cancel);
-    btnMid.append(presentProof);
+    btnMid.append(currentProof);
+    btnMid.append(allProofs);
     btnRight.append(update);
 
     // Example buttons
@@ -1729,11 +2029,8 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
         btnMid.append(examplesJQuery[i]);
     }
 
-    var testSuite = $('<div class="button small exampleProof">Test suite</div>');
+    var testSuite = $('<div class="button small exampleProof">Proof index</div>');
     btnMid.append(testSuite);
-
-    var onlineProofs = $('<div class="button small exampleProof">All proofs</div>');
-    btnMid.append(onlineProofs);
 
     content.append(buttonsContainer);
 
@@ -1777,20 +2074,20 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
         if ($(v.currentTarget).data("ithExample") !== undefined)
             textarea.val(proofCodes["Test " + $(v.currentTarget).data("ithExample")]);
 
-        else if ($(v.currentTarget).html() === "Test suite")
-            textarea.val(proofCodes["Test suite"]);
+        else if ($(v.currentTarget).html() === "Proof index")
+            textarea.val(proofCodes["Proof index"]);
 
         else if ($(v.currentTarget).html() === "All proofs")
             textarea.val(proofCodes["All proofs"]);
     });
 
     // Present proof code with prepended comment lines
-    var presentProofCode = ". The present proof is available in the code shown here.\n. Use text copy-and-paste to a file in order to save it.\n. The proof code can be edited or replaced entirely.\n. A line starting with a period is a comment only.\n\n";
+    var presentProofCode = ". The current proof is available in the lines shown here.\n. Use text copy-and-paste to a file in order to save it.\n. The proof lines can be edited or replaced entirely.\n. A line starting with a period is a comment only.\n\n";
 
     for (var i = stateStack.stack.length - 1; i >= 0; i--)
         presentProofCode += encodeProof(stateStack.stack[i].p) + "\n";
 
-    presentProof.on("click", () => {
+    currentProof.on("click", () => {
         textarea.val(presentProofCode);
     });
 
@@ -1801,13 +2098,10 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
 
     $(".btnMid").children().on("click", e => $(e.currentTarget).addClass("buttonMidHover"));
 
-    presentProof.trigger("click");
+    currentProof.trigger("click");
 };
 
-
-var firstHelpClick = true;
-
-function helpInner(overlay: JQuery, callback: () => void): void {
+function codeInner(overlay: JQuery, callback: () => void): void {
     // Flexible content
     var content = $("<div class=\"flexContentY\"></div>");
     overlay.append(content);
@@ -1828,17 +2122,17 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     buttonsContainer.append(buttonsTable);
     buttonsTable.append(buttonsRow);
 
-    var cancel = $('<div class="button small">Cancel help</div>');
+    var cancel = $('<div class="button small">Cancel code</div>');
     var folButton = $('<div class="button small">Definition of first-order logic syntax and semantics</div>');
     var ndButton = $('<div class="button small">Definition of natural deduction proof system</div>');
-    var sampleButton = $('<div class="button small">Sample proofs and exercises with hints</div>');
-    var welcomeButton = $('<div class="button small">Show welcome help</div>');
+    var sampleButton = $('<div class="button small">Notes on Isabelle formalization code</div>');
+    var isaFileButton = $('<div class="button small">Show Isabelle theory file</div>');
 
     btnLeft.append(cancel);
     btnMid.append(ndButton);
     btnMid.append(folButton);
     btnMid.append(sampleButton);
-    btnRight.append(welcomeButton);
+    btnRight.append(isaFileButton);
 
     content.append(buttonsContainer);
 
@@ -1884,21 +2178,20 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     };
 
     // Tabs
-    /* Content: Welcome */
-    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: https://logic-tools.github.io/ </div><div class="textline">The escape key can always be pressed to cancel and go to the main window where the Help button brings up the help window (this welcome help is also available).</div><div class="textline">Also in the main window the Load button brings up the load window which allows for simple import/export of proof code (the whole proof history is shown).</div><div class="textline extraSpace">In order to edit a proof, the Edit button in the main window can be used to turn the edit mode on and off (by default the edit mode is turned off).</div><div class="textline extraSpace">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: https://people.compute.dtu.dk/jovi/ </div><div class="codeBlock"><div class="textline"><strong>Getting Started</strong></div><div class="textline">1. To build the sample formula A &rarr; A start by turning on edit mode and clicking <span style="color: red;">¤</span>. The square brackets <div class="leftBracket">[</div><div class="rightBracket">]</div> denote the current list of assumptions which is initially empty. Use a predicate A with no arguments.</div><div class="textline">2. After building the sample formula, apply the rule Imp_I (Implication-Introduction) to prove the formula A by assumption of A. The rule is also selected by clicking <span style="color: red;">¤</span>.</div><div class="textline extraSpace">3. The proof finishes automatically by applying the rule Assume since the formula A is found in the list of assumptions. It is finished because there is no pending <span style="color: red;">¤</span>.</div></div><div class="codeBlock"><div class="textline"><strong>Natural Deduction Primitives</strong></div><div class="textline">OK p a: The formula p follows from the assumptions a.</div><div class="textline">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline extraSpace">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.<br /></div></div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
-
+    /* Content: Isabelle */
+    var isabelleContent = $('<div>' + (isabelleFileFormated.length > 0 ? "<pre id='isabelleFileView'>" + isabelleFileFormated + "</pre>" : 'Cannot show Isabelle theory file: "' + indexNadeaURL.replace("index.nadea", "NaDeA.thy") + '"') + '</div>');
 
     /* Content: Def. of syntax and semantics */
     var dssContent = $('<div></div>');
-    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline extraSpace">The natural deduction proof system assumes the following definition of first-order logic syntax and semantics:</div><div class="textline"><strong>Syntax</strong></div><div class="textline extraSpace">Identifiers are strings used as functions and predicates.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> string</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">The quantifiers use de Bruijn indices and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var v) <span class=\"eqdef\">=</span> e v<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline extraSpace">All meta-variables are implicitly universally quantified in the following derived rule connecting the provability predicate ´OK´ and the semantics:</div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div></div><br /><div class="textline">The computer-checked soundness proof is provided in the Isabelle theory file here: https://github.com/logic-tools/nadea</div>');
+    dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline extraSpace">The natural deduction proof system assumes the following definition of first-order logic syntax and semantics:</div><div class="textline"><strong>Syntax</strong></div><div class=\"textline extraSpace\">A function/predicate identifier is a list of characters which can be written ' + nadeaQuot + '...' + nadeaQuot + '.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> [char, ..., char]</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">The quantifiers use de Bruijn indices') + ' (natural numbers) ' + paranthesesBracketReplace('and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var n) <span class=\"eqdef\">=</span> e n<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline extraSpace">All meta-variables are implicitly universally quantified in the following derived rule connecting the provability predicate ´OK´ and the semantics:</div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div></div><br /><div class="textline">The computer-checked soundness proof is provided in the Isabelle theory file here: https://github.com/logic-tools/nadea</div>');
 
     /* Sample proofs and exercises with hints */
-    var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME - Mention Delete/Insert</strong></div>');
+    var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
 
     /* Summary of rules */
     var sorContent = $('<div></div>');
 
-    sorContent.append('<div class="textline codeBlock extraSpace">The natural deduction proof system is defined by the inductive provability predicate ´OK´ and the auxiliary primitive recursive functions ´news´ (new identifier in formulas) and ´sub´ (substitution for variable in formula):</div>');
+    sorContent.append('<div class="textline codeBlock extraSpace">The natural deduction proof system is defined by the provability predicate ´OK´ using the auxiliary predicate ´news´ (new identifier in formulas) and the auxiliary function ´sub´ (substitution for variable in formula):</div>');
 
     // Rule tables are created.
 
@@ -1906,23 +2199,23 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     var divBox2 = $('<div class="ndRulesContainer"></div>');
     var divBox3 = $('<div class="ndRulesContainer"></div>');
 
-    divBox1.append(getRuleTable("Assume", ["member p a"], "OK p a"));
-    divBox1.append(getRuleTable("Boole", ["OK Falsity ((Imp p Falsity) # a)"], "OK p a"));
-    divBox1.append(getRuleTable("Imp_E", ["OK (Imp p q) a", "OK p a"], "OK q a"));
-    divBox1.append(getRuleTable("Imp_I", ["OK q (p # a)"], "OK (Imp p q) a"));
-    divBox1.append('<div class="floatRight">Operator # is between the head and the tail of a list.</div>');
+    divBox1.append(getRuleTable("Assume", ["member p z"], "OK p z"));
+    divBox1.append(getRuleTable("Boole", ["OK Falsity ((Imp p Falsity) # z)"], "OK p z"));
+    divBox1.append(getRuleTable("Imp_E", ["OK (Imp p q) z", "OK p z"], "OK q z"));
+    divBox1.append(getRuleTable("Imp_I", ["OK q (p # z)"], "OK (Imp p q) z"));
+    divBox1.append('<div class="floatRightComment">Operator # is between the head and the tail of a list.</div>');
 
-    divBox2.append(getRuleTable("Dis_E", ["OK (Dis p q) a", "OK r (p # a)", "OK r (q # a)"], "OK r a"));
-    divBox2.append(getRuleTable("Dis_I1", ["OK p a"], "OK (Dis p q) a"));
-    divBox2.append(getRuleTable("Dis_I2", ["OK q a"], "OK (Dis p q) a"));
-    divBox2.append(getRuleTable("Con_E1", ["OK (Con p q) a"], "OK p a"));
-    divBox2.append(getRuleTable("Con_E2", ["OK (Con p q) a"], "OK q a"));
-    divBox2.append(getRuleTable("Con_I", ["OK p a", "OK q a"], "OK (Con p q) a"));
+    divBox2.append(getRuleTable("Dis_E", ["OK (Dis p q) z", "OK r (p # z)", "OK r (q # z)"], "OK r z"));
+    divBox2.append(getRuleTable("Dis_I1", ["OK p z"], "OK (Dis p q) z"));
+    divBox2.append(getRuleTable("Dis_I2", ["OK q z"], "OK (Dis p q) z"));
+    divBox2.append(getRuleTable("Con_E1", ["OK (Con p q) z"], "OK p z"));
+    divBox2.append(getRuleTable("Con_E2", ["OK (Con p q) z"], "OK q z"));
+    divBox2.append(getRuleTable("Con_I", ["OK p z", "OK q z"], "OK (Con p q) z"));
 
-    divBox3.append(getRuleTable("Exi_E", ["OK (Exi p) a", "OK q ((sub 0 (Fun c []) p) # a)", "news c (p # q # a)"], "OK q a"));
-    divBox3.append(getRuleTable("Exi_I", ["OK (sub 0 t p) a"], "OK (Exi p) a"));
-    divBox3.append(getRuleTable("Uni_E", ["OK (Uni p) a"], "OK (sub 0 t p) a"));
-    divBox3.append(getRuleTable("Uni_I", ["OK (sub 0 (Fun c []) p) a", "news c (p # a)"], "OK (Uni p) a"));
+    divBox3.append(getRuleTable("Exi_E", ["OK (Exi p) z", "OK q ((sub 0 (Fun c []) p) # z)", "news c (p # q # z)"], "OK q z"));
+    divBox3.append(getRuleTable("Exi_I", ["OK (sub 0 t p) z"], "OK (Exi p) z"));
+    divBox3.append(getRuleTable("Uni_E", ["OK (Uni p) z"], "OK (sub 0 t p) z"));
+    divBox3.append(getRuleTable("Uni_I", ["OK (sub 0 (Fun c []) p) z", "news c (p # z)"], "OK (Uni p) z"));
 
     sorContent.append(divBox1);
     sorContent.append(divBox2);
@@ -1931,7 +2224,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     sorContent.append('<div class="clear"></div>');
 
     // Content: Summary of rules
-    sorContent.append(paranthesesBracketReplace('<div class=\"leftColumn codeBlock\">member p [] = False<br />member p (q # a) <span class=\"eqdef\">=</span> (if p = q then True else member p a)<br /><br />new_term c (Var v) <span class=\"eqdef\">=</span> True<br />new_term c (Fun i l) <span class=\"eqdef\">=</span> (if i = c then False else new_list c l)<br /><br />new_list c [] <span class=\"eqdef\">=</span> True<br />new_list c (t # l) <span class=\"eqdef\">=</span> (if new_term c t then new_list c l else False)<br /><br />new c Falsity <span class=\"eqdef\">=</span> True<br />new c (Pre i l) <span class=\"eqdef\">=</span> new_list c l<br />new c (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> new c p<br />new c (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> new c p<br /><br />news c [] <span class=\"eqdef\">=</span> True<br />news c (p # a) <span class=\"eqdef\">=</span> (if new c p then news c a else False)</div><div class=\"rightColumn codeBlock\">inc_term (Var v) <span class=\"eqdef\">=</span> Var (v + 1)<br />inc_term (Fun i l) <span class=\"eqdef\">=</span> Fun i (inc_list l)<br /><br />inc_list [] <span class=\"eqdef\">=</span> []<br />inc_list (t # l) <span class=\"eqdef\">=</span> inc_term t <span class=\"headtail\">#</span> inc_list l<br /><br />sub_term n s (Var v) <span class=\"eqdef\">=</span> (if v = n then s else if v > n then Var (v - 1) else Var v)<br />sub_term n s (Fun i l) <span class=\"eqdef\">=</span> Fun i (sub_list n s l)<br /><br />sub_list n s [] <span class=\"eqdef\">=</span> []<br />sub_list n s (t # l) <span class=\"eqdef\">=</span> sub_term n s t <span class=\"headtail\">#</span> sub_list n s l<br /><br />sub n s Falsity <span class=\"eqdef\">=</span> Falsity<br />sub n s (Pre i l) <span class=\"eqdef\">=</span> Pre i (sub_list n s l)<br />sub n s (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> <span class="impFm">Imp</span> (sub n s p) (sub n s q)<br />sub n s (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> <span class="disFm">Dis</span> (sub n s p) (sub n s q)<br />sub n s (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> <span class="conFm">Con</span> (sub n s p) (sub n s q)<br />sub n s (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> <span class="exiFm">Exi</span> (sub (n + 1) (inc_term s) p)<br />sub n s (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> <span class="uniFm">Uni</span> (sub (n + 1) (inc_term s) p)</div>'));
+    sorContent.append(paranthesesBracketReplace('<div class=\"leftColumn codeBlock\">member p [] = False<br />member p (q # z) <span class=\"eqdef\">=</span> (if p = q then True else member p z)<br /><br />new_term c (Var n) <span class=\"eqdef\">=</span> True<br />new_term c (Fun i l) <span class=\"eqdef\">=</span> (if i = c then False else new_list c l)<br /><br />new_list c [] <span class=\"eqdef\">=</span> True<br />new_list c (t # l) <span class=\"eqdef\">=</span> (if new_term c t then new_list c l else False)<br /><br />new c Falsity <span class=\"eqdef\">=</span> True<br />new c (Pre i l) <span class=\"eqdef\">=</span> new_list c l<br />new c (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if new c p then new c q else False)<br />new c (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> new c p<br />new c (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> new c p<br /><br />news c [] <span class=\"eqdef\">=</span> True<br />news c (p # z) <span class=\"eqdef\">=</span> (if new c p then news c z else False)</div><div class=\"rightColumn codeBlock\">inc_term (Var n) <span class=\"eqdef\">=</span> Var (n + 1)<br />inc_term (Fun i l) <span class=\"eqdef\">=</span> Fun i (inc_list l)<br /><br />inc_list [] <span class=\"eqdef\">=</span> []<br />inc_list (t # l) <span class=\"eqdef\">=</span> inc_term t <span class=\"headtail\">#</span> inc_list l<br /><br />sub_term v s (Var n) <span class=\"eqdef\">=</span> (if n < v then Var n else if n = v then s else Var (n - 1))<br />sub_term v s (Fun i l) <span class=\"eqdef\">=</span> Fun i (sub_list v s l)<br /><br />sub_list v s [] <span class=\"eqdef\">=</span> []<br />sub_list v s (t # l) <span class=\"eqdef\">=</span> sub_term v s t <span class=\"headtail\">#</span> sub_list v s l<br /><br />sub v s Falsity <span class=\"eqdef\">=</span> Falsity<br />sub v s (Pre i l) <span class=\"eqdef\">=</span> Pre i (sub_list v s l)<br />sub v s (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> <span class="impFm">Imp</span> (sub v s p) (sub v s q)<br />sub v s (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> <span class="disFm">Dis</span> (sub v s p) (sub v s q)<br />sub v s (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> <span class="conFm">Con</span> (sub v s p) (sub v s q)<br />sub v s (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> <span class="exiFm">Exi</span> (sub (v + 1) (inc_term s) p)<br />sub v s (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> <span class="uniFm">Uni</span> (sub (v + 1) (inc_term s) p)</div>'));
 
     // Hide tabs default
     helpContent.children().hide();
@@ -1940,8 +2233,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     helpContent.append(dssContent);
     helpContent.append(sorContent);
     helpContent.append(sampleContent);
-    //helpContent.append(copyrightContent);
-    helpContent.append(welcomeContent);
+    helpContent.append(isabelleContent);
 
     helpContent.children().hide();
 
@@ -1952,20 +2244,18 @@ function helpInner(overlay: JQuery, callback: () => void): void {
     // Hide visible tabs on click
     $(".btnLeft, .btnMid, .btnRight").children().on("click", () => {
         $(".btnMid").children().removeClass("buttonMidHover");
+        $(".btnRight").children().removeClass("buttonRightHover");
 
         helpContent.children(":visible").hide();
     });
 
     $(".btnMid").children().on("click", e => $(e.currentTarget).addClass("buttonMidHover"));
+    $(".btnRight").children().on("click", e => $(e.currentTarget).addClass("buttonRightHover"));
 
     // Show corresponding tab on click
-    welcomeButton.on("click", (e) => {
-        welcomeContent.show();
+    isaFileButton.on("click", (e) => {
+        isabelleContent.show();
     })
-
-    //copyrightButton.on("click",() => {
-    //    copyrightContent.show();
-    //});
 
     folButton.on("click", () => {
         dssContent.show();
@@ -1983,13 +2273,366 @@ function helpInner(overlay: JQuery, callback: () => void): void {
         $(".closeCenteredOverlay", overlay).trigger("click");
     });
 
-    if (firstHelpClick) {
-        // Welcome is default tab
-        welcomeButton.click();
-        firstHelpClick = false;
-    } else {
-        ndButton.click();
+    ndButton.trigger("click");
+};
+
+var testHintData: { testGoal: Formula, hintGoal: Formula, testComments: string[], hints: string[][], hintsUsed: number }[] = [];
+
+function setupExerciseAndHintData() {
+    var regexHintDelimiter = /\.\.\./;
+
+    // Setup data
+    for (var i = 0; i <= 9; i++) {
+        testHintData[i] = { testGoal: undefined, hintGoal: undefined, testComments: null, hints: [], hintsUsed: 0 };
+
+        var testX = proofCodes["Test " + i];
+        var hintX = proofCodes["Hint " + i];
+
+        var regex = /^\..*$/m;
+
+        if (testX !== undefined) {
+            var testXFinal = testX.split("\n").filter(v => { return regex.exec(v) === null; }).shift();
+            testHintData[i].testComments = testX.split("\n").filter(v => { return regex.exec(v) !== null; }).map(v => {
+                return v.substring(2);
+            });
+            var testXDecoded = decodeProof(testXFinal);
+
+            if (testXDecoded === null) {
+                console.log("Test " + i + " could not be decoded. Something went very wrong...");
+            }
+
+            if (testXDecoded.length > 0) {
+                testHintData[i].testGoal = testXDecoded[0].goal;
+            }
+        }
+
+        if (hintX !== undefined) {
+            var hintXFinal = hintX.split("\n").filter(v => { return regex.exec(v) === null; }).shift();
+            var hintXDecoded = decodeProof(hintXFinal);
+
+            var hintIndex = 0;
+
+            var hintXComments = hintX.split("\n").filter(v => { return regex.exec(v) !== null; }).forEach(v => {
+                if (v.search(regexHintDelimiter) > -1) {
+                    hintIndex++;
+                    testHintData[i].hints[hintIndex] = [];
+                } else {
+                    if (testHintData[i].hints.length <= hintIndex)
+                        testHintData[i].hints[hintIndex] = [];
+
+                    testHintData[i].hints[hintIndex].push(v.substring(2));
+                }
+            });
+
+            if (hintXDecoded === null) {
+                console.log("Test " + i + " could not be decoded. Something went very wrong...");
+            }
+
+            if (hintXDecoded.length > 0) {
+                testHintData[i].hintGoal = hintXDecoded[0].goal;
+            }
+        }
     }
+
+    if (exsContent !== undefined)
+        updateExerciseAndHintContent();
+}
+
+var exsContent: JQuery;
+var hintContent: JQuery[];
+
+function updateExerciseAndHintContent() {    
+    // Exercise table
+    var exerciseTableRows = "";
+
+    for (var i = 0; i <= 9; i++) {
+        exerciseTableRows += '<div class="tableRow">';
+
+        if (testHintData[i] === undefined || testHintData[i].testGoal === undefined) {
+            exerciseTableRows += '<div class="tableCell">-</div>';
+        } else if (testHintData[i].testGoal === null) {
+            exerciseTableRows += '<div class="tableCell alignRight"><span class="formalUnknown">¤</span></div>';
+        } else {
+            exerciseTableRows += '<div class="tableCell alignRight formal">' + getFormalSyntax(testHintData[i].testGoal, 0, null) + '</div>';
+        }
+
+        exerciseTableRows += '<div class="tableCell">' + i + '</div>';
+
+        if (testHintData[i] === undefined || testHintData[i].hintGoal === undefined) {
+            exerciseTableRows += '<div class="tableCell">-</div>';
+        } else if (testHintData[i].hintGoal === null) {
+            exerciseTableRows += '<div class="tableCell"><span class="formalUnknown">¤</span></div>';
+        } else {
+            exerciseTableRows += '<div class="tableCell formal">' + getFormalSyntax(testHintData[i].hintGoal, 0, null) + '</div>';
+        }
+
+        exerciseTableRows += '</div>';
+    }
+
+    var exsContentStr = '<div class="table">'
+        + '<div class="tableRow borderBottom">'
+        + '<div class="tableCell alignRight"><strong>Test</strong></div>'
+        + '<div class="tableCell"><strong>#</strong></div>'
+        + '<div class="tableCell"><strong>Hint</strong></div>'
+        + '</div>'
+        + exerciseTableRows
+        + '</div>';
+
+    exsContent.html(exsContentStr);
+
+    replaceFormalSymbols(exsContent, [{ s: /@fm/g, r: "<span class='formalUnknown'>¤</span>" }]);
+
+    // Hint page 0-9
+    var updateHintPage = i => {
+        if (testHintData[i] !== undefined) {
+            if (testHintData[i].hintGoal === undefined) {
+                $(".hintStarContainer", hintContent[i]).remove();
+            } else {
+                var hscHtml: string = "";
+                for (var j = 0; j < testHintData[i].hints.length + 1 - testHintData[i].hintsUsed; j++)
+                    hscHtml += '&#9733;';
+                for (var j = 0; j < testHintData[i].hintsUsed; j++)
+                    hscHtml += '&#9734;';
+
+                $(".hintStarContainer", hintContent[i]).html(hscHtml);
+            }
+
+            $("div", hintContent[i]).each((j, e) => {
+                var ithHint: number = $(e).data("ithHint");
+
+                if (ithHint === undefined)
+                    return true;
+
+                if (ithHint > testHintData[i].hintsUsed)
+                    $(e).hide();
+                else
+                    $(e).show();
+            });
+        }
+    };
+
+    for (var i = 0; i <= 9; i++) {
+        var hs = "";
+        if (testHintData[i] === undefined) {
+            hs += '<div class="textline">Hint ' + i + ' could not be found.</div>';
+        } else {
+            hs += '<div class="formal textline lessSpace"><strong>Test ' + i + '</strong>: ';
+            hs += (testHintData[i].testGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].testGoal, 0, null);
+            hs += '</div>';
+
+            testHintData[i].testComments.forEach((l, j) => {
+                hs += '<div class="textline' + (j == testHintData[i].testComments.length - 1 ? ' extraSpace' : '') + '">' + l + '</div>';
+            });
+
+            hs += '<div class="formal textline lessSpace floatLeft"><strong>Hint ' + i + '</strong>: ';
+            hs += (testHintData[i].hintGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].hintGoal, 0, null);
+            hs += '</div>';
+
+            hs += '<div class="floatRight hintStarContainer" id="hintStarContainer' + i + '"></div>';
+
+            hs += '<div class="clear hintContainer">';
+            testHintData[i].hints.forEach((hintsX, k) => {
+                hintsX.forEach((h, j) => {
+                    hs += '<div class="textline" data-ith-hint="' + (k + 1) + '">' + h + '</div>';
+                });
+            });
+
+            hs += '<div class="textline" data-ith-hint="' + (testHintData[i].hints.length + 1) + '">See the proof at https://nadea.compute.dtu.dk/#' + i + '</div>';
+
+            hs += '</div>';
+        }
+
+        hintContent[i].html(hs);
+
+        updateHintPage(i);
+
+        if (testHintData[i] !== undefined) {
+            if (testHintData[i].hintsUsed <= testHintData[i].hints.length) {
+                $(document).off("click", "#hintStarContainer" + i);
+                $(document).on("click", "#hintStarContainer" + i, { hintNumber: i }, e => {
+                    testHintData[e.data.hintNumber].hintsUsed++;
+                    updateHintPage(e.data.hintNumber);
+
+                    if (testHintData[e.data.hintNumber].hintsUsed == testHintData[e.data.hintNumber].hints.length + 1) {
+                        $(document).off("click", "#hintStarContainer" + e.data.hintNumber);
+
+                        $(e.currentTarget).addClass("allUsed");
+                    }
+                });
+            } else {
+                $("#hintStarContainer" + i).addClass("allUsed");
+            }
+        }
+
+        replaceFormalSymbols(hintContent[i], [{ s: /@fm/g, r: "<span class='formalUnknown'>¤</span>" }]);
+    }
+}
+
+function helpInner(overlay: JQuery, callback: () => void): void {
+    // Flexible content
+    var content = $("<div class=\"flexContentY\"></div>");
+    overlay.append(content);
+
+    // Make menu buttons
+    var buttonsContainer = $("<div class=\"buttonContainer\"></div>");
+    var buttonsTable = $("<div class=\"buttonsTable\"></div>");
+    var buttonsRow = $("<div class=\"buttonsRow\"></div>");
+
+    var btnLeft = $('<div class="btnLeft"></div>');
+    var btnMid = $('<div class="btnMid"></div>');
+    var btnRight = $('<div class="btnRight"></div>');
+
+    buttonsRow.append(btnLeft);
+    buttonsRow.append(btnMid);
+    buttonsRow.append(btnRight);
+
+    buttonsContainer.append(buttonsTable);
+    buttonsTable.append(buttonsRow);
+    
+    // Buttons
+    var cancel = $('<div class="button small">Cancel help</div>');
+    var welcomeButton = $('<div class="button small">Welcome</div>');
+    var tutorialButton = $('<div class="button small">Tutorial</div>');
+    var exsButton = $('<div class="button small">Exercises</div>');
+    var pbsButton = $('<div class="button small">Publications</div>');
+    var aboutButton = $('<div class="button small">About NaDeA ' + versionNumber + '</div>');
+
+    btnLeft.append(cancel);
+
+    var hintsButtonJQuery: JQuery[] = [];
+
+    btnMid.append(welcomeButton);
+    btnMid.append(tutorialButton);
+    btnMid.append(exsButton);
+
+    for (var i = 0; i <= 9; i++) {
+        hintsButtonJQuery[i] = $('<div class="button small hint">Hint ' + i + '</div>');
+        hintsButtonJQuery[i].data("ithHint", i);
+
+        btnMid.append(hintsButtonJQuery[i]);
+    }
+
+    btnMid.append(pbsButton);
+
+    btnRight.append(aboutButton);
+
+    content.append(buttonsContainer);
+
+    // Content box
+    var helpContent = $('<div class="helpContent"></div>');
+    content.append(helpContent);
+
+    // Tabs
+    /* Content: Welcome */
+    var welcomeContent = $('<div><div class="headline">Welcome to NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div><div class="textline extraSpace">NaDeA runs in a standard browser - preferably in full screen - and is open source software - please find the source code and further information here: https://logic-tools.github.io/ </div>'
+        + '<div class="textline extraSpace">Use Tabs in your browser as necessary.</div>'
+        + '<div class="textline extraSpace">The following three buttons are available in the main proof window (the Escape key can always be pressed to cancel and go to the main proof window).</div>'
+        + '<div class="columnContainer extraSpace">'
+        + '<div class="column3"><div class="buttonStaticContainer"><div class="loadStatic buttonStatic big">Load</div></div><div class="textline">The Load button brings up the load window which allows for simple import/export of proof lines.</div>'
+        + '<div class="textline">Also a number of so-called tests can be loaded as explained in the help window (see Exercises).</div></div>'
+        + '<div class="column3"><div class="buttonStaticContainer"><div class="codeStatic buttonStatic big">Code</div></div><div class="textline">The Code button brings up the code window with the Isabelle formalization code for natural deduction as explained in the help window (see Tutorial).</div>'
+        + '<div class="textline">Also the complete Isabelle theory file with comments is available.</div></div>'
+        + '<div class="column3"><div class="buttonStaticContainer"><div class="helpStatic buttonStatic big">Help</div></div><div class="textline">The Help button brings up the help window with this welcome information and a number of so-called hints.</div>'
+        + '<div class="textline">After this welcome information then please click on Tutorial and thereafter continue with Exercises…</div></div>'
+        + '<div class="clear"></div>'
+        + '</div>'
+        + '<div class="textline extraSpace">In order to edit a proof, edit mode must be turned on (by default the edit mode is turned off). Edit mode can be toggled by clicking anywhere in the main proof window below the header.</div>'
+        + '<div class="textline less6Space">In order to undo a step, click the Undo button (or Delete key). All previous proof states can be reached.</div>'
+        + '<div class="textline extraSpace">By pressing the Stop button (or Insert key), the undo sequence (performed up until Stop) becomes available for undoing such that the steps undone can be reached once more.</div>'
+        + '<div class="textline lessSpace">In the top right there are three numbers "x&nbsp;&nbsp; y/z":</div>'
+        + '<div class="textline lessSpace">x is the number of <span style="color: red;">¤</span> symbols in the current proof state. If (and only if) x becomes 0, the proof is finished.</div>'
+        + '<div class="textline extraSpace">y marks the position of the current state on the Undo stack. z is the total number of states on the stack which can all be reached by consecutive clicks on Undo.</div>'
+        + '<div class="textline">Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: https://people.compute.dtu.dk/jovi/ </div></div>');
+
+    var tutorialContent = $('<div>'
+        + '<div class="columnContainer">'
+        + '<div class="column2">'
+        + '<div class="codeBlock"><div class="textline"><strong>Getting Started</strong></div><div class="textline">1. To build the sample formula A &rarr; A start by turning on edit mode and clicking <span style="color: red;">¤</span>. The square brackets <div class="leftBracket">[</div><div class="rightBracket">]</div> denote the current list of assumptions which is initially empty. Use a predicate A with no arguments.</div><div class="textline">2. After building the sample formula, apply the rule Imp_I (Implication-Introduction) to prove the formula A by assumption of A. The rule is also selected by clicking <span style="color: red;">¤</span>.</div><div class="textline">3. The proof finishes automatically by applying the rule Assume since the formula A is found in the list of assumptions. It is finished because there is no pending <span style="color: red;">¤</span>.</div></div>'
+        + '<div class="clear"></div>'
+        + '</div>'
+        + '<div class="column2">'
+        + '<div class="codeBlock"><div class="textline"><strong>Natural Deduction Primitives</strong></div><div class="textline">OK p a: The formula p follows from the assumptions a.</div><div class="textline">news c l: True if the identifier c does not occur in the list of formulas l.</div><div class="textline">sub n t p: Returns the formula p where the term t has been substituted for the variable with the de Bruijn index n.</div></div>'
+        + '<div class="clear"></div>'
+        + '</div>'
+        + '</div>');
+
+    /* Content: Exercises */
+    exsContent = $('<div id="exsContent"></div>');
+
+    /* Content: Publications */
+    var pbsContent = $('<div>More to come</div>');
+
+    /* Content: About NaDeA */
+    var aboutContent = $('<div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
+
+    // Hide tabs default
+    helpContent.children().hide();
+
+    //
+    helpContent.append(welcomeContent);
+    helpContent.append(tutorialContent);
+    helpContent.append(exsContent);
+    helpContent.append(pbsContent);
+
+    hintContent = [];
+    hintsButtonJQuery.forEach((e, i) => {
+        hintContent[i] = $('<div id="hint' + e.data("ithHint") + '"></div>')
+        helpContent.append(hintContent[i]);
+    });
+
+    helpContent.append(aboutContent);
+
+    helpContent.children().hide();
+
+    overlay.append(content);
+
+    // Apply button events
+
+    // Hide visible tabs on click
+    $(".btnLeft, .btnMid, .btnRight").children().on("click", () => {
+        $(".btnMid").children().removeClass("buttonMidHover");
+        $(".btnRight").children().removeClass("buttonRightHover");
+
+        helpContent.children(":visible").hide();
+    });
+
+    $(".btnMid").children().on("click", e => $(e.currentTarget).addClass("buttonMidHover"));
+    $(".btnRight").children().on("click", e => $(e.currentTarget).addClass("buttonRightHover"));
+
+    // Show corresponding tab on click
+    welcomeButton.on("click", (e) => {
+        welcomeContent.show();
+    })
+
+    tutorialButton.on("click", (e) => {
+        tutorialContent.show();
+    })
+
+    exsButton.on("click", () => {
+        exsContent.show();
+    });
+
+    pbsButton.on("click", () => {
+        pbsContent.show();
+    });
+
+    aboutButton.on("click", () => {
+        aboutContent.show();
+    });
+
+    cancel.click(e => {
+        $(".closeCenteredOverlay", overlay).trigger("click");
+    });
+
+    hintsButtonJQuery.forEach(e => {
+        e.on("click", () => {
+            $("#hint" + e.data("ithHint")).show();
+        });
+    });
+
+    updateExerciseAndHintContent();
+
+    welcomeButton.trigger("click");
 };
 
 
@@ -2374,7 +3017,7 @@ class synBool extends Inductive implements InductiveInterface {
 
         var assumptions: Formula[] = copyAssumptions(this).as;
 
-        assumptions.push(new fmImp(this.goal, falsity));
+        assumptions.unshift(new fmImp(this.goal, falsity));
 
         var inductive: Inductive = new Inductive(falsity, assumptions);
         this.premises.push(inductive);
@@ -2479,7 +3122,7 @@ class synImpI extends Inductive implements InductiveInterface {
         var q: Formula = copyFormula((<fmImp> this.goal).rhs);
 
         var assumptions: Formula[] = copyAssumptions(this).as;
-        assumptions.push(p);
+        assumptions.unshift(p);
 
         var inductive = new Inductive(q, assumptions);
         this.premises.push(inductive);
@@ -2534,8 +3177,8 @@ class synDisE extends Inductive implements InductiveInterface {
         var assumptions2: Formula[] = copyAssumptions(this).as;
         var assumptions3: Formula[] = copyAssumptions(this).as;
 
-        assumptions2.push(p);
-        assumptions3.push(q);
+        assumptions2.unshift(p);
+        assumptions3.unshift(q);
 
         var r: Formula = this.goal;
 
@@ -2850,7 +3493,7 @@ class synExiE extends Inductive implements InductiveInterface {
         this.c = new tmFun(cString, []);
 
         var ind2Assumptions: Formula[] = copyAssumptions(this).as;
-        ind2Assumptions.push(sub(0, this.c, copyFormula(p)));
+        ind2Assumptions.unshift(sub(0, this.c, copyFormula(p)));
 
         var ind2 = new Inductive(this.goal, ind2Assumptions);
         this.premises.push(ind2);
@@ -4237,8 +4880,8 @@ var newconstantSymbol = "c";
 function getNewConstant(x: Inductive = null): string {
     var s = newconstantSymbol;
 
-    var ts = getTerms(x); 
-    
+    var ts = getTerms(x);
+
     ts.forEach(t => {
         if (t instanceof tmFun) {
             if (t.id.search(/c\*+/) !== -1) {
@@ -4291,6 +4934,9 @@ function getTerms(x: any): Term[] {
         return ts;
     }
 
+    else if (x instanceof fmFalsity)
+        return [];
+
     else if (x instanceof tmFun) {
         var ts = [];
 
@@ -4312,7 +4958,7 @@ function getTerms(x: any): Term[] {
         });
 
         return terms;
-   }
+    }
 
     else {
         console.log(x);
@@ -4483,12 +5129,12 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
                     l = reconstructUnknownsFromProof(v, l)
                 }
             });
-
-            // Unknowns in premises
-            (<Inductive> x).premises.forEach(v => {
-                l = reconstructUnknownsFromProof(v, l)
-            });
         }
+        
+        // Unknowns in premises
+        (<Inductive> x).premises.forEach(v => {
+            l = reconstructUnknownsFromProof(v, l)
+        });
     }
 
     else if (x instanceof Formula) {
@@ -4629,7 +5275,7 @@ function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
 
     else if (x instanceof fmPre) {
         var fmP: fmPre = <fmPre> x;
-        fmIsa = '<div class="pre">Pre</div><div class="arg id">' + (fmP.id === null ? '@id:pre' : '"' + fmP.id + '"') + "</div>";
+        fmIsa = '<div class="pre">Pre</div><div class="arg id">' + (fmP.id === null ? '@id:pre' : nadeaQuot + fmP.id + nadeaQuot) + "</div>";
 
         fmIsa += '<div class="arg lastArg">';
 
@@ -4657,7 +5303,7 @@ function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
 
     else if (x instanceof tmFun) {
         var tmF: tmFun = <tmFun> x;
-        fmIsa = '<div class="fun">Fun</div><div class="arg id">' + (tmF.id === null ? '@id:fun' : '"' + tmF.id + '"') + "</div>";
+        fmIsa = '<div class="fun">Fun</div><div class="arg id">' + (tmF.id === null ? '@id:fun' : nadeaQuot + tmF.id + nadeaQuot) + "</div>";
 
         fmIsa += '<div class="arg lastArg">';
 
@@ -4821,11 +5467,16 @@ function getRuleName(x: Inductive): string {
         return "Dis_I2";
     else if (x instanceof synExiI)
         return "Exi_I";
-    else if (x instanceof synExiE)
-        return "Exi_E"
-            + ((<synExiE> x).waitingForPCompletion ? ":incomplete" : "")
-            + (!(<synExiE> x).cIsNew ? ":err" : "");
-    else if (x instanceof synImpE)
+    else if (x instanceof synExiE) {
+        var r = "Exi_E";
+
+        if ((<synExiE> x).waitingForPCompletion)
+            r += ":incomplete";
+        else if (!(<synExiE> x).cIsNew)
+            r += ":err";
+
+        return r;
+    } else if (x instanceof synImpE)
         return "Imp_E";
     else if (x instanceof synImpI)
         return "Imp_I";
@@ -4834,7 +5485,7 @@ function getRuleName(x: Inductive): string {
             + ((<synUniE> x).waitingForTermSelection ? ":incomplete" : "");
     else if (x instanceof synUniI)
         return "Uni_I"
-            + (!(<synUniI> x).cIsNew ? ":err" : "");
+            + ((<synUniI> x).cIsNew === false ? ":err" : "");
     else if (x instanceof Inductive) {
         if (x.trueByAssumption)
             return "@true:assume";
@@ -4877,6 +5528,7 @@ function attachKeyBindings() {
 
         else if (e.keyCode == 45) {
             stateStack.update(IbStackEvent.INSERT);
+            updateHeader();
         } // insert
     });
 }
@@ -5116,3 +5768,72 @@ function copyUnknown(x: Unknown, ref: any, xs: Unknown[], ltIndices: number[][])
 //
 // END OF UNDO
 //
+
+function countUnknowns(x: any): number {
+    if (x === null)
+        return 1;
+
+    if (x instanceof Array) {
+        var r = 0;
+
+        (<any[]> x).forEach(y => r += countUnknowns(y));
+
+        return r;
+    }
+
+
+    if (x instanceof FormulaOneArg) {
+        return countUnknowns((<FormulaOneArg> x).fm);
+    }
+
+    else if (x instanceof FormulaTwoArg) {
+        return countUnknowns((<FormulaTwoArg> x).lhs) + countUnknowns((<FormulaTwoArg> x).rhs);
+    }
+
+    else if (x instanceof fmPre) {
+        var r = countUnknowns((<fmPre> x).id);
+
+        r += countUnknowns((<fmPre> x).tms);
+
+        return r;
+    }
+
+    else if (x instanceof tmFun) {
+        var r = countUnknowns((<tmFun> x).id);
+
+        r += countUnknowns((<tmFun> x).tms);
+
+        return r;
+    }
+
+    else if (x instanceof Inductive) {
+        var r = countUnknowns((<Inductive> x).goal);
+        (<Inductive> x).assumptions.forEach(a => r += countUnknowns(a));
+
+        if (r == 0
+            && !(<Inductive> x).trueByAssumption
+            && !(x instanceof synBool
+                || x instanceof synConE1
+                || x instanceof synConE2
+                || x instanceof synConI
+                || x instanceof synDisE
+                || x instanceof synDisI1
+                || x instanceof synDisI2
+                || x instanceof synImpE
+                || x instanceof synImpI
+                || x instanceof synExiE
+                || x instanceof synExiI
+                || x instanceof synUniE
+                || x instanceof synUniI)) {
+            r += 1;
+        }
+
+        (<Inductive> x).premises.forEach(p => r += countUnknowns(p));
+
+        return r;
+    }
+
+    else {
+        return 0;
+    }
+}
