@@ -238,11 +238,11 @@ a {
     padding-bottom: 0.45vw;
 }
 
-.textline.lessSpace {
+.lessSpace {
     padding-bottom: 0.25vw;
 }
 
-.textline.extraSpace {
+.extraSpace {
     padding-bottom: 1.30vw;
 }
 
@@ -634,6 +634,7 @@ a {
 #isabelleFileView {
     font-size: 0.875vw;
     font-family: Courier New, Courier, monospace;
+    margin: 0;
 }
 
 .columnContainer {

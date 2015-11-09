@@ -3,11 +3,11 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.2.0";
+var versionNumber = "0.2.1";
 $(document).ready(() => setTitle());
 
 // Set up index.nadea location
-var isNadeaOnline = false;
+var isNadeaOnline = true;
 var indexNadeaURL = isNadeaOnline ? "http://nadea.compute.dtu.dk/index.nadea" : "";
 var readNadeaFileLocally = window.location.protocol !== "file:";
 var nadeaQuot = "''";
@@ -231,28 +231,33 @@ function loadOnlineContents() {
     // Initially the tests are the initial proof state
     proofCodes = {};
 
-    proofCodes["Test 0"] = ". This is the initial proof state.\n" + INITIAL_PROOF + "\n";
+    proofCodes["Test 0"] = ". This is the initial proof state with no formula and it can be used as a starting point for proofs - try proving the formula A by applying the so-called Boole rule... :-)\n" + INITIAL_PROOF + "\n";
 
     for (var i = 1; i <= 9; i++)
         proofCodes["Test " + i] = "";
 
     proofCodes["Proof index"] = ". The proof index collects the final proof state for all tests but no tests was provided.\n";
 
-    var nadeaContents = ". Ignored line...\n" +
-        "# Hint 0\n" +
-        "\n" +
-        ". Load the following sample proof states by appending the hash mark # and the hint number 0 (zero) to the address of NaDeA (in the browser address line).\n" +
-        "ImpI{Imp{Pre{A}{}}{Pre{A}{}}}[]:{OK{Pre{A}{}}[Pre{A}{}]}\n" +
-        "OK{Imp{Pre{A}{}}{Pre{A}{}}}[]\n" +
-        "OK{Imp{Pre{A}{}}{Pre{.}{}}}[]\n" +
-        "OK{Imp{Pre{.}{}}{Pre{.}{}}}[]\n" +
-        "OK{Imp{Pre{.}{}}{Pre{.}{.}}}[]\n" +
-        "OK{Imp{Pre{.}{.}}{Pre{.}{.}}}[]\n" +
-        "OK{Imp{Pre{.}{.}}{.}}[]\n" +
-        "OK{Imp{.}{.}}[]\n" +
-        "OK{.}[]";
 
     if (indexNadeaURL == "") {
+        var nadeaContents = ". Ignored line...\n" +
+            "# Test 0\n" +
+            proofCodes["Test 0"] +
+            "# Hint 0\n" +
+            "\n" +
+            ". Turn on edit mode and build the formula using Implication and the predicate A with no arguments.\n" +
+            "...\n" +
+            ". After building the formula, apply the rule Imp_I (Implication-Introduction) to prove the formula A by assumption of A.\n" +
+            "ImpI{Imp{Pre{A}{}}{Pre{A}{}}}[]:{OK{Pre{A}{}}[Pre{A}{}]}\n" +
+            "OK{Imp{Pre{A}{}}{Pre{A}{}}}[]\n" +
+            "OK{Imp{Pre{A}{}}{Pre{.}{}}}[]\n" +
+            "OK{Imp{Pre{.}{}}{Pre{.}{}}}[]\n" +
+            "OK{Imp{Pre{.}{}}{Pre{.}{.}}}[]\n" +
+            "OK{Imp{Pre{.}{.}}{Pre{.}{.}}}[]\n" +
+            "OK{Imp{Pre{.}{.}}{.}}[]\n" +
+            "OK{Imp{.}{.}}[]\n" +
+            "OK{.}[]";
+
         readNadeaTestData(nadeaContents);
         return;
     }
@@ -283,7 +288,7 @@ function loadOnlineContents() {
         // Load file from the net if not yet loaded
         xhr.onreadystatechange = () => {
             if (xhr.readyState == 4 && xhr.status === 200) {
-                readNadeaTestData(decodeURI(xhr.responseText));
+                readNadeaTestData(xhr.responseText);
             }
         }
 
@@ -293,7 +298,7 @@ function loadOnlineContents() {
 
         xhr.open("GET", indexNadeaURL, true);
         xhr.timeout = 5000;
-        xhr.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
+        xhr.setRequestHeader('Content-type', 'text/plain; charset=utf-8');
         xhr.send(null);
     }
 
@@ -305,7 +310,7 @@ function loadOnlineContents() {
 
         xhr2.onreadystatechange = () => {
             if (xhr2.readyState == 4 && xhr2.status === 200) {
-                readNadeaIsabelleFile(decodeURI(xhr2.responseText));
+                readNadeaIsabelleFile(xhr2.responseText);
             }
         }
 
@@ -334,7 +339,7 @@ function loadOnlineContents() {
 
         xhr2.open("GET", indexNadeaURL.replace("index.nadea", "NaDeA.thy"), true);
         xhr2.timeout = 5000;
-        xhr2.setRequestHeader('Content-type', 'text/plain; charset=iso-8859-1');
+        xhr2.setRequestHeader('Content-type', 'text/plain; charset=iso-utf-8');
         xhr2.send(null);
     }
 }
@@ -421,7 +426,7 @@ function readNadeaTestData(rawFileText: string) {
     addProofCode(currentProofID, currentProofCode);
 
     if (proofIndexData.length > 0)
-        addProofCode("Proof index", ". The proof index collects the final proof state for all tests (not only 0-9).\n\n" + proofIndexCodes.join("\n") + "\n\n. Load and press Delete to show the proof states.\n");
+        addProofCode("Proof index", ". The proof index collects the final proof state for all tests and hints.\n\n" + proofIndexCodes.join("\n") + "\n\n. Load and click the Undo button to show the proof states.\n");
 
     var allProofCodes = ". NaDeA index file: \"" + indexNadeaURL + "\"\n\n";
 
@@ -430,7 +435,7 @@ function readNadeaTestData(rawFileText: string) {
             allProofCodes += "# " + key + "\n\n" + proofCodes[key] + "\n";
     }
 
-    allProofCodes += ". A test resumes from the last proof state but a hint replays from the first proof state (press Delete to show the proof states).\n";
+    allProofCodes += ". More tests and hints are available online.\n";
 
     addProofCode("All proofs", allProofCodes, true);
 
@@ -441,44 +446,143 @@ function readNadeaTestData(rawFileText: string) {
     setupExerciseAndHintData();
 }
 
+var isabelleKeyWords: { keyword: string, description: string }[] = [
+    {
+        keyword: "theory",
+        description: "Defines a theory."
+    },
+    {
+        keyword: "imports",
+        description: "Imports a theory to be used in the current theory."
+    },
+    {
+        keyword: "begin",
+        description: "Marks the beginning of the theory content."
+    },
+    {
+        keyword: "type_synonym",
+        description: "Introduces a type synonym, just an abbreviation, for an existing type."
+    },
+    {
+        keyword: "datatype",
+        description: "Defines a datatype within the theory."
+    },
+    {
+        keyword: "primrec",
+        description: "Defines a primitive recursive function."
+    },
+    {
+        keyword: "and",
+        description: "Used in the syntax to gather multiple definitions etc."
+    },
+    {
+        keyword: "where",
+        description: "Used in certain declarations."
+    },
+    {
+        keyword: "inductive",
+        description: "Defines an inductive definition."
+    },
+    {
+        keyword: "lemma",
+        description: "States a lemma (similar to a theorem) in the theory and is followed by a proof."
+    },
+    {
+        keyword: "proof",
+        description: "Marks the beginning of a proof block."
+    },
+    {
+        keyword: "have",
+        description: "States a result in a proof block and is followed by a proof."
+    },
+    {
+        keyword: "qed",
+        description: "Marks the end a proof block."
+    },
+    {
+        keyword: "then",
+        description: "Uses the previous result to prove the following."
+    },
+    {
+        keyword: "show",
+        description: "States the final result of a proof block."
+    },
+    {
+        keyword: "fun",
+        description: "Defines a new function declaration inside the theory."
+    },
+    {
+        keyword: "fix",
+        description: "Defines a local arbitrary constant in the proof."
+    },
+    {
+        keyword: "assume",
+        description: "States an assumption to be used."
+    },
+    {
+        keyword: "also",
+        description: "Collects in a transitive chain the previous result in the proof"
+    },
+    {
+        keyword: "using",
+        description: "Uses the given results to prove a result."
+    },
+    /*{
+        keyword: "unfolding",
+        description: ""
+    },*/
+    {
+        keyword: "finally",
+        description: "Uses the collected results in a transitive chain to prove a result."
+    },
+    {
+        keyword: "next",
+        description: "Marks the start of a case inside the proof block."
+    },
+    {
+        keyword: "obtain",
+        description: "States the properties of a constant and gives it a name."
+    },
+    {
+        keyword: "moreover",
+        description: "Collects the previous result in the proof."
+    },
+    {
+        keyword: "ultimately",
+        description: "Uses the collected results to prove a result."
+    },
+    {
+        keyword: "theorem",
+        description: "States a theorem in the theory and is followed by a proof."
+    },
+    /*{
+        keyword: "apply",
+        description: ""
+    },*/
+    /*{
+        keyword: "done",
+        description: ""
+    },*/
+    {
+        keyword: "end",
+        description: "Marks the end of the current theory."
+    },
+    {
+        keyword: "oops",
+        description: "Placeholder for a missing proof."
+    },
+    {
+        keyword: "corollary",
+        description: "States a corollary (similar to a theorem) in the theory and is followed by a proof."
+    }
+];
+
+isabelleKeyWords.sort((x, y) => {
+    return x.keyword.localeCompare(y.keyword);
+});
+
 function readNadeaIsabelleFile(rawTextFile: string) {
     // Keywords in bold
-
-    var isabelleKeyWords = [
-        "theory",
-        "imports",
-        "begin",
-        "type_synonym",
-        "datatype",
-        "primrec",
-        "and",
-        "where",
-        "inductive",
-        "lemma",
-        "proof",
-        "have",
-        "qed",
-        "then",
-        "show",
-        "fun",
-        "fix",
-        "assume",
-        "also",
-        "using",
-        "unfolding",
-        "finally",
-        "next",
-        "obtain",
-        "moreover",
-        "ultimately",
-        "theorem",
-        "apply",
-        "done",
-        "end",
-        "oops",
-        "corollary"
-    ];
-
     var rawTextFileLines = rawTextFile.split(/(?:\r\n|\r|\n)/);
 
     var isabelleFileLines: string[][] = [];
@@ -493,7 +597,8 @@ function readNadeaIsabelleFile(rawTextFile: string) {
 
 
     var regexStr = "(";
-    isabelleKeyWords.forEach((k, i) => {
+    isabelleKeyWords.forEach((obj, i) => {
+        var k = obj.keyword;
         regexStr += "(\\s(" + k + ")\\s)|(\\s(" + k + "))|((" + k + "\\s))";
 
         if (i !== isabelleKeyWords.length - 1)
@@ -603,7 +708,7 @@ function attachEventHandlersUnknowns() {
      */
     $(document).on("click", "a.newSynRule", e => {
         // Get clicked inductive
-        var parentInductive = undefInductivesWithoutUnknowns[$(e.currentTarget).data("synUnknownIndex")];
+        var parentInductive = undefInductivesWithoutUnknowns[+$(e.currentTarget).data("synUnknownIndex")];
         var x: Inductive;
 
         if (parentInductive.parent === null)
@@ -658,7 +763,7 @@ function attachEventHandlersUnknowns() {
 
     $(document).on("click", "a.newFormula", e => {
         // Get index of unknown that is to be replaced
-        indexUnknown = $(e.currentTarget).data("indexUnknown");
+        indexUnknown = +$(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newFormula", (fm: Formula) => {
             prepareCurrentStateUpdate();
@@ -722,7 +827,7 @@ function attachEventHandlersUnknowns() {
 
     $(document).on("click", "a.newID", e => {
         // Index of unknown to be replaced
-        indexUnknown = $(e.currentTarget).data("indexUnknown");
+        indexUnknown = +$(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newID", (id: string) => {
 
@@ -827,22 +932,22 @@ function attachEventHandlersUnknowns() {
     // Attach click handlers with previously defined callback functions
     $(document).on("click", "a.newTms", (e) => {
 
-        indexUnknown = $(e.currentTarget).data("indexUnknown");
+        indexUnknown = +$(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newTms", tmCallback);
     });
 
     $(document).on("click", "a.newTm", (e) => {
 
-        indexUnknown = $(e.currentTarget).data("indexUnknown");
+        indexUnknown = +$(e.currentTarget).data("indexUnknown");
 
         newOverlay(e, "newTm", tmCallback);
     });
 
     $(document).on("click", "a.selectTerms", e => {
-        indexUnknown = $(e.currentTarget).data("indexUnknown");
+        indexUnknown = +$(e.currentTarget).data("indexUnknown");
 
-        var parentInductive = undefInductivesWithoutUnknowns[$(e.currentTarget).data("synUnknownIndex")];
+        var parentInductive = undefInductivesWithoutUnknowns[+$(e.currentTarget).data("synUnknownIndex")];
         var x: Inductive;
 
         if (parentInductive.parent === null)
@@ -1211,31 +1316,24 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     else if (x instanceof synExiE)
         htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synExiE> x).c) + '</div>';
 
-    htmlString += '<div class="arg leftParantheses">(</div>';
-
-    var newsList: string[][] = [];
+    var newsList: string[] = [];
 
     if (x instanceof synExiE)
-        newsList.push([getInternalSyntaxHTML((<fmExi> x.premises[0].goal).fm)]);
+        newsList.push(getInternalSyntaxHTML((<fmExi> x.premises[0].goal).fm));
 
     if (x instanceof synUniI || x instanceof synExiE) {
-        newsList.push([getInternalSyntaxHTML(x.goal)]);
+        newsList.push(getInternalSyntaxHTML(x.goal));
     }
-
-    newsList.push([]);
+    
     x.assumptions.forEach(v=> {
-        newsList[newsList.length - 1].push(getInternalSyntaxHTML(v));
+        newsList.push(getInternalSyntaxHTML(v));
     });
 
-    var htmlAppend: string[] = [];
-
-    newsList.forEach(v => {
-        htmlAppend.push("<div class='leftBracket'>[</div>" + v.join('<div class="comma">,</div><wbr />') + "<div class='rightBracket'>]</div>");
-    });
-
-    htmlString += htmlAppend.join("<div class='concat'>#</div>");
-
-    htmlString += '<div class="rightParantheses">)</div>';
+    htmlString += '<div class="leftBracket">[</div>';
+    
+    htmlString += newsList.join('<div class="comma">,</div><wbr />');
+    
+    htmlString += '<div class="rightBracket">]</div>';
     htmlString += '</div></div></div>';
 
     htmlString += '<div class="middle' + (!editModeOn ? ' shrink' : '') + '">news</div>';
@@ -2186,7 +2284,37 @@ function codeInner(overlay: JQuery, callback: () => void): void {
     dssContent.append(paranthesesBracketReplace('<div class="codeBlock"><div class="textline extraSpace">The natural deduction proof system assumes the following definition of first-order logic syntax and semantics:</div><div class="textline"><strong>Syntax</strong></div><div class=\"textline extraSpace\">A function/predicate identifier is a list of characters which can be written ' + nadeaQuot + '...' + nadeaQuot + '.</div><div class="textline lessSpace\">identifier <span class=\"eqdef\">:=</span> [char, ..., char]</div><div class="textline lessSpace\">term <span class=\"eqdef\">:=</span> Var nat <span class=\"delimiter\">|</span> Fun identifier [term, ..., term]</div><div class="textline lessSpace\">formula <span class=\"eqdef\">:=</span> Falsity <span class=\"delimiter\">|</span> Pre identifier [term, ..., term] <span class=\"delimiter\">|</span> <span>Imp</span> formula formula <span class=\"delimiter\">|</span> <span>Dis</span> formula formula <span class=\"delimiter\">|</span> <span>Con</span> formula formula <span class=\"delimiter\">|</span> <span>Exi</span> formula <span class=\"delimiter\">|</span> <span>Uni</span> formula<br /></div><br /><div class="textline">The quantifiers use de Bruijn indices') + ' (natural numbers) ' + paranthesesBracketReplace('and truth, negation and biimplication are abbreviations.</div><br /><div class="textline"><strong>Semantics</strong></div><div class="textline extraSpace">The domain of quantification is implicit in the environment ´e´ for variables and in the function semantics ´f´ and predicate semantics ´g´ of arbitrary arity.</div></div><div class="leftColumn noTopMargin codeBlock">semantics_term e f (Var n) <span class=\"eqdef\">=</span> e n<br />semantics_term e f (Fun i l) <span class=\"eqdef\">=</span> f i (semantics_list e f l)<br /><br />semantics_list e f [] <span class=\"eqdef\">=</span> []<br />semantics_list e f (t # l) <span class=\"eqdef\">=</span> semantics_term e f t <span class=\"headtail\">#</span> semantics_list e f l<br /><div class="textline"><br />Operator # is between the head and the tail of a list.</div></div><div class="rightColumn noTopMargin codeBlock">semantics e f g Falsity <span class=\"eqdef\">=</span> False<br />semantics e f g (Pre i l) <span class=\"eqdef\">=</span> g i (semantics_list e f l)<br />semantics e f g (<span class="impFm">Imp</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else True)<br />semantics e f g (<span class="disFm">Dis</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then True else semantics e f g q)<br />semantics e f g (<span class="conFm">Con</span> p q) <span class=\"eqdef\">=</span> (if semantics e f g p then semantics e f g q else False)<br />semantics e f g (<span class="exiFm">Exi</span> p) <span class=\"eqdef\">=</span> (<span class=\"qmark\">?</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br />semantics e f g (<span class="uniFm">Uni</span> p) <span class=\"eqdef\">=</span> (<span class=\"exmark\">!</span> x. semantics (% n. if n = 0 then x else e (n - 1)) f g p)<br /><br /></div><div class="clear"></div><div class="codeBlock"><div class="textline">Operator % is for lambda abstraction, operator ! is for universal quantification and operator ? is for existential quantification.</div><br /><div class="textline extraSpace">All meta-variables are implicitly universally quantified in the following derived rule connecting the provability predicate ´OK´ and the semantics:</div>') + '<div class="ndRulesContainer first">' + getRuleTable("Soundness", ["OK p []"], "semantics e f g p") + '<div class="clear"></div></div></div><br /><div class="textline">The computer-checked soundness proof is provided in the Isabelle theory file here: https://github.com/logic-tools/nadea</div>');
 
     /* Sample proofs and exercises with hints */
-    var sampleContent = $('<div class="codeBlock textline"><strong>MORE TO COME</strong></div>');
+    var sampleContent = $('<div>' +
+        '<div class="codeBlock">' +
+        '<div class="textline extraSpace">In type declarations &#39;a is for an arbitrary type and => is used for function space.</div>' +
+        '<div class="columnContainer extraSpace">' +
+        '<div class="column2">' +
+        '<div class="table"></div>' +
+        '</div>' +
+        '<div class="column2">' +
+        '<div class="table"></div>' +
+        '</div>' +
+        '<div class="clear"></div>' +
+        '</div>' +
+        '<div class="textline">==> is meta-implication (used in inductive definitions and in theorems) and !! is (universal) meta-quantification for locally bound meta-variables (used in the induction hypotheses).</div>' +
+        '</div>' +
+        '</div>');
+    var sampleContentKeywordTableA = $(".table:eq(0)", sampleContent);
+    var sampleContentKeywordTableB = $(".table:eq(1)", sampleContent);
+
+    isabelleKeyWords.slice(0, Math.ceil(isabelleKeyWords.length / 2)).forEach(obj => {
+        sampleContentKeywordTableA.append('<div class="tableRow">' +
+            '<div class="tableCell"><strong>' + obj.keyword + '</strong></div>' +
+            '<div class="tableCell">' + obj.description + '</div>' +
+            '</div>');
+    });
+
+    isabelleKeyWords.slice(Math.ceil(isabelleKeyWords.length / 2)).forEach(obj => {
+        sampleContentKeywordTableB.append('<div class="tableRow">' +
+            '<div class="tableCell"><strong>' + obj.keyword + '</strong></div>' +
+            '<div class="tableCell">' + obj.description + '</div>' +
+            '</div>');
+    });      
 
     /* Summary of rules */
     var sorContent = $('<div></div>');
@@ -2194,7 +2322,6 @@ function codeInner(overlay: JQuery, callback: () => void): void {
     sorContent.append('<div class="textline codeBlock extraSpace">The natural deduction proof system is defined by the provability predicate ´OK´ using the auxiliary predicate ´news´ (new identifier in formulas) and the auxiliary function ´sub´ (substitution for variable in formula):</div>');
 
     // Rule tables are created.
-
     var divBox1 = $('<div class="ndRulesContainer first"></div>');
     var divBox2 = $('<div class="ndRulesContainer"></div>');
     var divBox3 = $('<div class="ndRulesContainer"></div>');
@@ -2336,6 +2463,8 @@ function setupExerciseAndHintData() {
 
     if (exsContent !== undefined)
         updateExerciseAndHintContent();
+
+
 }
 
 var exsContent: JQuery;
@@ -2349,7 +2478,7 @@ function updateExerciseAndHintContent() {
         exerciseTableRows += '<div class="tableRow">';
 
         if (testHintData[i] === undefined || testHintData[i].testGoal === undefined) {
-            exerciseTableRows += '<div class="tableCell">-</div>';
+            exerciseTableRows += '<div class="tableCell alignRight">-</div>';
         } else if (testHintData[i].testGoal === null) {
             exerciseTableRows += '<div class="tableCell alignRight"><span class="formalUnknown">¤</span></div>';
         } else {
@@ -2378,7 +2507,7 @@ function updateExerciseAndHintContent() {
         + exerciseTableRows
         + '</div>';
 
-    exsContent.html(exsContentStr);
+    exsContent.children("#exsContent").html(exsContentStr);
 
     replaceFormalSymbols(exsContent, [{ s: /@fm/g, r: "<span class='formalUnknown'>¤</span>" }]);
 
@@ -2398,7 +2527,7 @@ function updateExerciseAndHintContent() {
             }
 
             $("div", hintContent[i]).each((j, e) => {
-                var ithHint: number = $(e).data("ithHint");
+                var ithHint: number = +$(e).data("ithHint");
 
                 if (ithHint === undefined)
                     return true;
@@ -2416,6 +2545,7 @@ function updateExerciseAndHintContent() {
         if (testHintData[i] === undefined) {
             hs += '<div class="textline">Hint ' + i + ' could not be found.</div>';
         } else {
+            hs += '<div class="formal textline extraSpace">It is recommended that another browser tab is used to examine following test example (use the load window).</div>';
             hs += '<div class="formal textline lessSpace"><strong>Test ' + i + '</strong>: ';
             hs += (testHintData[i].testGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].testGoal, 0, null);
             hs += '</div>';
@@ -2424,6 +2554,7 @@ function updateExerciseAndHintContent() {
                 hs += '<div class="textline' + (j == testHintData[i].testComments.length - 1 ? ' extraSpace' : '') + '">' + l + '</div>';
             });
 
+            hs += '<div class="formal textline extraSpace">It is recommended that another browser tab is used to solve following exercise (click on the stars to get the next hint part).</div>';
             hs += '<div class="formal textline lessSpace floatLeft"><strong>Hint ' + i + '</strong>: ';
             hs += (testHintData[i].hintGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].hintGoal, 0, null);
             hs += '</div>';
@@ -2537,8 +2668,8 @@ function helpInner(overlay: JQuery, callback: () => void): void {
         + '<div class="clear"></div>'
         + '</div>'
         + '<div class="textline extraSpace">In order to edit a proof, edit mode must be turned on (by default the edit mode is turned off). Edit mode can be toggled by clicking anywhere in the main proof window below the header.</div>'
-        + '<div class="textline less6Space">In order to undo a step, click the Undo button (or Delete key). All previous proof states can be reached.</div>'
-        + '<div class="textline extraSpace">By pressing the Stop button (or Insert key), the undo sequence (performed up until Stop) becomes available for undoing such that the steps undone can be reached once more.</div>'
+        + '<div class="textline lessSpace">In order to undo a step, click the Undo button (or Delete key). All previous proof states can be reached.</div>'
+        + '<div class="textline extraSpace">By clicking the Stop button (or Insert key), the undo sequence (performed up until Stop) becomes available for undoing such that the steps undone can be reached once more.</div>'
         + '<div class="textline lessSpace">In the top right there are three numbers "x&nbsp;&nbsp; y/z":</div>'
         + '<div class="textline lessSpace">x is the number of <span style="color: red;">¤</span> symbols in the current proof state. If (and only if) x becomes 0, the proof is finished.</div>'
         + '<div class="textline extraSpace">y marks the position of the current state on the Undo stack. z is the total number of states on the stack which can all be reached by consecutive clicks on Undo.</div>'
@@ -2557,10 +2688,21 @@ function helpInner(overlay: JQuery, callback: () => void): void {
         + '</div>');
 
     /* Content: Exercises */
-    exsContent = $('<div id="exsContent"></div>');
+    exsContent = $('<div>' +
+        '<div class="textline extraSpace">A test resumes from the last proof state but a hint replays from the first proof state (click Undo to show the proof states).</div>' +
+        '<div id="exsContent" class="extraSpace"></div>' +
+        '<div class="textline extraSpace">Exercises are available as Hint 0-9 in this Help window and sample proofs are available as Test 0-9 in the Load window.</div>' +
+        '<div class="textline extraSpace">Tabs in the browser are useful to switch between the load window, the code window, the help windows and the main proof window.</div>' +
+        '<div class="textline">NaDeA starts with a hint if the hash mark # and the hint number is added to the address in the browser address line.</div>' +
+        '</div>');
 
     /* Content: Publications */
-    var pbsContent = $('<div>More to come</div>');
+    var pbsContent = $('<div>' +
+        '<div class="textline">NaDeA: A Natural Deduction Assistant with a Formalization in Isabelle</div>' +
+        '<div class="textline">Jørgen Villadsen, Alexander Birch Jensen and Anders Schlichtkrull</div>' +
+        '<div class="textline extraSpace">Pages 253-262 in Proceedings of 4th International Conference on Tools for Teaching Logic, 9-12 June 2015, Rennes, France</div>' +
+        '<div class="textline">http://arxiv.org/abs/1507.04002</div>' +
+        '</div>');
 
     /* Content: About NaDeA */
     var aboutContent = $('<div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
@@ -4798,7 +4940,7 @@ function equalFormulas(fm1: any, fm2: any): boolean {
 }
 
 // Recursively find inductive types without unknowns and add them to a parsed array
-function findUndefInductivesWithoutUnknowns(rs: { parent: Inductive; premiseIndex: number }[], s: Inductive, p: Inductive, n: number, k: number): number {
+function findUndefInductivesWithoutUnknowns(rs: { parent: Inductive; premiseIndex: number; self: Inductive }[], s: Inductive, p: Inductive, n: number, k: number): number {
 
     if (!formulaContainsUnknowns(s.goal) && !s.assumptions.some(v=> {
         return formulaContainsUnknowns(v);
@@ -5260,12 +5402,12 @@ function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
 
     else if (x instanceof fmExi) {
         var fmE: fmExi = <fmExi> x;
-        fmIsa = '<div class="exi">Exi</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmE.fm) + '</div>';
+        fmIsa = '<div class="leftParantheses">(</div><div class="exi">Exi</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmE.fm) + '</div><div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmUni) {
         var fmU: fmUni = <fmUni> x;
-        fmIsa = '<div class="uni">Uni</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmU.fm) + '</div>';
+        fmIsa = '<div class="leftParantheses">(</div><div class="uni">Uni</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmU.fm) + '</div><div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmFalsity) {
@@ -5442,7 +5584,10 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
     else
         fmFormal = '@fm';
 
-    if (y !== undefined && y !== null)
+
+    if (x instanceof fmUni || x instanceof fmExi)
+        fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
+    else if (y !== undefined && y !== null)
         if (precedence(x) > precedence(y))
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
 
