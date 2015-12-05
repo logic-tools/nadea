@@ -3,7 +3,7 @@
 /// <reference path="jquery.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.2.1";
+var versionNumber = "0.2.2";
 $(document).ready(() => setTitle());
 
 // Set up index.nadea location
@@ -5972,6 +5972,9 @@ function countUnknowns(x: any): number {
                 || x instanceof synUniI)) {
             r += 1;
         }
+
+        if (x instanceof synUniE && (<synUniE>x).waitingForTermSelection)
+            r += 1;
 
         (<Inductive> x).premises.forEach(p => r += countUnknowns(p));
 
