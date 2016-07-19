@@ -11,4 +11,4 @@ Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, D
 
 Based on:
 
-Stefan Berghofer: First-Order Logic According to Fitting. Archive of Formal Proofs, November 2007, http://afp.sourceforge.net/entries/FOL-Fitting.shtml (Formal Proof Development).
+Stefan Berghofer: First-Order Logic According to Fitting. Archive of Formal Proofs, November 2007, http://www.isa-afp.org/entries/FOL-Fitting.shtml (Formal Proof Development).
