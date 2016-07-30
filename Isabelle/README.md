@@ -9,6 +9,8 @@ Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, D
 
 ---
 
+Document with symbols: http://nadea.compute.dtu.dk/document.pdf
+
 Based on:
 
 Stefan Berghofer: First-Order Logic According to Fitting. Archive of Formal Proofs, August 2007, https://www.isa-afp.org/entries/FOL-Fitting.shtml (Formal Proof Development).
