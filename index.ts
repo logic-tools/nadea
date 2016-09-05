@@ -1,15 +1,16 @@
 // NaDeA - License, source code and further information at https://logic-tools.github.io/
 //
-/// <reference path="jquery.d.ts"/>
+/// <reference path="references.d.ts"/>
 
 // Update version number on page
-var versionNumber = "0.2.2";
+var versionNumber = "0.3.0";
 $(document).ready(() => setTitle());
 
 // Set up index.nadea location
+var onDevelDomain = false;
 var isNadeaOnline = true;
 var indexNadeaURL = isNadeaOnline ? "http://nadea.compute.dtu.dk/index.nadea" : "";
-var readNadeaFileLocally = window.location.protocol !== "file:";
+var readNadeaFileLocally = !onDevelDomain && window.location.protocol !== "file:";
 var nadeaQuot = "''";
 
 var INITIAL_PROOF = "OK{.}[]";
@@ -35,8 +36,6 @@ var currentState: State;
 var stateStack: IbStack;
 
 var undefInductivesWithoutUnknowns: { parent: Inductive; self: Inductive; premiseIndex: number }[];
-
-//var examples: { proof: string; name: string }[] = [];
 
 $(document).ready(() => {
     /*
@@ -127,9 +126,9 @@ function update(hidden: boolean = false) {
 
     undefInductivesWithoutUnknowns.some((v, i) => {
         if (v.parent instanceof synExiE) {
-            if ((<synExiE> v.parent).waitingForPCompletion) {
-                (<synExiE> v.parent).waitingForPCompletion = false;
-                (<synExiE> v.parent).getNewsAndSub(getNewConstant(currentState.p));
+            if ((<synExiE>v.parent).waitingForPCompletion) {
+                (<synExiE>v.parent).waitingForPCompletion = false;
+                (<synExiE>v.parent).getNewsAndSub(getNewConstant(currentState.p));
 
                 pushIndices(undefInductivesWithoutUnknowns, i + 1, 1);
                 undefInductivesWithoutUnknowns[i + 1] = { parent: v.parent, self: v.self, premiseIndex: 1 };
@@ -141,10 +140,10 @@ function update(hidden: boolean = false) {
         return false;
     });
 
-    // Check if "Boole" rule can be applied to found premises
+    // Check if "Assume" rule can be applied to found premises
     undefInductivesWithoutUnknowns.forEach(v => {
         if (v.self.premises.length === 0)
-            if (v.self.trueByAssumption === undefined)
+            if (v.self.trueByAssumption !== true)
                 v.self.checkGoal();
     });
 
@@ -163,8 +162,8 @@ function updateHeader() {
     var disableStop: boolean = stateStackMark === stateStackSize;
 
     // Prepare iceberg info string
-    var ibInfo: string = numUnknowns + " &nbsp; ";
-    ibInfo += stateStackMark + "/" + stateStackSize;
+    var ibInfo: string = (numUnknowns > 99 ? "**" : numUnknowns) + " &nbsp; ";
+    ibInfo += (stateStackMark > 999 ? "***" : stateStackMark) + "/" + (stateStackSize > 999 ? "***" : stateStackSize);
 
     // Update header
     $("#header #rightbar .proofInfo").html(ibInfo);
@@ -361,7 +360,7 @@ function readNadeaTestData(rawFileText: string) {
             if (bypassCheck || isValidProofCode(currentProofCode))
                 proofCodes[id] = code;
             else
-                console.log("Invalid proof code (" + id + ") read from '.nadea' file.");
+                console.log("Invalid proof code (" + id + ") read from '.nadea' file:\n" + code);
         }
     };
 
@@ -527,10 +526,6 @@ var isabelleKeyWords: { keyword: string, description: string }[] = [
         keyword: "using",
         description: "Uses the given results to prove a result."
     },
-    /*{
-        keyword: "unfolding",
-        description: ""
-    },*/
     {
         keyword: "finally",
         description: "Uses the collected results in a transitive chain to prove a result."
@@ -555,14 +550,6 @@ var isabelleKeyWords: { keyword: string, description: string }[] = [
         keyword: "theorem",
         description: "States a theorem in the theory and is followed by a proof."
     },
-    /*{
-        keyword: "apply",
-        description: ""
-    },*/
-    /*{
-        keyword: "done",
-        description: ""
-    },*/
     {
         keyword: "end",
         description: "Marks the end of the current theory."
@@ -574,6 +561,10 @@ var isabelleKeyWords: { keyword: string, description: string }[] = [
     {
         keyword: "corollary",
         description: "States a corollary (similar to a theorem) in the theory and is followed by a proof."
+    },
+    {
+        keyword: "for",
+        description: "Defines a local parameter."
     }
 ];
 
@@ -875,15 +866,15 @@ function attachEventHandlersUnknowns() {
                         var newTmFuns: tmFun[] = [];
 
                         if (currentState.xs[removeIndex].x instanceof fmPre)
-                            (<fmPre> currentState.xs[removeIndex].x).tms.forEach(v => {
+                            (<fmPre>currentState.xs[removeIndex].x).tms.forEach(v => {
                                 if (v instanceof tmFun)
-                                    newTmFuns.push(<tmFun> v);
+                                    newTmFuns.push(<tmFun>v);
                             });
 
                         else if (currentState.xs[removeIndex].x instanceof tmFun)
-                            (<tmFun> currentState.xs[removeIndex].x).tms.forEach(v => {
+                            (<tmFun>currentState.xs[removeIndex].x).tms.forEach(v => {
                                 if (v instanceof tmFun)
-                                    newTmFuns.push(<tmFun> v);
+                                    newTmFuns.push(<tmFun>v);
                             });
 
                         currentState.xs.splice(removeIndex, 1);
@@ -1020,22 +1011,22 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
             var r: Unknown[] = [];
 
             if (x instanceof FormulaOneArg) {
-                r = getQuantifiedVarsAsUnknowns((<FormulaOneArg> x).fm, x);
+                r = getQuantifiedVarsAsUnknowns((<FormulaOneArg>x).fm, x);
             }
 
             else if (x instanceof FormulaTwoArg) {
-                r = getQuantifiedVarsAsUnknowns((<FormulaTwoArg> x).lhs, x)
-                    .concat(getQuantifiedVarsAsUnknowns((<FormulaTwoArg> x).rhs, x));
+                r = getQuantifiedVarsAsUnknowns((<FormulaTwoArg>x).lhs, x)
+                    .concat(getQuantifiedVarsAsUnknowns((<FormulaTwoArg>x).rhs, x));
             }
 
             else if (x instanceof fmPre) {
-                (<fmPre> x).tms.forEach((e, j) => {
+                (<fmPre>x).tms.forEach((e, j) => {
                     getQuantifiedVarsAsUnknowns(e, x, j).forEach(e => { r.push(e) });
                 });
             }
 
             else if (x instanceof tmFun) {
-                (<tmFun> x).tms.forEach((e, j) => {
+                (<tmFun>x).tms.forEach((e, j) => {
                     getQuantifiedVarsAsUnknowns(e, x, j).forEach(e => r.push(e));
                 });
             }
@@ -1046,7 +1037,7 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
             }
 
             else if (x instanceof Inductive) {
-                r = getQuantifiedVarsAsUnknowns((<Inductive> x).goal, x);
+                r = getQuantifiedVarsAsUnknowns((<Inductive>x).goal, x);
 
                 r.forEach(e => {
                     e.linkedTo = r.filter(k => k !== e);
@@ -1074,23 +1065,23 @@ function addUnknownsPremises(x: Inductive, insertIndex: number): void {
 function replaceUnknownsFormula(u: Unknown, fm: Formula, updateLinked: boolean = true): Unknown[] {
     // Replace previous unknown with new formula
     if (u.x instanceof FormulaOneArg) {
-        (<FormulaOneArg> u.x).fm = fm;
+        (<FormulaOneArg>u.x).fm = fm;
     }
 
     // Replacer either LHS or RHS of two argument formula
     else if (u.x instanceof FormulaTwoArg) {
         if (u.inFm == 1)
-            (<FormulaTwoArg> u.x).lhs = fm;
+            (<FormulaTwoArg>u.x).lhs = fm;
         else
-            (<FormulaTwoArg> u.x).rhs = fm;
+            (<FormulaTwoArg>u.x).rhs = fm;
     }
 
     // Set goal of new inductive
     else if (u.x instanceof Inductive) {
         if (u.inFm === 1)
-            (<Inductive> u.x).goal = fm;
+            (<Inductive>u.x).goal = fm;
         else if (u.inAssumption !== undefined)
-            (<Inductive> u.x).assumptions[u.inAssumption] = fm;
+            (<Inductive>u.x).assumptions[u.inAssumption] = fm;
 
     }
 
@@ -1116,12 +1107,12 @@ function replaceUnknownsID(u: Unknown, id: string, updateLinked: boolean = true)
 
     // Replace id of predicate
     if (u.x instanceof fmPre && u.inFm == 1) {
-        (<fmPre> u.x).id = id;
+        (<fmPre>u.x).id = id;
     }
 
     // Replace id of function term
     else if (u.x instanceof tmFun && u.inFm == 1) {
-        (<tmFun> u.x).id = id;
+        (<tmFun>u.x).id = id;
     }
 
     else {
@@ -1153,17 +1144,17 @@ function replaceUnknownsTm(u: Unknown, tmNats: number[], updateLinked: boolean =
         if (u.x instanceof fmPre) {
             if (u.inFm == 2)
                 // Entire list of terms is unknown. Initialize list.
-                (<fmPre> u.x).tms = [];
+                (<fmPre>u.x).tms = [];
 
-            unknownTms = (<fmPre> u.x).tms;
+            unknownTms = (<fmPre>u.x).tms;
         }
 
         else {
             if (u.inFm == 2)
                 // Entire list of terms is unknown. Initialize list.
-                (<tmFun> u.x).tms = [];
+                (<tmFun>u.x).tms = [];
 
-            unknownTms = (<tmFun> u.x).tms;
+            unknownTms = (<tmFun>u.x).tms;
         }
 
         tmNats.forEach(v => {
@@ -1208,7 +1199,7 @@ function replaceUnknownsTm(u: Unknown, tmNats: number[], updateLinked: boolean =
 
 function termHandlerUniE(e: JQueryEventObject, x: Inductive) {
     // New overlay that lets you choose existing term to quantify
-    newOverlay(e, "existingTerm", (ts: Term[]) => {
+    newOverlay(e, "existingTerm", (ts: { term: Term, occs?: number[] }[]) => {
         if (ts.length == 0)
             return;
 
@@ -1217,12 +1208,12 @@ function termHandlerUniE(e: JQueryEventObject, x: Inductive) {
 
         prepareCurrentStateUpdate();
 
-        (<synUniE> x).waitingForTermSelection = false;
+        (<synUniE>x).waitingForTermSelection = false;
 
         x.getPremises.apply(x, ts);
 
         update();
-    }, x.goal);
+    }, x);
 }
 
 //
@@ -1246,9 +1237,9 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
     var assumptionSyntaxLeft: string[] = [];
     var assumptionSyntaxRight: string[] = [];
 
-    x.assumptions.forEach(v=> {
-        assumptionSyntaxLeft.push(getInternalSyntaxHTML(v));
-        assumptionSyntaxRight.push(getFormalSyntax(v, 0, null));
+    x.assumptions.forEach(v => {
+        assumptionSyntaxLeft.push(getInternalSyntaxHTML(v, false, true));
+        assumptionSyntaxRight.push(getFormalSyntax(v, 0, null, [...x.assumptions, x.goal]));
     });
 
     htmlString += assumptionSyntaxLeft.join(", ");
@@ -1271,7 +1262,7 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
     htmlString += '<div class="assumptions"><div class="leftBracket">[</div>' + assumptionSyntaxRight.join('<div class="comma">,</div>') + '<div class="rightBracket">]</div></div>';
 
     // Goal
-    htmlString += '<div class="goal">' + getFormalSyntax(x.goal, 0, null) + '</div>';
+    htmlString += '<div class="goal">' + getFormalSyntax(x.goal, 0, null, [...x.assumptions, x.goal]) + '</div>';
     htmlString += '</div>';
 
     htmlString += '</div>';
@@ -1288,7 +1279,7 @@ function appendLines(x: Inductive, n: number, i: number = 1): number {
     });
 
     // Write "news" line
-    if (x.premises.length > 0 && (x instanceof synUniI || x instanceof synExiE && !(<synExiE> x).waitingForPCompletion)) {
+    if (x.premises.length > 0 && (x instanceof synUniI || x instanceof synExiE && !(<synExiE>x).waitingForPCompletion)) {
         writeNewsLine(x, n + 1, i);
         i++;
     }
@@ -1312,28 +1303,35 @@ function writeNewsLine(x: Inductive, n: number, i: number) {
     htmlString += "<div class='synGoal'><div class='news'>news</div>";
 
     if (x instanceof synUniI)
-        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synUniI> x).c) + '</div>';
+        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synUniI>x).c) + '</div>';
     else if (x instanceof synExiE)
-        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synExiE> x).c) + '</div>';
+        htmlString += '<div class="arg">' + getInternalSyntaxHTML((<synExiE>x).c) + '</div>';
 
-    var newsList: string[] = [];
+    htmlString += '<div class="arg leftParantheses">(</div>';
+
+    var newsList: string[][] = [];
 
     if (x instanceof synExiE)
-        newsList.push(getInternalSyntaxHTML((<fmExi> x.premises[0].goal).fm));
+        newsList.push([getInternalSyntaxHTML((<fmExi>x.premises[0].goal).fm)]);
 
     if (x instanceof synUniI || x instanceof synExiE) {
-        newsList.push(getInternalSyntaxHTML(x.goal));
+        newsList.push([getInternalSyntaxHTML(x.goal)]);
     }
-    
-    x.assumptions.forEach(v=> {
-        newsList.push(getInternalSyntaxHTML(v));
+
+    newsList.push([]);
+    x.assumptions.forEach(v => {
+        newsList[newsList.length - 1].push(getInternalSyntaxHTML(v));
     });
 
-    htmlString += '<div class="leftBracket">[</div>';
-    
-    htmlString += newsList.join('<div class="comma">,</div><wbr />');
-    
-    htmlString += '<div class="rightBracket">]</div>';
+    var htmlAppend: string[] = [];
+
+    newsList.forEach(v => {
+        htmlAppend.push("<div class='leftBracket'>[</div>" + v.join('<div class="comma">,</div><wbr />') + "<div class='rightBracket'>]</div>");
+    });
+
+    htmlString += htmlAppend.join("<div class='concat'>#</div>");
+
+    htmlString += '<div class="rightParantheses">)</div>';
     htmlString += '</div></div></div>';
 
     htmlString += '<div class="middle' + (!editModeOn ? ' shrink' : '') + '">news</div>';
@@ -1626,6 +1624,16 @@ function closeOverlays(...exceptions: JQuery[]) {
 function closeAllOverlays() {
     closeOverlays();
     $(".centeredOverlayOuter").remove();
+}
+
+function closeTopOverlay() {
+    var overlay = $(".overlay:last", $("body"));
+
+    if (overlay.parent(".centeredOverlayOuter").length > 0) {
+        overlay.parent(".centeredOverlayOuter").remove();
+    } else {
+        overlay.remove();
+    }
 }
 
 //
@@ -1925,11 +1933,11 @@ function addInnerNewTms(overlay: JQuery, callback: (x: number[]) => void): void 
             if (v === -1)
                 return true;
 
-            if (test[v] === true) {
+            /*if (test[v] === true) {
                 alert("Same variable selected multiple times");
                 interrupt = true;
                 return false;
-            }
+            }*/
 
             test[v] = true;
         });
@@ -1984,12 +1992,12 @@ function addInnerNewSingleTm(overlay: JQuery, callback: (x: number[]) => void): 
 }
 
 
-function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: Formula): void {
+function selectExistingTerm(overlay: JQuery, callback: (x: { term: Term, occs?: number[] }[]) => void, p: Inductive): void {
     var r = $("<div></div>");
     overlay.append(r);
 
     r.append("<div>Formula:</div>");
-    r.append('<div class="formula">' + getFormalSyntax(p, 0, null) + '</div><br />');
+    r.append('<div class="formula">' + getFormalSyntax(p.goal, 0, null, [...p.assumptions, p.goal]) + '</div><br />');
 
     r.append("<div>Existing term in formula to quantify:</div>");
 
@@ -1999,34 +2007,42 @@ function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: F
     var selectVars = $('<optgroup label="Variables"></optgroup>');
     var selectFns = $('<optgroup label="Functions"></optgroup>');
 
-    select.append(selectVars);
-    select.append(selectFns);
-
     // Link terms occuring multiple times
     var ts: { t: Term; linkedTo: Term[] }[] = [];
 
-    getTerms(p).forEach(e => {
+    getFreeTerms(p.goal).forEach(e => {
         var x: { t: Term; linkedTo: Term[] };
 
+        var newTerm: Term = e.t;
+
+        for (var i = 0; i < e.nq; i++) {
+            newTerm = dect(newTerm);
+        }
+
         ts.some(d => {
-            if (equalFormulas(d.t, e)) {
+            if (equalFormulas(newTerm, d.t)) {
                 x = d;
                 return true;
             }
         });
 
         if (x === undefined) {
-            ts.push({ t: e, linkedTo: [] });
+            ts.push({ t: newTerm, linkedTo: [] });
         } else {
-            x.linkedTo.push(e);
+            x.linkedTo.push(newTerm);
         }
     });
 
     // Add each term to list of functions or list of variables (term types)
     ts.forEach((e, i) => {
         (e.t instanceof tmVar ? selectVars : selectFns)
-            .append("<option value='" + i + "'>" + getFormalSyntax(e.t, 0, null) + "</option>");
+            .append("<option value='" + i + "'>" + getFormalSyntax(e.t, 0, null, [...p.assumptions, p.goal]) + "</option>");
     });
+
+    if (selectVars.children("option").length > 0)
+        select.append(selectVars);
+    if (selectFns.children("option").length > 0)
+        select.append(selectFns);
 
     // Append select to overlay
     select.appendTo(terms);
@@ -2061,23 +2077,27 @@ function selectExistingTerm(overlay: JQuery, callback: (x: Term[]) => void, p: F
         // Get chosen occurences, if needed
         var i: number = select.val();
 
-        var cbTs: Term[] = [];
+        var cbt: { term: Term, occs: number[] }[] = [];
 
         if (ts[i].linkedTo.length == 0)
-            cbTs.push(ts[i].t);
+            cbt.push({ term: ts[i].t, occs: [0] });
 
         else {
+            var termOccs = { term: ts[i].t, occs: [] };
+
             $(":checkbox", r).each((j, e) => {
                 if ($(e).prop("checked"))
-                    cbTs.push(j == 0 ? ts[i].t : ts[i].linkedTo[j - 1]);
+                    termOccs.occs.push(j);
             });
+
+            cbt.push(termOccs);
         }
 
         // Simple error check: Make sure that term list is not empty
-        if (cbTs.length == 0)
+        if (cbt.length == 0)
             alert("You have not selected any occurences of the term to quantify");
         else {
-            callback(cbTs);
+            callback(cbt);
             closeOverlays();
         }
     });
@@ -2146,7 +2166,7 @@ function loadInner(overlay: JQuery, callback: (x: Inductive[]) => void): void {
     });
 
     update.click(e => {
-        var proofString = (<string> textarea.val()).trim();
+        var proofString = (<string>textarea.val()).trim();
 
         if (proofString == "")
             proofString = INITIAL_PROOF;
@@ -2251,7 +2271,7 @@ function codeInner(overlay: JQuery, callback: () => void): void {
         var ndContentStr = "";
         ndContentStr += '<table cellpadding="0" cellspacing="0" border="0" class="ndRule">';
         ndContentStr += '<tr class="premises">';
-        premises.forEach(v=> {
+        premises.forEach(v => {
             ndContentStr += '<td>' + paranthesesBracketReplace(v) + '</td>';
         });
         ndContentStr += '<td>&nbsp;</td>';
@@ -2296,7 +2316,7 @@ function codeInner(overlay: JQuery, callback: () => void): void {
         '</div>' +
         '<div class="clear"></div>' +
         '</div>' +
-        '<div class="textline">==> is meta-implication (used in inductive definitions and in theorems) and !! is (universal) meta-quantification for locally bound meta-variables (used in the induction hypotheses).</div>' +
+        '<div class="textline">==> is meta-implication (used in inductive definitions and in theorems).</div>' +
         '</div>' +
         '</div>');
     var sampleContentKeywordTableA = $(".table:eq(0)", sampleContent);
@@ -2314,7 +2334,7 @@ function codeInner(overlay: JQuery, callback: () => void): void {
             '<div class="tableCell"><strong>' + obj.keyword + '</strong></div>' +
             '<div class="tableCell">' + obj.description + '</div>' +
             '</div>');
-    });      
+    });
 
     /* Summary of rules */
     var sorContent = $('<div></div>');
@@ -2470,7 +2490,7 @@ function setupExerciseAndHintData() {
 var exsContent: JQuery;
 var hintContent: JQuery[];
 
-function updateExerciseAndHintContent() {    
+function updateExerciseAndHintContent() {
     // Exercise table
     var exerciseTableRows = "";
 
@@ -2482,7 +2502,7 @@ function updateExerciseAndHintContent() {
         } else if (testHintData[i].testGoal === null) {
             exerciseTableRows += '<div class="tableCell alignRight"><span class="formalUnknown">¤</span></div>';
         } else {
-            exerciseTableRows += '<div class="tableCell alignRight formal">' + getFormalSyntax(testHintData[i].testGoal, 0, null) + '</div>';
+            exerciseTableRows += '<div class="tableCell alignRight formal">' + getFormalSyntax(testHintData[i].testGoal, 0, null, [testHintData[i].testGoal]) + '</div>';
         }
 
         exerciseTableRows += '<div class="tableCell">' + i + '</div>';
@@ -2492,7 +2512,7 @@ function updateExerciseAndHintContent() {
         } else if (testHintData[i].hintGoal === null) {
             exerciseTableRows += '<div class="tableCell"><span class="formalUnknown">¤</span></div>';
         } else {
-            exerciseTableRows += '<div class="tableCell formal">' + getFormalSyntax(testHintData[i].hintGoal, 0, null) + '</div>';
+            exerciseTableRows += '<div class="tableCell formal">' + getFormalSyntax(testHintData[i].hintGoal, 0, null, [testHintData[i].hintGoal]) + '</div>';
         }
 
         exerciseTableRows += '</div>';
@@ -2547,7 +2567,7 @@ function updateExerciseAndHintContent() {
         } else {
             hs += '<div class="formal textline extraSpace">It is recommended that another browser tab is used to examine following test example (use the load window).</div>';
             hs += '<div class="formal textline lessSpace"><strong>Test ' + i + '</strong>: ';
-            hs += (testHintData[i].testGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].testGoal, 0, null);
+            hs += (testHintData[i].testGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].testGoal, 0, null, [testHintData[i].testGoal]);
             hs += '</div>';
 
             testHintData[i].testComments.forEach((l, j) => {
@@ -2556,7 +2576,7 @@ function updateExerciseAndHintContent() {
 
             hs += '<div class="formal textline extraSpace">It is recommended that another browser tab is used to solve following exercise (click on the stars to get the next hint part).</div>';
             hs += '<div class="formal textline lessSpace floatLeft"><strong>Hint ' + i + '</strong>: ';
-            hs += (testHintData[i].hintGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].hintGoal, 0, null);
+            hs += (testHintData[i].hintGoal === undefined) ? "-" : getFormalSyntax(testHintData[i].hintGoal, 0, null, [testHintData[i].hintGoal]);
             hs += '</div>';
 
             hs += '<div class="floatRight hintStarContainer" id="hintStarContainer' + i + '"></div>';
@@ -2619,7 +2639,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
 
     buttonsContainer.append(buttonsTable);
     buttonsTable.append(buttonsRow);
-    
+
     // Buttons
     var cancel = $('<div class="button small">Cancel help</div>');
     var welcomeButton = $('<div class="button small">Welcome</div>');
@@ -2705,7 +2725,7 @@ function helpInner(overlay: JQuery, callback: () => void): void {
         '</div>');
 
     /* Content: About NaDeA */
-    var aboutContent = $('<div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
+    var aboutContent = $('<div><div class="textline extraSpace"><strong>Supported by a DTU E-learning Grant and DTU Compute\'s Strategic Foundation</strong></div><div class="codeBlock"><div class="textline"><strong>Copyright Notice and Disclaimer</strong></div><div class="codeBlock">Copyright &copy; 2015-2016 Jørgen Villadsen, Alexander Birch Jensen &amp; Anders Schlichtkrull<br /><br />Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br /><br />The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br /><br />THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</div></div></div>');
 
     // Hide tabs default
     helpContent.children().hide();
@@ -3077,6 +3097,8 @@ class Inductive implements InductiveInterface {
     }
 
     checkGoal(): void {
+        this.trueByAssumption = false;
+
         if (formulaContainsUnknowns(this.goal) || this.assumptions.some(v => { return formulaContainsUnknowns(v) }))
             return;
 
@@ -3260,8 +3282,8 @@ class synImpI extends Inductive implements InductiveInterface {
     }
 
     getPremisesAux(input: Formula[]) {
-        var p: Formula = copyFormula((<fmImp> this.goal).lhs);
-        var q: Formula = copyFormula((<fmImp> this.goal).rhs);
+        var p: Formula = copyFormula((<fmImp>this.goal).lhs);
+        var q: Formula = copyFormula((<fmImp>this.goal).rhs);
 
         var assumptions: Formula[] = copyAssumptions(this).as;
         assumptions.unshift(p);
@@ -3371,7 +3393,7 @@ class synDisI1 extends Inductive implements InductiveInterface {
     }
 
     getPremisesAux(input: Formula[]) {
-        var p: Formula = (<fmCon> this.goal).lhs;
+        var p: Formula = (<fmCon>this.goal).lhs;
         var inductive: Inductive = new Inductive(p, copyAssumptions(this).as);
         this.premises.push(inductive);
     }
@@ -3414,7 +3436,7 @@ class synDisI2 extends Inductive implements InductiveInterface {
     }
 
     getPremisesAux(input: Formula[]) {
-        var q: Formula = (<fmCon >this.goal).rhs;
+        var q: Formula = (<fmCon>this.goal).rhs;
         var inductive: Inductive = new Inductive(q, copyAssumptions(this).as);
         this.premises.push(inductive);
     }
@@ -3551,8 +3573,8 @@ class synConI extends Inductive implements InductiveInterface {
     }
 
     getPremisesAux(input: Formula[]) {
-        var p: Formula = (<fmCon> this.goal).lhs;
-        var q: Formula = (<fmCon> this.goal).rhs;
+        var p: Formula = (<fmCon>this.goal).lhs;
+        var q: Formula = (<fmCon>this.goal).rhs;
 
         this.premises.push(new Inductive(p, copyAssumptions(this).as));
         this.premises.push(new Inductive(q, copyAssumptions(this).as));
@@ -3626,7 +3648,7 @@ class synExiE extends Inductive implements InductiveInterface {
         if (this.premises[0] === undefined || !(this.premises[0].goal instanceof fmExi))
             throw new Error("Could not find formula p");
 
-        var p: Formula = (<fmExi> this.premises[0].goal).fm;
+        var p: Formula = (<fmExi>this.premises[0].goal).fm;
 
         var newsFmList: Formula[] = copyAssumptions(this).as;
         newsFmList.push(copyFormula(p), copyFormula(this.goal));
@@ -3685,7 +3707,7 @@ class synExiI extends Inductive implements InductiveInterface {
 
         var t: Term = input[0];
 
-        var p: Formula = (<fmExi> this.goal).fm;
+        var p: Formula = (<fmExi>this.goal).fm;
         var indFm: Formula = sub(0, t, copyFormula(p));
 
         this.premises.push(new Inductive(indFm, copyAssumptions(this).as));
@@ -3726,129 +3748,147 @@ class synUniE extends Inductive implements InductiveInterface {
     }
 
     static isApplicable(goal) {
-        return containsTerms(goal);
+        return getFreeTerms(goal).length > 0;
     }
 
-    getPremisesAux(input: Term[]) {
-        if (input.length < 1) {
+    static subReverse(replacement: number, searchFor: { term: Term, occs: number[] }, replaceIn: Formula, occurenceCount): { f: Formula, n: number } {
+
+        if (replaceIn instanceof fmPre) {
+            var termList: Term[] = [];
+
+            var n = occurenceCount;
+
+            replaceIn.tms.forEach(t => {
+                var result = this.subReverseT(replacement, searchFor, t, n);
+
+                termList.push(result.t);
+
+                n = result.n;
+            });
+
+            return {
+                f: new fmPre(replaceIn.id, termList),
+                n: n
+            };
+        }
+
+        else if (replaceIn instanceof fmExi) {
+            var result = this.subReverse(replacement + 1, {
+                term: inct(searchFor.term),
+                occs: searchFor.occs
+            }, replaceIn.fm, occurenceCount);
+
+            return {
+                f: new fmExi(result.f),
+                n: result.n
+            };
+        }
+
+        else if (replaceIn instanceof fmUni) {
+            var result = this.subReverse(replacement + 1, {
+                term: inct(searchFor.term),
+                occs: searchFor.occs
+            }, replaceIn.fm, occurenceCount);
+
+            return {
+                f: new fmUni(result.f),
+                n: result.n
+            };
+        }
+
+        else if (replaceIn instanceof fmFalsity) {
+            return {
+                f: new fmFalsity(),
+                n: occurenceCount
+            };
+        }
+
+        else if (replaceIn instanceof FormulaTwoArg) {
+            var lhsResult = this.subReverse(replacement, searchFor, replaceIn.lhs, occurenceCount);
+            var rhsResult = this.subReverse(replacement, searchFor, replaceIn.rhs, lhsResult.n);
+
+            if (replaceIn instanceof fmCon) {
+                return {
+                    f: new fmCon(lhsResult.f, rhsResult.f),
+                    n: rhsResult.n
+                };
+            }
+
+            else if (replaceIn instanceof fmDis) {
+                return {
+                    f: new fmDis(lhsResult.f, rhsResult.f),
+                    n: rhsResult.n
+                };
+            }
+
+            else if (replaceIn instanceof fmImp) {
+                return {
+                    f: new fmImp(lhsResult.f, rhsResult.f),
+                    n: rhsResult.n
+                };
+            }
+        }
+    }
+
+    static subReverseT(replacement: number, searchFor: { term: Term, occs: number[] }, replaceIn: Term, occurenceCount): { t: Term, n: number } {
+
+        if (replaceIn instanceof tmFun) {
+            var found: boolean = equalFormulas(replaceIn, searchFor.term);
+
+            if (found) {
+
+                return {
+                    t: searchFor.occs.some(m => m == occurenceCount) ? new tmVar(replacement) : replaceIn,
+                    n: occurenceCount + 1
+                };
+
+            } else {
+
+                var termList: Term[] = [];
+
+                var n = occurenceCount;
+
+                replaceIn.tms.forEach(t => {
+                    var result = this.subReverseT(replacement, searchFor, t, n);
+
+                    termList.push(result.t);
+
+                    n = result.n;
+                });
+
+                return {
+                    t: new tmFun(replaceIn.id, termList),
+                    n: n
+                };
+            }
+        }
+
+        else if (replaceIn instanceof tmVar) {
+            var found: boolean = equalFormulas(replaceIn, searchFor.term);
+
+            var newTerm = found && searchFor.occs.some(m => m == occurenceCount) ? new tmVar(replacement) : new tmVar(replacement > replaceIn.nat ? replaceIn.nat : replaceIn.nat + 1);
+
+            var newOccurenceCount = found ? occurenceCount + 1 : occurenceCount;
+
+            return {
+                t: newTerm,
+                n: newOccurenceCount
+            };
+        }
+    }
+
+    getPremisesAux(input: { term: Term, occs: number[] }[]) {
+        if (input.length !== 1) {
             console.log(input);
-            throw new Error("Expecting non-empty term list");
+            throw new Error("Expecting one term to replace");
         }
 
-        // Replace occurences of terms from input in p with "Var 0"
-        // Build new formula as we traverse the formula tree
-        // - The procedure is unique to this rule, and is therefore defined inline
-        var fm: Formula = new fmUni(null);
+        var termOcc = input[0];
 
-        var stack: { x: any; y: any; k?: number }[] = [];
-        stack.push({ x: this.goal, y: fm });
-
-        while (stack.length > 0) {
-            var e = stack.shift();
-
-            var add;
-
-            /* Determine which formula to add to y */
-            if (e.x instanceof fmFalsity)
-                add = new fmFalsity();
-
-            else if (e.x instanceof fmCon) {
-                add = new fmCon(null, null);
-
-                /* Push LHS and RHS to stack */
-                stack.push({ x: (<fmCon> e.x).lhs, y: add, k: 1 });
-                stack.push({ x: (<fmCon> e.x).rhs, y: add, k: 2 });
-            }
-
-            else if (e.x instanceof fmDis) {
-                add = new fmDis(null, null);
-
-                /* Push LHS and RHS to stack */
-                stack.push({ x: (<fmDis> e.x).lhs, y: add, k: 1 });
-                stack.push({ x: (<fmDis> e.x).rhs, y: add, k: 2 });
-            }
-
-            else if (e.x instanceof fmImp) {
-                add = new fmImp(null, null);
-
-                /* Push LHS and RHS to stack */
-                stack.push({ x: (<fmImp> e.x).lhs, y: add, k: 1 });
-                stack.push({ x: (<fmImp> e.x).rhs, y: add, k: 2 });
-            }
-
-            else if (e.x instanceof fmExi) {
-                add = new fmExi(null);
-
-                /* Push p in fmExi(p) to stack */
-                stack.push({ x: (<fmExi> e.x).fm, y: add });
-            }
-
-            else if (e.x instanceof fmUni) {
-                add = new fmUni(null);
-
-                /* Push p in fmUni(p) to stack */
-                stack.push({ x: (<fmUni> e.x).fm, y: add });
-            }
-
-            else if (e.x instanceof fmPre) {
-                add = new fmPre((<fmPre> e.x).id, []);
-
-                /* Push replace terms in term list stack */
-                (<fmPre> e.x).tms.forEach((t, i) => this.replaceTerm<fmPre>(t, i, input, add, stack));
-            }
-
-            else if (e.x instanceof tmFun) {
-                add = e.y;
-
-                /* Push replace terms in term list stack */
-                (<tmFun> e.x).tms.forEach((t, i) => this.replaceTerm<tmFun>(t, i, input, add, stack));
-            }
-
-            // Replace correct field based on type of y
-            if (e.y instanceof FormulaOneArg)
-                (<FormulaOneArg> e.y).fm = add;
-
-            else if (e.y instanceof FormulaTwoArg) {
-                // Replace either LHS or RHS
-                if (e.k == 1)
-                    (<FormulaTwoArg> e.y).lhs = add;
-                else
-                    (<FormulaTwoArg> e.y).rhs = add;
-            }
-
-            else {
-                // Do nothing
-            }
-        }
+        var fm: Formula = new fmUni(synUniE.subReverse(0, termOcc, this.goal, 0).f);
 
         // Create and push premise
         this.premises.push(new Inductive(fm, copyAssumptions(this).as));
-    }
-
-    replaceTerm<T extends { id: string; tms: Term[] }>(v: Term, i: number, input: Term[], add: T, stack: { x: any; y: any; k?: number }[]) {
-        var replaced = input.some(w => {
-            if (v === w) {
-                add.tms[i] = new tmVar(0);
-                return true;
-            }
-        });
-
-        // Not replaced by Var 0 - add existing term to list
-        // If term is a function, add it to stack
-        if (!replaced) {
-            var ins;
-
-            if (v instanceof tmVar)
-                ins = new tmVar((<tmVar> v).nat + 1);
-
-            else if (v instanceof tmFun) {
-                ins = new tmFun((<tmFun> v).id, []);
-
-                stack.push({ x: v, y: ins });
-            }
-
-            add.tms[i] = ins;
-        }
     }
 
     getInternalName(): string {
@@ -3900,7 +3940,7 @@ class synUniI extends Inductive implements InductiveInterface {
         var c: string = input[0];
         this.c = new tmFun(c, []);
 
-        var p: Formula = (<fmUni> this.goal).fm;
+        var p: Formula = (<fmUni>this.goal).fm;
 
         var newsFmList: Formula[] = copyAssumptions(this).as;
         newsFmList.push(copyFormula(p), copyFormula(this.goal));
@@ -3942,35 +3982,35 @@ function sub(n: number, s: Term, fm: Formula): Formula {
     }
 
     else if (fm instanceof fmPre) {
-        var i = (<fmPre> fm).id;
-        var tms = subl(n, s, (<fmPre> fm).tms);
+        var i = (<fmPre>fm).id;
+        var tms = subl(n, s, (<fmPre>fm).tms);
         return new fmPre(i, tms);
     }
 
     else if (fm instanceof fmImp) {
-        var lhs = sub(n, s, (<fmImp> fm).lhs);
-        var rhs = sub(n, s, (<fmImp> fm).rhs);
+        var lhs = sub(n, s, (<fmImp>fm).lhs);
+        var rhs = sub(n, s, (<fmImp>fm).rhs);
         return new fmImp(lhs, rhs);
     }
 
     else if (fm instanceof fmDis) {
-        var lhs = sub(n, s, (<fmDis> fm).lhs);
-        var rhs = sub(n, s, (<fmDis> fm).rhs);
+        var lhs = sub(n, s, (<fmDis>fm).lhs);
+        var rhs = sub(n, s, (<fmDis>fm).rhs);
         return new fmDis(lhs, rhs);
     }
 
     else if (fm instanceof fmCon) {
-        var lhs = sub(n, s, (<fmCon> fm).lhs);
-        var rhs = sub(n, s, (<fmCon> fm).rhs);
+        var lhs = sub(n, s, (<fmCon>fm).lhs);
+        var rhs = sub(n, s, (<fmCon>fm).rhs);
         return new fmCon(lhs, rhs);
     }
 
     else if (fm instanceof fmExi) {
-        return new fmExi(sub(n + 1, inct(s), (<fmExi> fm).fm));
+        return new fmExi(sub(n + 1, inct(s), (<fmExi>fm).fm));
     }
 
     else if (fm instanceof fmUni) {
-        return new fmUni(sub(n + 1, inct(s), (<fmUni> fm).fm));
+        return new fmUni(sub(n + 1, inct(s), (<fmUni>fm).fm));
     }
 
     else {
@@ -3982,9 +4022,9 @@ function subl(n: number, s: Term, ts: Term[]): Term[] {
     if (ts.length == 0)
         return [];
     else {
-        var t = ts.shift();
+        var t = ts[0];
 
-        return [subt(n, s, t)].concat(subl(n, s, ts));
+        return [subt(n, s, t)].concat(subl(n, s, ts.slice(1)));
 
     }
 }
@@ -3992,7 +4032,7 @@ function subl(n: number, s: Term, ts: Term[]): Term[] {
 function subt(n: number, s: Term, t: Term): Term {
 
     if (t instanceof tmVar) {
-        var tv = <tmVar> t;
+        var tv = <tmVar>t;
 
         if (tv.nat == n)
             return s;
@@ -4003,7 +4043,7 @@ function subt(n: number, s: Term, t: Term): Term {
     }
 
     else if (t instanceof tmFun) {
-        return new tmFun((<tmFun> t).id, subl(n, s, (<tmFun> t).tms));
+        return new tmFun((<tmFun>t).id, subl(n, s, (<tmFun>t).tms));
     }
 
     else {
@@ -4019,10 +4059,10 @@ function news(c: string, fmList: Formula[]): boolean {
     if (fmList.length == 0)
         return true;
     else {
-        var p = fmList.shift();
+        var p = fmList[0]
 
         if (new1(c, p))
-            return news(c, fmList);
+            return news(c, fmList.slice(1));
         else
             return false;
     }
@@ -4033,13 +4073,13 @@ function new1(c: string, fm: Formula): boolean {
         return true;
 
     else if (fm instanceof fmPre) {
-        var l = (<fmPre> fm).tms;
+        var l = (<fmPre>fm).tms;
         return newl(c, l);
     }
 
     else if (fm instanceof fmImp) {
-        var p = (<fmImp> fm).lhs;
-        var q = (<fmImp> fm).rhs;
+        var p = (<fmImp>fm).lhs;
+        var q = (<fmImp>fm).rhs;
 
         if (new1(c, p))
             return new1(c, q);
@@ -4048,8 +4088,8 @@ function new1(c: string, fm: Formula): boolean {
     }
 
     else if (fm instanceof fmDis) {
-        var p = (<fmDis> fm).lhs;
-        var q = (<fmDis> fm).rhs;
+        var p = (<fmDis>fm).lhs;
+        var q = (<fmDis>fm).rhs;
 
         if (new1(c, p))
             return new1(c, q);
@@ -4059,8 +4099,8 @@ function new1(c: string, fm: Formula): boolean {
     }
 
     else if (fm instanceof fmCon) {
-        var p = (<fmCon> fm).lhs;
-        var q = (<fmCon> fm).rhs;
+        var p = (<fmCon>fm).lhs;
+        var q = (<fmCon>fm).rhs;
 
         if (new1(c, p))
             return new1(c, q);
@@ -4070,10 +4110,10 @@ function new1(c: string, fm: Formula): boolean {
     }
 
     else if (fm instanceof fmExi)
-        return new1(c, (<fmExi> fm).fm);
+        return new1(c, (<fmExi>fm).fm);
 
     else if (fm instanceof fmUni)
-        return new1(c, (<fmUni> fm).fm);
+        return new1(c, (<fmUni>fm).fm);
 
     else
         throw new Error("Unrecognized formula type");
@@ -4083,10 +4123,10 @@ function newl(c: string, ts: Term[]): boolean {
     if (ts.length == 0)
         return true;
     else {
-        var t = ts.shift();
+        var t = ts[0];
 
         if (newt(c, t))
-            return newl(c, ts);
+            return newl(c, ts.slice(1));
         else
             return false;
     }
@@ -4097,8 +4137,8 @@ function newt(c: string, t: Term): boolean {
         return true;
 
     else if (t instanceof tmFun) {
-        var i = (<tmFun> t).id;
-        var l = (<tmFun> t).tms;
+        var i = (<tmFun>t).id;
+        var l = (<tmFun>t).tms;
 
         if (i === c)
             return false;
@@ -4117,23 +4157,364 @@ function newt(c: string, t: Term): boolean {
 
 function inct(t: Term): Term {
     if (t instanceof tmVar)
-        return new tmVar((<tmVar> t).nat + 1);
+        return new tmVar((<tmVar>t).nat + 1);
     else if (t instanceof tmFun)
-        return new tmFun((<tmFun> t).id, incl((<tmFun> t).tms));
+        return new tmFun((<tmFun>t).id, incl((<tmFun>t).tms));
     else if (t === null)
         return null;
 }
 
 function incl(ts: Term[]): Term[] {
+    if (ts === null)
+        return null;
     if (ts.length == 0)
         return [];
     else {
-        var t = ts.shift();
+        var t = ts[0];
 
-        return [inct(t)].concat(incl(ts));
+        return [inct(t)].concat(incl(ts.slice(1)));
     }
 }
 
+
+function dect(t: Term): Term {
+    if (t instanceof tmVar)
+        return new tmVar((<tmVar>t).nat - 1);
+    else if (t instanceof tmFun)
+        return new tmFun((<tmFun>t).id, decl((<tmFun>t).tms));
+    else if (t === null)
+        return null;
+}
+
+function decl(ts: Term[]): Term[] {
+    if (ts === null)
+        return null;
+    if (ts.length == 0)
+        return [];
+    else {
+        var t = ts[0];
+
+        return [dect(t)].concat(decl(ts.slice(1)));
+    }
+}
+
+//
+// Determines validity of proof
+//
+function isValidProof(x: Inductive): boolean {
+    try {
+        return validateProof(x) && x.premises.every(v => isValidProof(v));
+    } catch (e) {
+        console.log(x);
+        return false;
+    }
+}
+
+function validateProof(x: Inductive): boolean {
+    function subCheck(fm1: Formula, fm2: Formula): boolean {
+        var terms = subCheckF(fm1, fm2, 0);
+
+        if (terms.length === 0)
+            return false;
+
+        if (!terms.every((v, i) => terms.slice(i).every(w => equalFormulas(v, w))))
+            return false;
+
+        return true;
+    };
+
+    function subCheckT(tm1: Term, tm2: Term, n: number) {
+        if (tm1 instanceof tmVar) {
+            if (tm1.nat === n)
+                return [tm2];
+            else
+                return [];
+        }
+
+        else if (tm1 instanceof tmFun && tm2 instanceof tmFun) {
+            return [];
+        }
+
+        else {
+            console.log(tm1, tm2, n);
+            throw new Error("Unexpected type of inputs");
+        }
+    };
+
+    function subCheckF(fm1: Formula, fm2: Formula, n: number): Term[] {
+        if (fm1 instanceof fmPre && fm2 instanceof fmPre) {
+            if (fm1.tms === null || fm2.tms === null)
+                return [];
+
+            else {
+                var r: Term[] = [];
+                fm1.tms.forEach((v, i) => r = r.concat(subCheckT(v, fm2.tms[i], n)));
+                return r;
+            }
+        }
+
+        else if (fm1 instanceof fmUni && fm2 instanceof fmUni || fm1 instanceof fmExi && fm2 instanceof fmExi)
+            return subCheckF(fm1.fm, fm2.fm, n + 1);
+
+        else if (fm1 instanceof fmCon && fm2 instanceof fmCon || fm1 instanceof fmDis && fm2 instanceof fmDis || fm1 instanceof fmImp && fm2 instanceof fmImp)
+            return subCheckF(fm1.lhs, fm2.lhs, n).concat(subCheckF(fm1.rhs, fm2.rhs, n));
+
+        else {
+            console.log(fm1, fm2, n);
+            throw new Error("Unexpected type of inputs");
+        }
+    }
+
+    if (x instanceof synBool) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        var p = x.goal;
+
+        if (!equalFormulas(x.premises[0].goal, new fmFalsity()))
+            throw new Error("Unmatching formulas");
+
+        if (x.premises[0].assumptions.length == 0)
+            throw new Error("Expected at least assumption in premise");
+
+        if (!equalFormulas(x.premises[0].assumptions[0], new fmImp(p, new fmFalsity)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.premises[0].assumptions.slice(1), x.assumptions))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synImpE) {
+        if (x.premises.length != 2)
+            throw new Error("Unexpected premise length");
+
+        var q = x.goal;
+        var p = x.premises[1].goal;
+
+        if (!(equalFormulas(x.assumptions, x.premises[0].assumptions) && equalFormulas(x.assumptions, x.premises[1].assumptions)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.premises[0].goal, new fmImp(p, q)))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synImpI) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (x.premises[0].assumptions.length == 0)
+            throw new Error("Expected at least assumption in premise");
+
+        var q = x.premises[0].goal;
+        var p = x.premises[0].assumptions[0];
+
+        if (!equalFormulas(x.goal, new fmImp(p, q)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions.slice(1)))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synDisE) {
+        if (x.premises.length != 3)
+            throw new Error("Unexpected premise length");
+
+        var r = x.goal;
+        var p = x.premises[1].assumptions[0];
+        var q = x.premises[2].assumptions[0];
+
+        if (!equalFormulas(x.premises[0].goal, new fmDis(p, q)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.premises[1].goal, r))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.premises[2].goal, r))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[1].assumptions.slice(1)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[2].assumptions.slice(1)))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synDisI1) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.goal instanceof fmDis))
+            throw new Error("Unexpected type of conclusion goal");
+
+        var p = (<fmDis>x.goal).lhs
+        var q = (<fmDis>x.goal).rhs
+
+        if (!equalFormulas(p, x.premises[0].goal))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synDisI2) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.goal instanceof fmDis))
+            throw new Error("Unexpected type of conclusion goal");
+
+        var p = (<fmDis>x.goal).lhs
+        var q = (<fmDis>x.goal).rhs
+
+        if (!equalFormulas(q, x.premises[0].goal))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synConE1) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.premises[0].goal instanceof fmCon))
+            throw new Error("Unexpected type of premise goal");
+
+        var p = (<fmCon>x.premises[0].goal).lhs
+        var q = (<fmCon>x.premises[0].goal).rhs
+
+        if (!equalFormulas(p, x.goal))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synConE2) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.premises[0].goal instanceof fmCon))
+            throw new Error("Unexpected type of premise goal");
+
+        var p = (<fmCon>x.premises[0].goal).lhs
+        var q = (<fmCon>x.premises[0].goal).rhs
+
+        if (!equalFormulas(q, x.goal))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+    } else if (x instanceof synConI) {
+        if (x.premises.length != 2)
+            throw new Error("Unexpected premise length");
+
+        var p = x.premises[0].goal;
+        var q = x.premises[1].goal;
+
+        if (!equalFormulas(x.goal, new fmCon(p, q)))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.assumptions, x.premises[1].assumptions))
+            throw new Error("Unmatching formulas");
+
+
+    } else if (x instanceof synExiE) {
+        if (!(x.premises[0].goal instanceof fmExi))
+            throw new Error("Unexpected type of premise goal");
+
+        var p = (<fmExi>x.premises[0].goal).fm;
+
+        if (x.waitingForPCompletion) {
+            if (x.premises.length != 1)
+                throw new Error("Unexpected premise length");
+        } else {
+            if (x.premises.length != 2)
+                throw new Error("Unexpected premise length");
+
+            if (x.premises[1].assumptions.length == 0)
+                throw new Error("Expected at least one assumption in premise");
+
+            var q = x.goal
+
+            if (!equalFormulas(q, x.premises[1].goal))
+                throw new Error("Unmatching formulas");
+
+            if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+                throw new Error("Unmatching formulas");
+
+            if (!equalFormulas(x.assumptions, x.premises[1].assumptions.slice(1)))
+                throw new Error("Unmatching formulas");
+
+            if (!equalFormulas(sub(0, x.c, p), x.premises[1].assumptions[0]))
+                throw new Error("Invalid substitution");
+
+            if (!(x.cIsNew && news((<tmFun>x.c).id, [p, q].concat(x.assumptions))))
+                throw new Error("Term is not new.");
+        }
+
+    } else if (x instanceof synExiI) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.goal instanceof fmExi))
+            throw new Error("Unexpected type of conclusion goal");
+
+        var p = (<fmExi>x.goal).fm;
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+        if (!subCheck(p, x.premises[0].goal))
+            throw new Error("Invalid substitution");
+
+    } else if (x instanceof synUniE) {
+        if (x.waitingForTermSelection) {
+            if (x.premises.length != 0)
+                throw new Error("Unexpected premise length");
+        } else {
+            if (x.premises.length != 1)
+                throw new Error("Unexpected premise length");
+
+            var p = (<fmUni>x.premises[0].goal).fm;
+
+            if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+                throw new Error("Unmatching formulas");
+
+            if (!subCheck(p, x.goal))
+                throw new Error("Invalid substitution");
+        }
+
+    } else if (x instanceof synUniI) {
+        if (x.premises.length != 1)
+            throw new Error("Unexpected premise length");
+
+        if (!(x.goal instanceof fmUni))
+            throw new Error("Unexpected type of conclusion goal");
+
+        var p = (<fmUni>x.goal).fm;
+
+        if (!equalFormulas(x.assumptions, x.premises[0].assumptions))
+            throw new Error("Unmatching formulas");
+
+        if (!equalFormulas(x.premises[0].goal, sub(0, x.c, p)))
+            throw new Error("Invalid substitution");
+
+        if (!(x.cIsNew && news((<tmFun>x.c).id, [p].concat(x.assumptions))))
+            throw new Error("Term is not new");
+
+    } else if (x instanceof Inductive) {
+        if (x.trueByAssumption) {
+            if (x.assumptions.every(v => !equalFormulas(v, x.goal))) {
+                throw new Error("Not a valid assumption");
+            }
+        }
+    }
+
+    else {
+        console.log(x);
+        throw new Error("Unexpected type of x");
+    }
+
+    return true;
+}
 
 //
 // Return a string representation of the proof
@@ -4163,15 +4544,15 @@ function encodeProof(x: any): string {
         // Handle inductive types with additional arguments
         //
         if (ind instanceof synExiE) {
-            s += "{" + encodeProof((<synExiE> ind).c) + "," + ((<synExiE> ind).cIsNew ? "1" : "0") + "," + ((<synExiE> ind).waitingForPCompletion ? "1" : "0") + "}";
+            s += "{" + encodeProof((<synExiE>ind).c) + "," + ((<synExiE>ind).cIsNew ? "1" : "0") + "," + ((<synExiE>ind).waitingForPCompletion ? "1" : "0") + "}";
         }
 
         else if (ind instanceof synUniE) {
-            s += "{" + ((<synUniE> ind).waitingForTermSelection ? "1" : "0") + "}";
+            s += "{" + ((<synUniE>ind).waitingForTermSelection ? "1" : "0") + "}";
         }
 
         else if (ind instanceof synUniI) {
-            s += "{" + encodeProof((<synUniI> ind).c) + "," + ((<synUniI> ind).cIsNew ? "1" : "0") + "}";
+            s += "{" + encodeProof((<synUniI>ind).c) + "," + ((<synUniI>ind).cIsNew ? "1" : "0") + "}";
         }
 
         if (ind.premises.length > 0) {
@@ -4186,7 +4567,7 @@ function encodeProof(x: any): string {
     }
 
     else if (x instanceof FormulaOneArg) {
-        var foa: FormulaOneArg = <FormulaOneArg> x;
+        var foa: FormulaOneArg = <FormulaOneArg>x;
 
         s += foa.getInternalName();
 
@@ -4194,7 +4575,7 @@ function encodeProof(x: any): string {
     }
 
     else if (x instanceof FormulaTwoArg) {
-        var fta: FormulaTwoArg = <FormulaTwoArg> x;
+        var fta: FormulaTwoArg = <FormulaTwoArg>x;
 
         s += fta.getInternalName();
 
@@ -4203,7 +4584,7 @@ function encodeProof(x: any): string {
     }
 
     else if (x instanceof fmPre) {
-        var fmp: fmPre = <fmPre> x;
+        var fmp: fmPre = <fmPre>x;
 
         s += fmp.getInternalName();
 
@@ -4216,29 +4597,33 @@ function encodeProof(x: any): string {
         if (fmp.tms === null)
             s += ".";
         else if (fmp.tms.length > 0) {
+            s += "[";
             fmp.tms.forEach(v => {
                 s += encodeProof(v) + ",";
             });
 
             // Remove last comma
             s = s.substr(0, s.length - 1);
+
+
+            s += "]";
         }
 
         s += "}";
     }
 
     else if (x instanceof fmFalsity) {
-        s += (<fmFalsity> x).getInternalName();
+        s += (<fmFalsity>x).getInternalName();
     }
 
     else if (x instanceof tmVar) {
-        var tmv: tmVar = <tmVar> x;
+        var tmv: tmVar = <tmVar>x;
 
         s += tmv.getInternalName() + "{" + tmv.nat.toString() + "}";
     }
 
     else if (x instanceof tmFun) {
-        var tmf: tmFun = <tmFun> x;
+        var tmf: tmFun = <tmFun>x;
 
         s += tmf.getInternalName();
 
@@ -4250,12 +4635,15 @@ function encodeProof(x: any): string {
         if (tmf.tms === null)
             s += ".";
         else if (tmf.tms.length > 0) {
+            s += "[";
             tmf.tms.forEach(v => {
                 s += encodeProof(v) + ",";
             });
 
             // Remove last comma
             s = s.substr(0, s.length - 1);
+
+            s += "]";
         }
 
         s += "}";
@@ -4288,7 +4676,11 @@ function decodeProof(x: string): Inductive[] {
         if (dp === null || dp === undefined)
             ok = false;
 
-        z.push(dp);
+        else if (!isValidProof(dp))
+            ok = false
+
+        else
+            z.push(dp);
     });
 
     if (!ok)
@@ -4442,7 +4834,6 @@ function decodeProofAux(x: string): any {
         inductiveClasses.some(v => {
             if (indName === v.getInternalName()) {
                 eval("ind = new v.prototype.constructor(goal, assumptions);");
-
                 return true;
             }
         });
@@ -4463,15 +4854,15 @@ function decodeProofAux(x: string): any {
             if (c === undefined)
                 return;
 
-            (<synExiE> ind).c = c;
-            (<synExiE> ind).cIsNew = cIsNew;
-            (<synExiE> ind).waitingForPCompletion = waitingForPCompletion;
+            (<synExiE>ind).c = c;
+            (<synExiE>ind).cIsNew = cIsNew;
+            (<synExiE>ind).waitingForPCompletion = waitingForPCompletion;
         }
 
         else if (ind instanceof synUniE && indAdditionalArgs.length >= 1) {
             var waitingForTermSelection = indAdditionalArgs[0] === "1";
 
-            (<synUniE> ind).waitingForTermSelection = waitingForTermSelection;
+            (<synUniE>ind).waitingForTermSelection = waitingForTermSelection;
         }
 
         else if (ind instanceof synUniI && indAdditionalArgs.length >= 2) {
@@ -4481,8 +4872,8 @@ function decodeProofAux(x: string): any {
             if (c === undefined)
                 return;
 
-            (<synUniI> ind).c = c;
-            (<synUniI> ind).cIsNew = cIsNew;
+            (<synUniI>ind).c = c;
+            (<synUniI>ind).cIsNew = cIsNew;
         }
 
         return ind;
@@ -4500,10 +4891,8 @@ function decodeProofAux(x: string): any {
         var fmName = m[1];
 
         formulaClasses.some(v => {
-            if (fmName === (<typeof Formula> v).getInternalName()) {
-
+            if (fmName === (<typeof Formula>v).getInternalName()) {
                 eval("fm = new v.prototype.constructor(null, null);");
-
                 return true;
             }
         });
@@ -4526,7 +4915,7 @@ function decodeProofAux(x: string): any {
             if (fmInner === undefined)
                 return;
 
-            (<FormulaOneArg> fm).fm = fmInner;
+            (<FormulaOneArg>fm).fm = fmInner;
         }
 
         else if (fm instanceof FormulaTwoArg) {
@@ -4537,28 +4926,32 @@ function decodeProofAux(x: string): any {
             if (fmInnerLHS === undefined || fmInnerRHS === undefined)
                 return;
 
-            (<FormulaTwoArg> fm).lhs = fmInnerLHS;
-            (<FormulaTwoArg> fm).rhs = fmInnerRHS;
+            (<FormulaTwoArg>fm).lhs = fmInnerLHS;
+            (<FormulaTwoArg>fm).rhs = fmInnerRHS;
 
         }
 
         else if (fm instanceof fmPre) {
-
             if (args[0] !== ".")
-                (<fmPre> fm).id = args[0];
+                (<fmPre>fm).id = args[0];
 
             if (args[1] !== ".") {
-                (<fmPre> fm).tms = [];
+                (<fmPre>fm).tms = [];
 
                 if (args[1] !== undefined) {
-                    args[1].split(",").forEach(v => {
+                    var tmListStr = args[1].match(/(\[(.*)\])|(.*)/)
+
+                    if (tmListStr === null)
+                        return;
+
+                    outerMostSplit(tmListStr[2] === undefined ? tmListStr[3] : tmListStr[2], ",").forEach(v => {
                         var tm: Term = decodeProofAux(v);
 
                         // Make sure that term was parsed correctly
                         if (tm === undefined)
                             return;
 
-                        (<fmPre> fm).tms.push(tm);
+                        (<fmPre>fm).tms.push(tm);
                     });
                 }
             }
@@ -4589,9 +4982,7 @@ function decodeProofAux(x: string): any {
 
         termClasses.some(v => {
             if (tmName === v.getInternalName()) {
-
                 eval("tm = new v.prototype.constructor(null, null);");
-
                 return true;
             }
         });
@@ -4604,25 +4995,30 @@ function decodeProofAux(x: string): any {
         var args: string[] = extractArgs(x);
 
         if (tm instanceof tmVar) {
-            (<tmVar> tm).nat = +args[0];
+            (<tmVar>tm).nat = +args[0];
         }
 
         else if (tm instanceof tmFun) {
             if (args[0] !== ".")
-                (<tmFun> tm).id = args[0];
+                (<tmFun>tm).id = args[0];
 
             if (args[1] !== ".") {
-                (<tmFun> tm).tms = [];
+                (<tmFun>tm).tms = [];
 
                 if (args[1] !== undefined) {
-                    args[1].split(",").forEach(v => {
-                        var tmArg: Term = decodeProofAux(v);
+                    var tmListStr = args[1].match(/(\[(.*)\])|(.*)/)
+
+                    if (tmListStr === null)
+                        return;
+
+                    outerMostSplit(tmListStr[2] === undefined ? tmListStr[3] : tmListStr[2], ",").forEach(v => {
+                        var tmArg = decodeProofAux(v);
 
                         // Make sure that term was parsed correctly
                         if (tmArg === undefined)
                             return;
 
-                        (<tmFun> tm).tms.push(tmArg);
+                        (<tmFun>tm).tms.push(tmArg);
                     });
                 }
             }
@@ -4642,9 +5038,47 @@ function decodeProofAux(x: string): any {
 }
 
 //
+// Split only outside of {}'s
+//
+
+function outerMostSplit(x: string, seperator: string): string[] {
+    var r: string[] = [];
+
+    var nestedBrackets = 0;
+    var currentArgument = 0;
+
+    for (var i = 0; i < x.length; i++) {
+
+        if (x[i] === "{") {
+            nestedBrackets++;
+        }
+
+        else if (x[i] === "}") {
+            nestedBrackets--;
+        }
+
+        else if (x[i] === seperator && nestedBrackets === 0) {
+            currentArgument++;
+
+            continue;
+        }
+
+        if (r.length == currentArgument)
+            r[currentArgument] = "";
+
+        r[currentArgument] += x[i];
+    }
+
+    return r;
+}
+
+//
 // Helper function to deal with problem of well-balanced curly braces / brackets
 //
 function extractArgs(x: string, isInd: boolean = false): any {
+    if (x === undefined || x === null)
+        return null;
+
     var args: string[] = [""];
     var c = 0, b = 0;
 
@@ -4727,7 +5161,7 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
     var fm: Formula, lhs: Formula, rhs: Formula;
 
     if (x instanceof FormulaOneArg) {
-        fm = copyFormula((<FormulaOneArg> x).fm, refs);
+        fm = copyFormula((<FormulaOneArg>x).fm, refs);
 
         var r: Formula;
 
@@ -4744,8 +5178,8 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
     }
 
     else if (x instanceof FormulaTwoArg) {
-        lhs = copyFormula((<FormulaTwoArg> x).lhs, refs);
-        rhs = copyFormula((<FormulaTwoArg> x).rhs, refs);
+        lhs = copyFormula((<FormulaTwoArg>x).lhs, refs);
+        rhs = copyFormula((<FormulaTwoArg>x).rhs, refs);
 
         var r: Formula;
 
@@ -4774,21 +5208,21 @@ function copyFormula(x: Formula, refs: any[] = null): Formula {
 
         var numUnknownArgs = 0;
 
-        if ((<fmPre> x).tms === null)
+        if ((<fmPre>x).tms === null)
             tms = null;
         else
-            (<fmPre> x).tms.forEach(v => {
+            (<fmPre>x).tms.forEach(v => {
                 if (v === null)
                     numUnknownArgs++;
 
                 tms.push(copyTerm(v, refs));
             });
 
-        var r: Formula = new fmPre((<fmPre> x).id, tms);
+        var r: Formula = new fmPre((<fmPre>x).id, tms);
 
-        if (refs !== null && (<fmPre> x).id === null)
+        if (refs !== null && (<fmPre>x).id === null)
             refs.push(r);
-        if (refs !== null && (<fmPre> x).tms === null)
+        if (refs !== null && (<fmPre>x).tms === null)
             refs.push(r);
 
         for (var i = 0; i < numUnknownArgs; i++)
@@ -4804,27 +5238,27 @@ function copyTerm(x: Term, refs: any[] = null): Term {
         return null;
 
     if (x instanceof tmVar)
-        return new tmVar((<tmVar> x).nat);
+        return new tmVar((<tmVar>x).nat);
     else if (x instanceof tmFun) {
         var tms: Term[] = [];
 
         var numUnknownArgs = 0;
 
-        if ((<tmFun> x).tms === null)
+        if ((<tmFun>x).tms === null)
             tms = null;
         else
-            (<tmFun> x).tms.forEach(v => {
+            (<tmFun>x).tms.forEach(v => {
                 if (v === null)
                     numUnknownArgs++;
 
                 tms.push(copyTerm(v, refs));
             });
 
-        var t = new tmFun((<tmFun> x).id, tms);
+        var t = new tmFun((<tmFun>x).id, tms);
 
-        if (refs !== null && (<tmFun> x).id === null)
+        if (refs !== null && (<tmFun>x).id === null)
             refs.push(t);
-        if (refs !== null && (<tmFun> x).tms === null)
+        if (refs !== null && (<tmFun>x).tms === null)
             refs.push(t);
 
         for (var i = 0; i < numUnknownArgs; i++)
@@ -4843,44 +5277,51 @@ function equalFormulas(fm1: any, fm2: any): boolean {
             return false;
     }
 
+    if (fm1 instanceof Array && fm2 instanceof Array) {
+        if ((<Formula[]>fm1).length != (<Formula[]>fm2).length)
+            return false;
+
+        return (<Formula[]>fm1).every((v, i) => equalFormulas(v, (<Formula[]>fm2)[i]))
+    }
+
     if (fm1.constructor.name !== fm2.constructor.name) {
         return false;
     }
 
     if (fm1 instanceof fmCon) {
-        var fmC1: fmCon = <fmCon> fm1;
-        var fmC2: fmCon = <fmCon> fm2;
+        var fmC1: fmCon = <fmCon>fm1;
+        var fmC2: fmCon = <fmCon>fm2;
 
         return equalFormulas(fmC1.lhs, fmC2.lhs)
             && equalFormulas(fmC1.rhs, fmC2.rhs);
     }
 
     else if (fm1 instanceof fmDis) {
-        var fmD1: fmDis = <fmDis> fm1;
-        var fmD2: fmDis = <fmDis> fm2;
+        var fmD1: fmDis = <fmDis>fm1;
+        var fmD2: fmDis = <fmDis>fm2;
 
         return equalFormulas(fmD1.lhs, fmD2.lhs)
             && equalFormulas(fmD1.rhs, fmD2.rhs);
     }
 
     else if (fm1 instanceof fmImp) {
-        var fmI1: fmImp = <fmImp> fm1;
-        var fmI2: fmImp = <fmImp> fm2;
+        var fmI1: fmImp = <fmImp>fm1;
+        var fmI2: fmImp = <fmImp>fm2;
 
         return equalFormulas(fmI1.lhs, fmI2.lhs)
             && equalFormulas(fmI1.rhs, fmI2.rhs);
     }
 
     else if (fm1 instanceof fmExi) {
-        var fmE1: fmExi = <fmExi> fm1;
-        var fmE2: fmExi = <fmExi> fm2;
+        var fmE1: fmExi = <fmExi>fm1;
+        var fmE2: fmExi = <fmExi>fm2;
 
         return equalFormulas(fmE1.fm, fmE2.fm);
     }
 
     else if (fm1 instanceof fmUni) {
-        var fmU1: fmUni = <fmUni> fm1;
-        var fmU2: fmUni = <fmUni> fm2
+        var fmU1: fmUni = <fmUni>fm1;
+        var fmU2: fmUni = <fmUni>fm2
 
         return equalFormulas(fmU1.fm, fmU2.fm);
     }
@@ -4890,8 +5331,8 @@ function equalFormulas(fm1: any, fm2: any): boolean {
     }
 
     else if (fm1 instanceof fmPre) {
-        var fmP1: fmPre = <fmPre> fm1;
-        var fmP2: fmPre = <fmPre> fm2;
+        var fmP1: fmPre = <fmPre>fm1;
+        var fmP2: fmPre = <fmPre>fm2;
 
         if (fmP1.id === fmP2.id && fmP1.tms === null && fmP2.tms === null)
             return true;
@@ -4900,23 +5341,23 @@ function equalFormulas(fm1: any, fm2: any): boolean {
             return false;
         }
 
-        return !fmP1.tms.some(function (v, i) {
-            if (!equalFormulas(v, fmP2.tms[i])) {
+        return fmP1.tms.every(function (v, i) {
+            if (equalFormulas(v, fmP2.tms[i])) {
                 return true;
             }
         });
     }
 
     else if (fm1 instanceof tmVar) {
-        var tmN1: tmVar = <tmVar> fm1;
-        var tmN2: tmVar = <tmVar> fm2;
+        var tmN1: tmVar = <tmVar>fm1;
+        var tmN2: tmVar = <tmVar>fm2;
 
         return tmN1.nat == tmN2.nat;
     }
 
     else if (fm1 instanceof tmFun) {
-        var tmF1: tmFun = <tmFun> fm1;
-        var tmF2: tmFun = <tmFun> fm2;
+        var tmF1: tmFun = <tmFun>fm1;
+        var tmF2: tmFun = <tmFun>fm2;
 
         if (tmF1.id === tmF2.id && tmF1.tms === null && tmF2.tms === null)
             return true;
@@ -4925,8 +5366,8 @@ function equalFormulas(fm1: any, fm2: any): boolean {
             return false;
         }
 
-        return !tmF1.tms.some(function (v, i) {
-            if (!equalFormulas(v, tmF2.tms[i])) {
+        return tmF1.tms.every(function (v, i) {
+            if (equalFormulas(v, tmF2.tms[i])) {
                 return true;
             }
         });
@@ -4934,15 +5375,12 @@ function equalFormulas(fm1: any, fm2: any): boolean {
 
     else
         throw new Error("Failed to recognize formula object of type " + (typeof fm1));
-
-
-    return true;
 }
 
 // Recursively find inductive types without unknowns and add them to a parsed array
-function findUndefInductivesWithoutUnknowns(rs: { parent: Inductive; premiseIndex: number; self: Inductive }[], s: Inductive, p: Inductive, n: number, k: number): number {
+function findUndefInductivesWithoutUnknowns(rs: { parent: Inductive; premiseIndex: number; self?: Inductive }[], s: Inductive, p: Inductive, n: number, k: number): number {
 
-    if (!formulaContainsUnknowns(s.goal) && !s.assumptions.some(v=> {
+    if (!formulaContainsUnknowns(s.goal) && !s.assumptions.some(v => {
         return formulaContainsUnknowns(v);
     })) {
         rs[n] = { parent: p, premiseIndex: k, self: s };
@@ -4966,26 +5404,26 @@ function formulaContainsUnknowns(x: any): boolean {
     else if (x instanceof fmFalsity)
         return false;
     else if (x instanceof FormulaOneArg)
-        return formulaContainsUnknowns((<FormulaOneArg> x).fm);
+        return formulaContainsUnknowns((<FormulaOneArg>x).fm);
     else if (x instanceof FormulaTwoArg)
-        return formulaContainsUnknowns((<FormulaTwoArg> x).lhs)
-            || formulaContainsUnknowns((<FormulaTwoArg> x).rhs);
+        return formulaContainsUnknowns((<FormulaTwoArg>x).lhs)
+            || formulaContainsUnknowns((<FormulaTwoArg>x).rhs);
 
     else if (x instanceof fmPre) {
-        return (<fmPre> x).id === null
-            || (<fmPre> x).tms === null
-            || (<fmPre> x).tms.some(v=> {
+        return (<fmPre>x).id === null
+            || (<fmPre>x).tms === null
+            || (<fmPre>x).tms.some(v => {
                 if (formulaContainsUnknowns(v))
                     return true;
             });
     }
 
     else if (x instanceof tmVar)
-        return (<tmVar> x).nat === null;
+        return (<tmVar>x).nat === null;
     else if (x instanceof tmFun) {
-        return (<tmFun> x).id === null
-            || (<tmFun> x).tms === null
-            || (<tmFun> x).tms.some(v=> {
+        return (<tmFun>x).id === null
+            || (<tmFun>x).tms === null
+            || (<tmFun>x).tms.some(v => {
                 if (formulaContainsUnknowns(v))
                     return true;
             });
@@ -5044,34 +5482,61 @@ function getNewConstant(x: Inductive = null): string {
 }
 
 // Determines if a formula contains terms
-function containsTerms(x: any): boolean {
-    if (x instanceof Term)
-        return true;
+function getFreeTerms(x: any, nestedQuantifiers = 0): { t: Term, nq: number }[] {
+    if (x instanceof tmVar)
+        return (<tmVar>x).nat >= nestedQuantifiers ? [{ t: <tmVar>x, nq: nestedQuantifiers }] : [];
+
+    else if (x instanceof tmFun) {
+        var ts1: { t: Term, nq: number }[] = [];
+        var ts2: { t: Term, nq: number }[] = [];
+
+        (<tmFun>x).tms.forEach(y => ts1.push.apply(ts1, getFreeTerms(y, nestedQuantifiers)));
+        (<tmFun>x).tms.forEach(y => ts2.push.apply(ts2, getTerms(y)));
+
+        if (ts1.length == ts2.length)
+            ts1.unshift({ t: <tmFun>x, nq: nestedQuantifiers });
+
+        return ts1;
+    }
+
+    else if (x instanceof fmPre) {
+        var ts: { t: Term, nq: number }[] = [];
+
+        (<fmPre>x).tms.forEach(y => ts.push.apply(ts, getFreeTerms(y, nestedQuantifiers)));
+
+        return ts;
+    }
+
+    else if (x instanceof fmExi)
+        return getFreeTerms((<fmExi>x).fm, nestedQuantifiers + 1);
+
+    else if (x instanceof fmUni)
+        return getFreeTerms((<fmUni>x).fm, nestedQuantifiers + 1);
+
     else if (x instanceof FormulaOneArg)
-        return containsTerms((<FormulaOneArg> x).fm);
+        return getFreeTerms((<FormulaOneArg>x).fm, nestedQuantifiers);
+
     else if (x instanceof FormulaTwoArg)
-        return containsTerms((<FormulaTwoArg> x).lhs) || containsTerms((<FormulaTwoArg> x).rhs);
-    else if (x instanceof fmPre)
-        return (<fmPre> x).tms.length > 0;
+        return getFreeTerms((<FormulaTwoArg>x).lhs, nestedQuantifiers).concat(getFreeTerms((<FormulaTwoArg>x).rhs, nestedQuantifiers));
+
     else
-        return false;
+        return [];
 }
 
 // Return terms occuring in a formula/proof
 function getTerms(x: any): Term[] {
     // Formula cases - nothing to add yet - recurse further
     if (x instanceof FormulaOneArg)
-        return getTerms((<FormulaOneArg> x).fm);
+        return getTerms((<FormulaOneArg>x).fm);
 
     else if (x instanceof FormulaTwoArg)
-        return getTerms((<FormulaTwoArg> x).lhs).concat(getTerms((<FormulaTwoArg> x).rhs));
+        return getTerms((<FormulaTwoArg>x).lhs).concat(getTerms((<FormulaTwoArg>x).rhs));
 
     else if (x instanceof fmPre) {
         var ts = [];
 
-        //ts.push.apply(ts, (<fmPre> x).tms);
-
-        (<fmPre> x).tms.forEach(e => { ts.push.apply(ts, getTerms(e)) });
+        if (x.tms !== null)
+            x.tms.forEach(e => { ts.push.apply(ts, getTerms(e)) });
 
         return ts;
     }
@@ -5082,20 +5547,21 @@ function getTerms(x: any): Term[] {
     else if (x instanceof tmFun) {
         var ts = [];
 
-        ts.push(<tmFun> x);
+        ts.push(<tmFun>x);
 
-        (<tmFun> x).tms.forEach(e => { ts.push.apply(ts, getTerms(e)) });
+        if (x.tms !== null)
+            x.tms.forEach(e => { ts.push.apply(ts, getTerms(e)) });
 
         return ts;
     }
 
     else if (x instanceof tmVar)
-        return [<tmVar> x];
+        return [<tmVar>x];
 
     else if (x instanceof Inductive) {
-        var terms: Term[] = getTerms((<Inductive> x).goal);
+        var terms: Term[] = getTerms((<Inductive>x).goal);
 
-        (<Inductive> x).premises.forEach(p => {
+        (<Inductive>x).premises.forEach(p => {
             getTerms(p).forEach(t => terms.push(t));
         });
 
@@ -5119,7 +5585,7 @@ function getQuantifiedVariable(n: number, formal: boolean = false): string {
             s += new String(n - variableSymbols.length)
         else
             for (var i = 0; i < n - variableSymbols.length + 1; i++)
-                s += "#";
+                s += "*";
 
         return s;
     }
@@ -5166,7 +5632,7 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
 
             if (!equalFormulas(p, impPQ.lhs)) {
                 console.log(p, impPQ.lhs);
-                throw new Error("Linked formula p appears different despite being linked");
+                throw new Error("Linked formula p is different despite being linked");
             }
 
             if (p === null) {
@@ -5257,14 +5723,14 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // General case
             //
 
-            if ((<Inductive> x).goal === null)
+            if ((<Inductive>x).goal === null)
                 // Unknown is goal
                 l.push({ x: x, inFm: 1 });
             else
-                reconstructUnknownsFromProof((<Inductive> x).goal, l);
+                reconstructUnknownsFromProof((<Inductive>x).goal, l);
 
             // Unknowns in assumptions
-            (<Inductive> x).assumptions.forEach((v, i) => {
+            (<Inductive>x).assumptions.forEach((v, i) => {
                 if (v === null) {
                     l.push({ x: x, inAssumption: i });
                 } else {
@@ -5272,9 +5738,9 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
                 }
             });
         }
-        
+
         // Unknowns in premises
-        (<Inductive> x).premises.forEach(v => {
+        (<Inductive>x).premises.forEach(v => {
             l = reconstructUnknownsFromProof(v, l)
         });
     }
@@ -5288,10 +5754,10 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // Now considering type: One argument formula
             //
 
-            if ((<FormulaOneArg> x).fm === null) {
+            if ((<FormulaOneArg>x).fm === null) {
                 l.push({ x: x, inFm: 1 });
             } else {
-                l = reconstructUnknownsFromProof((<FormulaOneArg> x).fm, l);
+                l = reconstructUnknownsFromProof((<FormulaOneArg>x).fm, l);
             }
         }
 
@@ -5300,16 +5766,16 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // Now considering type: Two argument formula
             //
 
-            if ((<FormulaTwoArg> x).lhs === null) {
+            if ((<FormulaTwoArg>x).lhs === null) {
                 l.push({ x: x, inFm: 1 });
             } else {
-                l = reconstructUnknownsFromProof((<FormulaTwoArg> x).lhs, l);
+                l = reconstructUnknownsFromProof((<FormulaTwoArg>x).lhs, l);
             }
 
-            if ((<FormulaTwoArg> x).rhs === null) {
+            if ((<FormulaTwoArg>x).rhs === null) {
                 l.push({ x: x, inFm: 2 });
             } else {
-                l = reconstructUnknownsFromProof((<FormulaTwoArg> x).rhs, l);
+                l = reconstructUnknownsFromProof((<FormulaTwoArg>x).rhs, l);
             }
         }
 
@@ -5318,16 +5784,16 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // Now considering type: Predicate
             //
 
-            if ((<fmPre> x).id === null) {
+            if ((<fmPre>x).id === null) {
                 l.push({ x: x, inFm: 1 });
             }
 
-            if ((<fmPre> x).tms === null) {
+            if ((<fmPre>x).tms === null) {
                 l.push({ x: x, inFm: 2 });
             }
 
             else {
-                (<fmPre> x).tms.forEach((v, i) => {
+                (<fmPre>x).tms.forEach((v, i) => {
                     if (v === null) {
                         l.push({ x: x, inTm: i });
                     } else {
@@ -5348,16 +5814,16 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // Now considering type: Function
             //
 
-            if ((<tmFun> x).id === null) {
+            if ((<tmFun>x).id === null) {
                 l.push({ x: x, inFm: 1 });
             }
 
-            if ((<tmFun> x).tms === null) {
+            if ((<tmFun>x).tms === null) {
                 l.push({ x: x, inFm: 2 });
             }
 
             else {
-                (<tmFun> x).tms.forEach((v, i) => {
+                (<tmFun>x).tms.forEach((v, i) => {
                     if (v === null) {
                         l.push({ x: x, inTm: i });
                     } else {
@@ -5372,7 +5838,7 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
             // Now considering type: Variable
             //
 
-            if ((<tmVar> x).nat === null)
+            if ((<tmVar>x).nat === null)
                 l.push({ x: x, inFm: 1 });
         }
     }
@@ -5381,42 +5847,55 @@ function reconstructUnknownsFromProof(x: any, l: Unknown[] = []): Unknown[] {
 };
 
 // Gets the Isabelle (code) syntax for a proof
-function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
+function getInternalSyntaxHTML(x: any, isTerm: boolean = false, skipOutermostParantheses: boolean = false): string {
 
     var fmIsa: string;
+    var outermostParantheses = false;
 
     if (x instanceof fmCon) {
-        var fmC: fmCon = <fmCon> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="con">Con</div><div class="arg">' + getInternalSyntaxHTML(fmC.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmC.rhs) + '</div><div class="rightParantheses">)</div>';
+        outermostParantheses = true;
+
+        var fmC: fmCon = <fmCon>x;
+        fmIsa = '<div class="con">Con</div><div class="arg">' + getInternalSyntaxHTML(fmC.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmC.rhs) + '</div>';
     }
 
     else if (x instanceof fmDis) {
-        var fmD: fmDis = <fmDis> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="dis">Dis</div><div class="arg">' + getInternalSyntaxHTML(fmD.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmD.rhs) + '</div><div class="rightParantheses">)</div>';
+        outermostParantheses = true;
+
+        var fmD: fmDis = <fmDis>x;
+        fmIsa = '<div class="dis">Dis</div><div class="arg">' + getInternalSyntaxHTML(fmD.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmD.rhs) + '</div>';
     }
 
     else if (x instanceof fmImp) {
-        var fmI: fmImp = <fmImp> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="imp">Imp</div><div class="arg">' + getInternalSyntaxHTML(fmI.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmI.rhs) + '</div><div class="rightParantheses">)</div>';
+        outermostParantheses = true;
+
+        var fmI: fmImp = <fmImp>x;
+        fmIsa = '<div class="imp">Imp</div><div class="arg">' + getInternalSyntaxHTML(fmI.lhs) + '</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmI.rhs) + '</div>';
     }
 
     else if (x instanceof fmExi) {
-        var fmE: fmExi = <fmExi> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="exi">Exi</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmE.fm) + '</div><div class="rightParantheses">)</div>';
+        outermostParantheses = true;
+
+        var fmE: fmExi = <fmExi>x;
+        fmIsa = '<div class="exi">Exi</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmE.fm) + '</div>';
     }
 
     else if (x instanceof fmUni) {
-        var fmU: fmUni = <fmUni> x;
-        fmIsa = '<div class="leftParantheses">(</div><div class="uni">Uni</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmU.fm) + '</div><div class="rightParantheses">)</div>';
+        outermostParantheses = true;
+
+        var fmU: fmUni = <fmUni>x;
+        fmIsa = '<div class="uni">Uni</div><div class="arg lastArg">' + getInternalSyntaxHTML(fmU.fm) + '</div>';
     }
 
     else if (x instanceof fmFalsity) {
-        var fmF: fmFalsity = <fmFalsity> x;
+        var fmF: fmFalsity = <fmFalsity>x;
         fmIsa = '<div class="falsity">Falsity</div>';
     }
 
     else if (x instanceof fmPre) {
-        var fmP: fmPre = <fmPre> x;
+        outermostParantheses = true;
+
+        var fmP: fmPre = <fmPre>x;
         fmIsa = '<div class="pre">Pre</div><div class="arg id">' + (fmP.id === null ? '@id:pre' : nadeaQuot + fmP.id + nadeaQuot) + "</div>";
 
         fmIsa += '<div class="arg lastArg">';
@@ -5427,24 +5906,24 @@ function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
             var elems: string[] = [];
 
             fmP.tms.forEach(function (v) {
-                elems.push(getInternalSyntaxHTML(v, true));
+                elems.push(getInternalSyntaxHTML(v, true, true));
             });
 
             fmIsa += '<div class="leftBracket">[</div>' + elems.join('<div class="comma">,</div>') + '<div class="rightBracket">]</div>';
         }
 
         fmIsa += "</div>";
-
-        fmIsa = '<div class="leftParantheses">(</div>' + fmIsa + '<div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof tmVar) {
-        var tmN: tmVar = <tmVar> x;
+        var tmN: tmVar = <tmVar>x;
         fmIsa = '<div class="var">Var</div><div class="arg lastArg">' + (tmN.nat === undefined ? '@id' : tmN.nat.toString()) + "</div>";
     }
 
     else if (x instanceof tmFun) {
-        var tmF: tmFun = <tmFun> x;
+        outermostParantheses = true;
+
+        var tmF: tmFun = <tmFun>x;
         fmIsa = '<div class="fun">Fun</div><div class="arg id">' + (tmF.id === null ? '@id:fun' : nadeaQuot + tmF.id + nadeaQuot) + "</div>";
 
         fmIsa += '<div class="arg lastArg">';
@@ -5455,83 +5934,106 @@ function getInternalSyntaxHTML(x: any, isTerm: boolean = false): string {
             var elems: string[] = [];
 
             tmF.tms.forEach(function (v) {
-                elems.push(getInternalSyntaxHTML(v, true));
+                elems.push(getInternalSyntaxHTML(v, true, true));
             });
 
             fmIsa += '<div class="leftBracket">[</div>' + elems.join('<div class="comma">,</div>') + '<div class="rightBracket">]</div>';
         }
 
         fmIsa += "</div>";
-
-        fmIsa = '<div class="leftParantheses">(</div>' + fmIsa + '<div class="rightParantheses">)</div>';
     }
 
     else
         fmIsa = isTerm ? '@tm' : '@fm';
 
+    if (outermostParantheses && !skipOutermostParantheses)
+        fmIsa = '<div class="leftParantheses">(</div>' + fmIsa + '<div class="rightParantheses">)</div>';
+
     return fmIsa;
 }
 
+function getMaxNumNestedQuantifiers(x: Formula): number {
+    if (x instanceof fmUni) {
+        return getMaxNumNestedQuantifiers(x.fm) + 1;
+    }
+
+    else if (x instanceof fmExi) {
+        return getMaxNumNestedQuantifiers(x.fm) + 1;
+    }
+
+    else if (x instanceof FormulaTwoArg) {
+        return Math.max(getMaxNumNestedQuantifiers(x.lhs), getMaxNumNestedQuantifiers(x.rhs));
+    }
+
+    else {
+        return 0;
+    }
+}
+
+function getFormalSyntax(x: any, nq: number, y: any, z: Formula[]): string {
+    return getFormalSyntaxAux(x, nq, y, Math.max(...z.map(f => getMaxNumNestedQuantifiers(f))));
+}
+
 // Gets the formal syntax for a proof
-function getFormalSyntax(x: any, nq: number, y: any): string {
+function getFormalSyntaxAux(x: any, nq: number, y: any, maxNq: number): string {
     // nq: number of nested quantifiers
 
     var fmFormal: string;
 
     if (x instanceof fmCon) {
-        var fmC: fmCon = <fmCon> x;
-        fmFormal = '<div class="arg">' + getFormalSyntax(fmC.lhs, nq, fmC) + "</div>";
+        var fmC: fmCon = <fmCon>x;
+        fmFormal = '<div class="arg">' + getFormalSyntaxAux(fmC.lhs, nq, fmC, maxNq) + "</div>";
 
         if (fmC.lhs instanceof fmCon)
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
 
-        fmFormal += '<div class="con">@con</div><div class="arg lastArg">' + getFormalSyntax(fmC.rhs, nq, fmC) + "</div>";
+        fmFormal += '<div class="con">@con</div><div class="arg lastArg">' + getFormalSyntaxAux(fmC.rhs, nq, fmC, maxNq) + "</div>";
     }
 
     else if (x instanceof fmDis) {
-        var fmD: fmDis = <fmDis> x;
-        fmFormal = '<div class="arg">' + getFormalSyntax(fmD.lhs, nq, fmD) + "</div>";
+        var fmD: fmDis = <fmDis>x;
+        fmFormal = '<div class="arg">' + getFormalSyntaxAux(fmD.lhs, nq, fmD, maxNq) + "</div>";
 
         if (fmD.lhs instanceof fmDis)
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
 
-        fmFormal += '<div class="dis">@dis</div><div class="arg">' + getFormalSyntax(fmD.rhs, nq, fmD) + '</div>';
+        fmFormal += '<div class="dis">@dis</div><div class="arg">' + getFormalSyntaxAux(fmD.rhs, nq, fmD, maxNq) + '</div>';
     }
 
     else if (x instanceof fmImp) {
-        var fmI: fmImp = <fmImp> x;
-        fmFormal = '<div class="arg">' + getFormalSyntax(fmI.lhs, nq, fmI) + "</div>";
+        var fmI: fmImp = <fmImp>x;
+        fmFormal = '<div class="arg">' + getFormalSyntaxAux(fmI.lhs, nq, fmI, maxNq) + "</div>";
 
         if (fmI.lhs instanceof fmImp)
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
 
-        fmFormal += '<div class="imp">@imp</div><div class="arg">' + getFormalSyntax(fmI.rhs, nq, fmI) + "</div>";
+        fmFormal += '<div class="imp">@imp</div><div class="arg">' + getFormalSyntaxAux(fmI.rhs, nq, fmI, maxNq) + "</div>";
     }
 
     else if (x instanceof fmExi) {
-        var fmE: fmExi = <fmExi> x;
+        var fmE: fmExi = <fmExi>x;
 
-        fmFormal = '<div class="exi">@exi{' + getQuantifiedVariable(nq) + '}</div><div class="arg">' + getFormalSyntax(fmE.fm, nq + 1, fmE) + '</div>';
+        fmFormal = '<div class="exi">@exi{' + getQuantifiedVariable(nq) + '}</div><div class="arg">' + getFormalSyntaxAux(fmE.fm, nq + 1, fmE, maxNq) + '</div>';
 
         if (!(y instanceof fmExi) && !(y instanceof fmUni) && precedence(x) < precedence(y))
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmUni) {
-        var fmU: fmUni = <fmUni> x;
-        fmFormal = '<div class="uni">@uni{' + getQuantifiedVariable(nq) + '}</div><div class="arg">' + getFormalSyntax(fmU.fm, nq + 1, fmU) + '</div>';
+        var fmU: fmUni = <fmUni>x;
+        fmFormal = '<div class="uni">@uni{' + getQuantifiedVariable(nq) + '}</div><div class="arg">' + getFormalSyntaxAux(fmU.fm, nq + 1, fmU, maxNq) + '</div>';
 
         if (!(y instanceof fmExi) && !(y instanceof fmUni) && precedence(x) < precedence(y))
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
     }
 
     else if (x instanceof fmFalsity) {
-        var fmF: fmFalsity = <fmFalsity> x;
+        var fmF: fmFalsity = <fmFalsity>x;
         fmFormal = '<div class="falsity">@false</div>';
     }
 
     else if (x instanceof fmPre) {
-        var fmP: fmPre = <fmPre> x;
+        var fmP: fmPre = <fmPre>x;
         fmFormal = '<div class="pre"><div class="id">';
         fmFormal += fmP.id === null ? '@id' : fmP.id;
         fmFormal += '</div>';
@@ -5542,7 +6044,7 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
             var elems: string[] = [];
 
             fmP.tms.forEach(function (v) {
-                elems.push(getFormalSyntax(v, nq, fmP));
+                elems.push(getFormalSyntaxAux(v, nq, fmP, maxNq));
             });
 
             if (elems.length > 0)
@@ -5553,16 +6055,14 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
     }
 
     else if (x instanceof tmVar) {
-        var tmN: tmVar = <tmVar> x;
-        var qvIndex = nq > 0 ? nq - tmN.nat - 1 : tmN.nat;
-        if (qvIndex < 0)
-            qvIndex = nq + Math.abs(qvIndex) - 1;
+        var tmN: tmVar = <tmVar>x;
+        var qvIndex = tmN.nat + 1 > nq ? maxNq + tmN.nat - nq : nq - tmN.nat - 1;
 
         fmFormal = '<div class="var">' + (tmN.nat === null ? '@id' : getQuantifiedVariable(qvIndex)) + '</div>';
     }
 
     else if (x instanceof tmFun) {
-        var tmF: tmFun = <tmFun> x;
+        var tmF: tmFun = <tmFun>x;
         fmFormal = '<div class="fun"><div class="id">' + (tmF.id === null ? '@id' : tmF.id) + '</div>';
 
         if (tmF.tms === null) {
@@ -5571,7 +6071,7 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
             var elems: string[] = [];
 
             tmF.tms.forEach(function (v) {
-                elems.push(getFormalSyntax(v, nq, tmF));
+                elems.push(getFormalSyntaxAux(v, nq, tmF, maxNq));
             });
 
             if (elems.length > 0)
@@ -5584,10 +6084,7 @@ function getFormalSyntax(x: any, nq: number, y: any): string {
     else
         fmFormal = '@fm';
 
-
-    if (x instanceof fmUni || x instanceof fmExi)
-        fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
-    else if (y !== undefined && y !== null)
+    if (y !== undefined && y !== null)
         if (precedence(x) > precedence(y))
             fmFormal = '<div class="leftParantheses">(</div>' + fmFormal + '<div class="rightParantheses">)</div>';
 
@@ -5615,9 +6112,9 @@ function getRuleName(x: Inductive): string {
     else if (x instanceof synExiE) {
         var r = "Exi_E";
 
-        if ((<synExiE> x).waitingForPCompletion)
+        if ((<synExiE>x).waitingForPCompletion)
             r += ":incomplete";
-        else if (!(<synExiE> x).cIsNew)
+        else if (!(<synExiE>x).cIsNew)
             r += ":err";
 
         return r;
@@ -5627,10 +6124,10 @@ function getRuleName(x: Inductive): string {
         return "Imp_I";
     else if (x instanceof synUniE)
         return "Uni_E"
-            + ((<synUniE> x).waitingForTermSelection ? ":incomplete" : "");
+            + ((<synUniE>x).waitingForTermSelection ? ":incomplete" : "");
     else if (x instanceof synUniI)
         return "Uni_I"
-            + ((<synUniI> x).cIsNew === false ? ":err" : "");
+            + ((<synUniI>x).cIsNew === false ? ":err" : "");
     else if (x instanceof Inductive) {
         if (x.trueByAssumption)
             return "@true:assume";
@@ -5661,7 +6158,7 @@ function generateIsabelleFile(i: Inductive) {
 function attachKeyBindings() {
     $(document).keydown((e) => {
         if (e.keyCode == 27) {
-            $('.closeOverlay, .closeCenteredOverlay').click();
+            closeTopOverlay();
         } // esc
 
         else if (e.keyCode == 46) {
@@ -5831,9 +6328,9 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
     else if (x instanceof synExiE) {
         i = new synExiE(g, cpas.as);
 
-        (<synExiE> i).c = x.c;
-        (<synExiE> i).cIsNew = x.cIsNew;
-        (<synExiE> i).waitingForPCompletion = x.waitingForPCompletion;
+        (<synExiE>i).c = x.c;
+        (<synExiE>i).cIsNew = x.cIsNew;
+        (<synExiE>i).waitingForPCompletion = x.waitingForPCompletion;
     }
 
     else if (x instanceof synExiI) {
@@ -5843,14 +6340,14 @@ function copyInductive(x: Inductive, refs: any[]): Inductive {
     else if (x instanceof synUniE) {
         i = new synUniE(g, cpas.as);
 
-        (<synUniE> i).waitingForTermSelection = (<synUniE> x).waitingForTermSelection;
+        (<synUniE>i).waitingForTermSelection = (<synUniE>x).waitingForTermSelection;
     }
 
     else if (x instanceof synUniI) {
         i = new synUniI(g, cpas.as);
 
-        (<synUniI> i).c = x.c;
-        (<synUniI> i).cIsNew = x.cIsNew;
+        (<synUniI>i).c = x.c;
+        (<synUniI>i).cIsNew = x.cIsNew;
     }
 
     else if (x instanceof synImpE) {
@@ -5921,42 +6418,42 @@ function countUnknowns(x: any): number {
     if (x instanceof Array) {
         var r = 0;
 
-        (<any[]> x).forEach(y => r += countUnknowns(y));
+        (<any[]>x).forEach(y => r += countUnknowns(y));
 
         return r;
     }
 
 
     if (x instanceof FormulaOneArg) {
-        return countUnknowns((<FormulaOneArg> x).fm);
+        return countUnknowns((<FormulaOneArg>x).fm);
     }
 
     else if (x instanceof FormulaTwoArg) {
-        return countUnknowns((<FormulaTwoArg> x).lhs) + countUnknowns((<FormulaTwoArg> x).rhs);
+        return countUnknowns((<FormulaTwoArg>x).lhs) + countUnknowns((<FormulaTwoArg>x).rhs);
     }
 
     else if (x instanceof fmPre) {
-        var r = countUnknowns((<fmPre> x).id);
+        var r = countUnknowns((<fmPre>x).id);
 
-        r += countUnknowns((<fmPre> x).tms);
+        r += countUnknowns((<fmPre>x).tms);
 
         return r;
     }
 
     else if (x instanceof tmFun) {
-        var r = countUnknowns((<tmFun> x).id);
+        var r = countUnknowns((<tmFun>x).id);
 
-        r += countUnknowns((<tmFun> x).tms);
+        r += countUnknowns((<tmFun>x).tms);
 
         return r;
     }
 
     else if (x instanceof Inductive) {
-        var r = countUnknowns((<Inductive> x).goal);
-        (<Inductive> x).assumptions.forEach(a => r += countUnknowns(a));
+        var r = countUnknowns((<Inductive>x).goal);
+        (<Inductive>x).assumptions.forEach(a => r += countUnknowns(a));
 
         if (r == 0
-            && !(<Inductive> x).trueByAssumption
+            && !(<Inductive>x).trueByAssumption
             && !(x instanceof synBool
                 || x instanceof synConE1
                 || x instanceof synConE2
@@ -5973,10 +6470,7 @@ function countUnknowns(x: any): number {
             r += 1;
         }
 
-        if (x instanceof synUniE && (<synUniE>x).waitingForTermSelection)
-            r += 1;
-
-        (<Inductive> x).premises.forEach(p => r += countUnknowns(p));
+        (<Inductive>x).premises.forEach(p => r += countUnknowns(p));
 
         return r;
     }
@@ -5984,4 +6478,8 @@ function countUnknowns(x: any): number {
     else {
         return 0;
     }
+}
+
+function countNoProofRules(x: Inductive): number {
+    return x.premises.length > 0 ? 1 + x.premises.map<number>(v => countNoProofRules(v)).reduce((a, b) => a + b) : 0;
 }

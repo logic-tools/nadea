@@ -2,6 +2,6 @@
 *.bat
 *.ico
 *.js
-*.d.ts
+jquery.d.ts
 online/
 output/

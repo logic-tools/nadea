@@ -35,7 +35,7 @@ a {
 #header #leftbar {
     display: table-cell;
     font-size: 2.0vw;
-    width: 30vw;
+    width: 35vw;
 }
 
 #header #leftbar span:nth-child(1) {
@@ -94,7 +94,7 @@ a {
 #header #rightbar {
     display: table-cell;
     font-size: 2vw;
-    width: 30vw;
+    width: 35vw;
     vertical-align: middle;
     text-align: right;
 }
@@ -105,7 +105,9 @@ a {
 
 #header #rightbar .smiley {
     display: inline-block;
+    width: 2vw;
     vertical-align: text-top;
+    text-align: center;
 }
 
 #frame {
@@ -208,7 +210,7 @@ a {
     border: 0.12vw solid black;
     border-radius: 0.5vw;
     overflow: hidden;
-    width: 17vw;
+    min-width: 17vw;
 }
 
 .overlay .formula {
@@ -678,13 +680,40 @@ div.table {
     border-spacing: 1vw;
 }
 
+div.table.fullWidth {
+    width: 100%;    
+}
+
+div.halfOfTableWidth {
+    width: 50%;
+    padding: 0 !important;
+}
+
 div.tableRow {
     display: table-row;
+}
+
+div.tableRow.dark, div.tableCaption.dark {
+    background-color: #ccc;
+}
+
+div.tableRow.hidden {
+    display: none;
 }
 
 div.tableCell {
     display: table-cell;
     padding: 0.2vw 0.5vw;
+    vertical-align: top;
+}
+
+div.tableCell.minWidth {
+    width: 1%;
+    white-space: nowrap;
+}
+
+div.tableCell.center {
+    text-align: center;
 }
 
 div.tableCell.alignRight {
@@ -695,6 +724,11 @@ div.tableRow.borderBottom {
     border-bottom: 0.1vw solid black;
 }
 
+div.tableCaption {
+    display: table-caption;
+    padding: 0.2vw 0.5vw;
+}
+
 .hintStarContainer {
     font-size: 3vw;
     cursor: pointer;
@@ -702,4 +736,80 @@ div.tableRow.borderBottom {
 
 .hintStarContainer.allUsed {
     cursor: default;
+}
+
+/**********************/
+/* ProofJudge related */
+/**********************/
+
+#header #rightbar .proofjudge {
+    float: left;
+}
+
+#header #rightbar .proofjudgeBtn {
+    font-size: 1.5vw;
+    color: orange;
+    border-color: orange;
+}
+
+#header #rightbar .proofjudgeBtn:hover {
+    color: white;
+    background: orange;
+}
+
+.overlay.proofjudge {
+    border-color: orange;
+}
+
+.overlay .flexContentY {    
+    overflow: auto;
+}
+
+.proofJudgeInputText {
+    padding: 0.2vw;    
+    border: 0.1vw solid black;
+    font-size: 0.9vw;    
+    font-family: sans-serif;
+}
+
+#loginArea {
+    width: 17.4vw;
+}
+
+.overlay.proofjudge .bordered {
+    border: 1px solid black;
+}
+
+.proofjudgeContent {
+    font-size: 1.15vw;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: auto;
+    padding: 0.5vw;
+}
+
+.smallFont {
+    font-size: 0.9vw;
+}
+
+.marginRight {
+    margin-right: 0.3vw;
+}
+
+.centerPage {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}
+
+.topOfPage {
+    z-index: 10;
+}
+
+.pre {
+    white-space: pre-wrap;
 }
