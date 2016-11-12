@@ -194,10 +194,6 @@ a {
     display: inline;
 }
 
-.indentProof {
-    padding-left: 1.3vw;
-}
-
 .indentProof * {
     word-wrap: break-word;
     word-break: break-all;
@@ -445,7 +441,7 @@ a {
     vertical-align: text-top;
     font-size: 1.2vw;
     line-height: 1.5vw;
-    margin: 0.55vw;
+    margin: 0.55vw 0vw;
 }
 
 .button {
@@ -720,6 +716,10 @@ div.tableCell.alignRight {
     text-align: right;
 }
 
+div.tableCell.alignMiddle {
+    vertical-align: middle;
+}
+
 div.tableRow.borderBottom {
     border-bottom: 0.1vw solid black;
 }
@@ -768,8 +768,14 @@ div.tableCaption {
 .proofJudgeInputText {
     padding: 0.2vw;    
     border: 0.1vw solid black;
-    font-size: 0.9vw;    
+    font-size: 0.9vw;
     font-family: sans-serif;
+}
+
+#groupSelector {
+    width: 100%;
+    padding: 0.2vw;    
+    border: 0.1vw solid black;
 }
 
 #loginArea {
@@ -799,11 +805,11 @@ div.tableCaption {
 
 .centerPage {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: auto;
+    top: 50%;
+    left: 50%;
+    -moz-transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    transform: translateX(-50%) translateY(-50%);
 }
 
 .topOfPage {

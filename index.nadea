@@ -17,6 +17,27 @@ OK{.}[]
 # Test 2
 
 . Test example available.
+ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{}}}}[]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}}]}
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{.}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{.}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{.}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{.}}{.}}[]
+OK{Imp{Imp{Pre{A}{.}}{.}}{.}}[]
+OK{Imp{Imp{Pre{.}{.}}{.}}{.}}[]
+OK{Imp{Imp{.}{.}}{.}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+
+# Test 3
+
+. Test example available.
 ImpI{Imp{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}{Pre{B}{}}}[]:{ImpE{Pre{B}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{ConE2{Imp{Pre{A}{}}{Pre{B}{}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}{ConE1{Pre{A}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}}
 ImpI{Imp{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}{Pre{B}{}}}[]:{ImpE{Pre{B}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{ConE2{Imp{Pre{A}{}}{Pre{B}{}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}{ConE1{Pre{A}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{.}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}}
 ImpI{Imp{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}{Pre{B}{}}}[]:{ImpE{Pre{B}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{ConE2{Imp{Pre{A}{}}{Pre{B}{}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}{ConE1{Pre{A}{}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]:{OK{Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{.}{.}}}}[Con{Pre{A}{}}{Imp{Pre{A}{}}{Pre{B}{}}}]}}}
@@ -51,7 +72,7 @@ OK{Imp{Con{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Test 3
+# Test 4
 
 . Test example available.
 ImpI{Imp{Uni{Pre{A}{Var{0}}}}{Pre{A}{Fun{c}{}}}}[]:{UniE{Pre{A}{Fun{c}{}}}[Uni{Pre{A}{Var{0}}}]{0}:{OK{Uni{Pre{A}{Var{0}}}}[Uni{Pre{A}{Var{0}}}]}}
@@ -69,28 +90,47 @@ OK{Imp{Uni{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Test 4
+# Test 5
 
 . Test example available.
-ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{}}}}[]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}}]}
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{B}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{.}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{.}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{.}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{.}}{.}}[]
-OK{Imp{Imp{Pre{A}{.}}{.}}{.}}[]
-OK{Imp{Imp{Pre{.}{.}}{.}}{.}}[]
-OK{Imp{Imp{.}{.}}{.}}[]
+ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{ImpI{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]:{OK{Pre{A}{}}[Pre{B}{},Pre{A}{}]}}
+ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{OK{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]}
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{.}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{B}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
+OK{Imp{Pre{A}{}}{.}}[]
+OK{Imp{Pre{A}{.}}{.}}[]
+OK{Imp{Pre{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Test 5
+# Test 6
+
+. Test example available.
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{A}{}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{A}{}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{A}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{A}{.}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{.}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{.}{.}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{.}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{.}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{OK{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{OK{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]}
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{.}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
+OK{Imp{Pre{A}{}}{.}}[]
+OK{Imp{Pre{A}{.}}{.}}[]
+OK{Imp{Pre{.}{.}}{.}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+
+# Test 7
 
 . Test example available.
 ImpI{Imp{Con{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{C}{}}{Con{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Pre{C}{}}{Con{Pre{A}{}}{Pre{C}{}}}}[Con{Pre{A}{}}{Pre{B}{}}]:{ConI{Con{Pre{A}{}}{Pre{C}{}}}[Pre{C}{},Con{Pre{A}{}}{Pre{B}{}}]:{ConE1{Pre{A}{}}[Pre{C}{},Con{Pre{A}{}}{Pre{B}{}}]:{OK{Con{Pre{A}{}}{Pre{B}{}}}[Pre{C}{},Con{Pre{A}{}}{Pre{B}{}}]}}{OK{Pre{C}{}}[Pre{C}{},Con{Pre{A}{}}{Pre{B}{}}]}}}
@@ -121,7 +161,28 @@ OK{Imp{Con{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Test 6
+# Test 8
+
+. Test example available.
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{UniI{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{Fun{c'}{},1}:{UniE{Pre{A}{[Fun{c'}{},Fun{c'}{}]}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{0}:{UniE{Uni{Pre{A}{[Fun{c'}{},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{0}:{OK{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]}}}}
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{UniI{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{Fun{c'}{},1}:{UniE{Pre{A}{[Fun{c'}{},Fun{c'}{}]}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{0}:{UniE{Uni{Pre{A}{[Fun{c'}{},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{1}}}}
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{UniI{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{Fun{c'}{},1}:{UniE{Pre{A}{[Fun{c'}{},Fun{c'}{}]}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{0}:{OK{Uni{Pre{A}{[Fun{c'}{},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]}}}
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{UniI{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{Fun{c'}{},1}:{UniE{Pre{A}{[Fun{c'}{},Fun{c'}{}]}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{1}}}
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{UniI{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]{Fun{c'}{},1}:{OK{Pre{A}{[Fun{c'}{},Fun{c'}{}]}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]}}
+ImpI{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]:{OK{Uni{Pre{A}{[Var{0},Var{0}]}}}[Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}]}
+OK{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{[Var{0},Var{0}]}}}}[]
+OK{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{A}{.}}}}[]
+OK{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{Pre{.}{.}}}}[]
+OK{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{Uni{.}}}[]
+OK{Imp{Uni{Uni{Pre{A}{[Var{1},Var{0}]}}}}{.}}[]
+OK{Imp{Uni{Uni{Pre{A}{.}}}}{.}}[]
+OK{Imp{Uni{Uni{Pre{.}{.}}}}{.}}[]
+OK{Imp{Uni{Uni{.}}}{.}}[]
+OK{Imp{Uni{.}}{.}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+
+# Test 9
 
 . Test example available.
 Boole{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}[]:{ImpE{Falsity}[Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{OK{Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}}[Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]}{ExiI{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}[Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{ImpI{Imp{Pre{A}{Fun{c}{}}}{Uni{Pre{A}{Var{0}}}}}[Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{UniI{Uni{Pre{A}{Var{0}}}}[Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]{Fun{c*}{},1}:{Boole{Pre{A}{Fun{c*}{}}}[Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{OK{Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}}[Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]}{ExiI{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}[Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{ImpI{Imp{Pre{A}{Fun{c*}{}}}{Uni{Pre{A}{Var{0}}}}}[Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{Boole{Uni{Pre{A}{Var{0}}}}[Pre{A}{Fun{c*}{}},Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{ImpE{Falsity}[Imp{Uni{Pre{A}{Var{0}}}}{Falsity},Pre{A}{Fun{c*}{}},Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]:{OK{Imp{Pre{A}{Fun{c*}{}}}{Falsity}}[Imp{Uni{Pre{A}{Var{0}}}}{Falsity},Pre{A}{Fun{c*}{}},Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]}{OK{Pre{A}{Fun{c*}{}}}[Imp{Uni{Pre{A}{Var{0}}}}{Falsity},Pre{A}{Fun{c*}{}},Imp{Pre{A}{Fun{c*}{}}}{Falsity},Pre{A}{Fun{c}{}},Imp{Exi{Imp{Pre{A}{Var{0}}}{Uni{Pre{A}{Var{0}}}}}}{Falsity}]}}}}}}}}}}}
@@ -175,51 +236,6 @@ OK{Exi{Imp{.}{.}}}[]
 OK{Exi{.}}[]
 OK{.}[]
 
-# Test 7
-
-. Test example available.
-ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{ImpI{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]:{OK{Pre{A}{}}[Pre{B}{},Pre{A}{}]}}
-ImpI{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]:{OK{Imp{Pre{B}{}}{Pre{A}{}}}[Pre{A}{}]}
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{A}{.}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{.}{.}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{B}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
-OK{Imp{Pre{A}{}}{.}}[]
-OK{Imp{Pre{A}{.}}{.}}[]
-OK{Imp{Pre{.}{.}}{.}}[]
-OK{Imp{.}{.}}[]
-OK{.}[]
-
-# Test 8
-
-. Test example available.
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{A}{}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{A}{}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{A}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{A}{.}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{Pre{.}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{Pre{.}{.}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]:{OK{Imp{.}{Falsity}}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}{OK{.}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]:{OK{Falsity}[Imp{Pre{A}{}}{Falsity},Pre{A}{}]}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]:{OK{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Pre{A}{}]}
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Falsity}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{.}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
-OK{Imp{Pre{A}{}}{.}}[]
-OK{Imp{Pre{A}{.}}{.}}[]
-OK{Imp{Pre{.}{.}}{.}}[]
-OK{Imp{.}{.}}[]
-OK{.}[]
-
-# Test 9
-
-. No test example available.
-OK{.}[]
-
 # Hint 0
 
 . Turn on edit mode and build the formula using Implication and the predicate A with no arguments.
@@ -250,6 +266,34 @@ OK{Imp{.}{.}}[]
 OK{.}[]
 
 # Hint 2
+
+. Turn on edit mode and build the formula.
+...
+. The Boole rule is not necessary.
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{A}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{A}{.}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{A}{.}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{.}{.}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{.}{.}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{.}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{.}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{OK{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}
+ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]}
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{.}{.}}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{Imp{.}{.}}{.}}}[]
+OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
+OK{Imp{Pre{A}{}}{.}}[]
+OK{Imp{Pre{A}{.}}{.}}[]
+OK{Imp{Pre{.}{.}}{.}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+
+# Hint 3
 
 . Turn on edit mode and build the formula.
 ...
@@ -301,7 +345,7 @@ OK{Imp{Con{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Hint 3
+# Hint 4
 
 . Turn on edit mode and build the formula.
 ...
@@ -323,35 +367,82 @@ OK{Imp{Pre{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Hint 4
+# Hint 5
 
 . Turn on edit mode and build the formula.
 ...
 . The Boole rule is not necessary.
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{A}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{A}{.}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{A}{.}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{Pre{.}{.}}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{Pre{.}{.}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{ImpE{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]:{OK{Imp{.}{Pre{B}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}{OK{.}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]:{OK{Pre{B}{}}[Imp{Pre{A}{}}{Pre{B}{}},Pre{A}{}]}}
-ImpI{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]:{OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}[Pre{A}{}]}
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{B}{.}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Pre{.}{.}}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{Imp{.}{.}}{.}}}[]
-OK{Imp{Pre{A}{}}{Imp{.}{.}}}[]
-OK{Imp{Pre{A}{}}{.}}[]
-OK{Imp{Pre{A}{.}}{.}}[]
-OK{Imp{Pre{.}{.}}{.}}[]
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{.}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{.}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{B}{.}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{B}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}
+ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{.}}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{.}{.}}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{.}}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{.}{.}}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{.}{.}}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{.}{.}}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{.}{.}}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{.}}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{.}{.}}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{.}}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{Imp{.}{.}}}{.}}[]
+OK{Imp{Imp{Pre{A}{}}{.}}{.}}[]
+OK{Imp{Imp{Pre{A}{.}}{.}}{.}}[]
+OK{Imp{Imp{Pre{.}{.}}{.}}{.}}[]
+OK{Imp{Imp{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Hint 5
+# Hint 6
+
+. Turn on edit mode and build the formula.
+...
+. The Boole rule is necessary.
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{.}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{.}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{.}{.}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{.}{.}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{.}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{.}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{.}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{.}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}
+ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{OK{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}
+OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]
+OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{.}}}[]
+OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{.}{.}}}[]
+OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{.}}[]
+OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{.}}{.}}[]
+OK{Imp{Imp{Imp{Pre{A}{}}{.}}{.}}{.}}[]
+OK{Imp{Imp{Imp{Pre{A}{.}}{.}}{.}}{.}}[]
+OK{Imp{Imp{Imp{Pre{.}{.}}{.}}{.}}{.}}[]
+OK{Imp{Imp{Imp{.}{.}}{.}}{.}}[]
+OK{Imp{Imp{.}{.}}{.}}[]
+OK{Imp{.}{.}}[]
+OK{.}[]
+
+# Hint 7
 
 . Turn on edit mode and build the formula.
 ...
@@ -408,7 +499,7 @@ OK{Imp{Dis{.}{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Hint 6
+# Hint 8
 
 . Turn on edit mode and build the formula.
 ...
@@ -431,86 +522,36 @@ OK{Imp{Uni{.}}{.}}[]
 OK{Imp{.}{.}}[]
 OK{.}[]
 
-# Hint 7
-
-. Turn on edit mode and build the formula.
-...
-. The Boole rule is not necessary.
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{.}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{ImpE{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Pre{B}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{.}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{A}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Imp{Pre{B}{}}{Pre{C}{}}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{B}{}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{B}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{B}{.}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{B}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{.}{.}}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{Pre{.}{.}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpE{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{.}{Pre{C}{}}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}{OK{.}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{ImpI{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Pre{C}{}}[Pre{A}{},Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{ImpI{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]:{OK{Imp{Pre{A}{}}{Pre{C}{}}}[Imp{Pre{A}{}}{Pre{B}{}},Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}}
-ImpI{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]:{OK{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}[Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}]}
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{}}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{C}{.}}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{Pre{.}{.}}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{}}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{A}{.}}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{Pre{.}{.}}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{Imp{.}{.}}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{}}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{B}{.}}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{Pre{.}{.}}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{}}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{A}{.}}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{Pre{.}{.}}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{Imp{.}{.}}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{Imp{.}{.}}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{}}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{C}{.}}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{Pre{.}{.}}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{}}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{B}{.}}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{Pre{.}{.}}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{Imp{.}{.}}}{.}}[]
-OK{Imp{Imp{Pre{A}{}}{.}}{.}}[]
-OK{Imp{Imp{Pre{A}{.}}{.}}{.}}[]
-OK{Imp{Imp{Pre{.}{.}}{.}}{.}}[]
-OK{Imp{Imp{.}{.}}{.}}[]
-OK{Imp{.}{.}}[]
-OK{.}[]
-
-# Hint 8
-
-. Turn on edit mode and build the formula.
-...
-. The Boole rule is necessary.
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{A}{.}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{A}{.}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{Pre{.}{.}}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{Pre{.}{.}}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{Imp{.}{.}}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{Imp{.}{.}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{ImpE{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Imp{.}{Falsity}}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}{OK{.}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{Boole{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]:{OK{Falsity}[Imp{Pre{A}{}}{Falsity},Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}}
-ImpI{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]:{OK{Pre{A}{}}[Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}]}
-OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{}}}[]
-OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{A}{.}}}[]
-OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{Pre{.}{.}}}[]
-OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{Falsity}}{.}}[]
-OK{Imp{Imp{Imp{Pre{A}{}}{Falsity}}{.}}{.}}[]
-OK{Imp{Imp{Imp{Pre{A}{}}{.}}{.}}{.}}[]
-OK{Imp{Imp{Imp{Pre{A}{.}}{.}}{.}}{.}}[]
-OK{Imp{Imp{Imp{Pre{.}{.}}{.}}{.}}{.}}[]
-OK{Imp{Imp{Imp{.}{.}}{.}}{.}}[]
-OK{Imp{Imp{.}{.}}{.}}[]
-OK{Imp{.}{.}}[]
-OK{.}[]
-
 # Hint 9
 
-. No exercise available.
+. Turn on edit mode and build the formula.
 ...
-. The link in the final hint works but it is not interesting.
+. A proof with 100 lines is possible but only the very first line is available online even though the final hint claims that all 100 lines are available online.
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{[Fun{f}{[Fun{f}{[Var{0}]}]}]}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{[Fun{f}{[Fun{f}{.}]}]}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{[Fun{f}{[Fun{.}{.}]}]}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{[Fun{f}{.}]}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{[Fun{.}{.}]}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{r}{.}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{Pre{.}{.}}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{[Var{0}]}}{.}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{r}{.}}{.}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{Pre{.}{.}}{.}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{Con{.}{.}}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{[Var{0}]}]}}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{f}{.}]}}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{[Fun{.}{.}]}}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{r}{.}}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{Pre{.}{.}}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{[Var{0}]}}{Falsity}}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{r}{.}}{Falsity}}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{Pre{.}{.}}{Falsity}}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{.}{Falsity}}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{Imp{.}{.}}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{Imp{.}{.}}}{Exi{.}}}[]
+OK{Imp{Uni{.}}{Exi{.}}}[]
+OK{Imp{Uni{.}}{.}}[]
+OK{Imp{.}{.}}[]
 OK{.}[]
 
 . More tests and hints are available online.
