@@ -5,6 +5,8 @@ NaDeA - Natural Deduction Assistant
 
 Developers: Jørgen Villadsen, Alexander Birch Jensen & Anders Schlichtkrull
 
+Contributor: Andreas Halkjær From
+
 Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, Denmark: http://people.compute.dtu.dk/jovi/
 
 ---
