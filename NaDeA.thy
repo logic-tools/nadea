@@ -1,4 +1,4 @@
-theory NaDeA imports Main begin                                                                     (*  Isabelle theory file (Isabelle2016)                                       *)
+theory NaDeA imports Main begin                                                                     (*  Isabelle theory file (Isabelle2016-1)                                     *)
                                                                                                     (*                                                                            *)
 type_synonym id = "char list"                                                                       (*  A function/predicate identifier is a list of characters.                  *)
                                                                                                     (*                                                                            *)
@@ -263,6 +263,7 @@ corollary "? p. OK p []" "? p. ~ OK p []"                                       
 proof -                                                                                             (*  Proof of consistency: Something, but not everything, can be proved.       *)
   have "OK (Imp p p) []" for p proof (rule Imp_I, rule Assume, simp) qed                            (*                                                                            *)
   then show "? p. OK p []" proof iprover qed                                                        (*                                                                            *)
+next                                                                                                (*                                                                            *)
   have "~ semantics (e :: nat => unit) f g Falsity" for e f g proof simp qed                        (*                                                                            *)
   then show "? p. ~ OK p []" using soundness proof iprover qed                                      (*                                                                            *)
 qed                                                                                                 (*                                                                            *)

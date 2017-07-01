@@ -263,6 +263,7 @@ corollary "\<exists>p. OK p []" "\<exists>p. \<not> OK p []"
 proof -
   have "OK (Imp p p) []" for p proof (rule Imp_I, rule Assume, simp) qed
   then show "\<exists>p. OK p []" proof iprover qed
+next
   have "\<not> semantics (e :: nat \<Rightarrow> unit) f g Falsity" for e f g proof simp qed
   then show "\<exists>p. \<not> OK p []" using soundness proof iprover qed
 qed
