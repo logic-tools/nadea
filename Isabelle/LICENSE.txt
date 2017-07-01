@@ -1,4 +1,4 @@
-﻿Copyright (c) 2004, Gerwin Klein, Tobias Nipkow, Lawrence C. Paulson
+Copyright (c) 2004, Gerwin Klein, Tobias Nipkow, Lawrence C. Paulson
 Copyright (c) 2004, contributing authors 
                     (see author notice in individual files)
 
