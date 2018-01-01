@@ -9,7 +9,7 @@ Please provide feedback to Associate Professor Jørgen Villadsen, DTU Compute, D
 
 ---
 
-This folder is not longer maintained.
+This folder is no longer maintained.
 
 Based on:
 
