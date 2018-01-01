@@ -1,8 +1,8 @@
-*.pdf
 *.bat
 *.ico
 *.js
+*.nadea
+*.pdf
+*.php
 jquery.d.ts
-online/
 output/
-proofjudge.ts

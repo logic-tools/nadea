@@ -103,13 +103,6 @@ a {
     font-weight: bold;
 }
 
-#header #rightbar .smiley {
-    display: inline-block;
-    width: 2vw;
-    vertical-align: text-top;
-    text-align: center;
-}
-
 #frame {
     padding: 0.6vw;
     margin: 3vw 0 0 0;
@@ -244,6 +237,10 @@ a {
     padding-bottom: 1.30vw;
 }
 
+.medSpace {
+    padding-bottom: 0.75vw;
+}
+
 .textline ol {
     margin-top: 0;
     padding-top: 0;
@@ -350,11 +347,11 @@ a {
     border-top: 0.12vw solid black;
 }
 
-.helpContent .leftParantheses, .helpContent .leftBracket {
+.helpContent .leftParentheses, .helpContent .leftBracket {
     padding-right: 0.135vw !important;
 }
 
-.helpContent .rightParantheses, .helpContent .rightBracket {
+.helpContent .rightParentheses, .helpContent .rightBracket {
     padding-left: 0.135vw !important;
 }
 
@@ -416,6 +413,14 @@ a {
     padding: 0 0.5vw;
 }
 
+.verifyTextareaContainer {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 0 0.5vw;
+    height: 100%;
+}
+
 .loadTextarea {
     margin: 0;
     padding: 0.25%;
@@ -424,6 +429,19 @@ a {
     flex-grow: 1;
     border: 0.1vw solid black;
     font-size: 1.2vw;    
+    font-family: sans-serif;
+    outline: none;
+    resize: none;
+}
+
+.verifyTextarea {
+    margin: 0;
+    padding: 0.25%;
+    width: 99.5%;
+    display: flex;
+    flex-grow: 1;
+    border: 0.1vw solid black;
+    font-size: 1vw;    
     font-family: sans-serif;
     outline: none;
     resize: none;
@@ -503,6 +521,20 @@ a {
     background: white;
 }
 
+#header .verify, .verifyStatic {
+    color: white;
+    background: magenta;
+    border-color: magenta;
+    width: 2vw;
+    vertical-align: text-top;
+    text-align: center;
+}
+
+#header .verify:hover {
+    color: magenta;
+    background: white;
+}
+
 #header .disabled, #header .disabled:hover {
     color: white;
     background: lightgray;
@@ -574,7 +606,7 @@ a {
     color: white !important;
 }
 
-.ok, .leftParantheses, .rightParantheses, .leftBracket, .rightBracket, .imp, .con, .dis, .exi, .uni, .pre, .fun, .arg, .line .goal, .var, .id, .falsity, .news, .concat, .comma  {
+.ok, .leftParentheses, .rightParentheses, .leftBracket, .rightBracket, .imp, .con, .dis, .exi, .uni, .pre, .fun, .arg, .line .goal, .var, .id, .falsity, .news, .concat, .comma  {
     display: inline;
 }
 
@@ -591,11 +623,11 @@ a {
     white-space: nowrap;
 }
 
-.leftParantheses, .leftBracket {
+.leftParentheses, .leftBracket {
     padding-right: 0.18vw;
 }
 
-.rightParantheses, .rightBracket {
+.rightParentheses, .rightBracket {
     padding-left: 0.18vw;
 }
 
@@ -629,7 +661,7 @@ a {
     color: red;
 }
 
-#isabelleFileView {
+.isabelleFileView {
     font-size: 0.875vw;
     font-family: Courier New, Courier, monospace;
     margin: 0;
@@ -746,7 +778,7 @@ div.tableCaption {
     float: left;
 }
 
-#header #rightbar .proofjudgeBtn {
+#header #rightbar .proofjudgeBtn, .proofjudgeBtnStatic {
     font-size: 1.5vw;
     color: orange;
     border-color: orange;
