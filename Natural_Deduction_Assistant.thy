@@ -2715,6 +2715,7 @@ definition nat_of_string:: \<open>string \<Rightarrow> nat\<close> where
 definition string_of_nat:: \<open>nat \<Rightarrow> string\<close> where
   \<open>string_of_nat \<equiv> inv nat_of_string\<close>
 
+abbreviation countable :: \<open>'a set \<Rightarrow> bool\<close> where \<open>countable S \<equiv> \<exists>f::'a \<Rightarrow> nat. inj_on f S\<close>
 
 lemma nat_of_string_bij: \<open>bij nat_of_string\<close>
 proof -
