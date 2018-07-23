@@ -8,7 +8,7 @@ https://www.isa-afp.org/LICENSE
 
 section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
-theory Natural_Deduction_Assistant imports "HOL-Library.Countable" begin
+theory Natural_Deduction_Assistant imports Main begin
 
 section \<open>Natural Deduction\<close>
 
@@ -1360,11 +1360,225 @@ theorem finite_char_subset: \<open>subset_closed C \<Longrightarrow> C \<subsete
 
 subsection \<open>Enumerating datatypes\<close>
 
-instance tm :: countable
-  by countable_datatype
+primrec diag :: \<open>nat \<Rightarrow> (nat \<times> nat)\<close> where
+  \<open>diag 0 = (0, 0)\<close>
+| \<open>diag (Suc n) =
+     (let (x, y) = diag n
+      in case y of
+          0 \<Rightarrow> (0, Suc x)
+        | Suc y \<Rightarrow> (Suc x, y))\<close>
 
-instance fm :: countable
-  by countable_datatype
+theorem diag_le1: \<open>fst (diag (Suc n)) < Suc n\<close>
+  by (induct n) (simp_all add: Let_def split_def split: nat.split)
+
+theorem diag_le2: \<open>snd (diag (Suc (Suc n))) < Suc (Suc n)\<close>
+proof (induct n)
+  case 0
+  then show ?case by simp
+next
+  case (Suc n')
+  then show ?case proof (induct n')
+    case 0
+    then show ?case by simp
+  next
+    case (Suc _)
+    then show ?case
+      using diag_le1 by (simp add: Let_def split_def split: nat.split)
+  qed
+qed
+
+theorem diag_le3: \<open>fst (diag n) = Suc x \<Longrightarrow> snd (diag n) < n\<close>
+proof (induct n)
+  case 0
+  then show ?case by simp
+next
+  case (Suc n')
+  then show ?case proof (induct n')
+    case 0
+    then show ?case by simp
+  next
+    case (Suc n'')
+    then show ?case using diag_le2 by simp
+  qed
+qed
+
+theorem diag_le4: \<open>fst (diag n) = Suc x \<Longrightarrow> x < n\<close>
+proof (induct n)
+  case 0
+  then show ?case by simp
+next
+  case (Suc n')
+  then have \<open>fst (diag (Suc n')) < Suc n'\<close>
+    using diag_le1 by blast
+  then show ?case using Suc by simp
+qed
+
+function undiag :: \<open>nat \<times> nat \<Rightarrow> nat\<close> where
+  \<open>undiag (0, 0) = 0\<close>
+| \<open>undiag (0, Suc y) = Suc (undiag (y, 0))\<close>
+| \<open>undiag (Suc x, y) = Suc (undiag (x, Suc y))\<close>
+  by pat_completeness auto
+termination
+  by (relation \<open>measure (\<lambda>(x, y). ((x + y) * (x + y + 1)) div 2 + x)\<close>) auto
+
+theorem diag_undiag [simp]: \<open>diag (undiag (x, y)) = (x, y)\<close>
+  by (induct rule: undiag.induct) simp_all
+
+datatype btree = Leaf nat | Branch btree btree
+
+function diag_btree :: \<open>nat \<Rightarrow> btree\<close> where
+  \<open>diag_btree n = (case fst (diag n) of
+       0 \<Rightarrow> Leaf (snd (diag n))
+     | Suc x \<Rightarrow> Branch (diag_btree x) (diag_btree (snd (diag n))))\<close>
+  by auto
+termination
+  by (relation \<open>measure id\<close>) (auto intro: diag_le3 diag_le4)
+
+primrec undiag_btree :: \<open>btree \<Rightarrow> nat\<close> where
+  \<open>undiag_btree (Leaf n) = undiag (0, n)\<close>
+| \<open>undiag_btree (Branch t1 t2) =
+     undiag (Suc (undiag_btree t1), undiag_btree t2)\<close>
+
+theorem diag_undiag_btree [simp]: \<open>diag_btree (undiag_btree t) = t\<close>
+  by (induct t) simp_all
+
+declare diag_btree.simps [simp del] undiag_btree.simps [simp del]
+
+fun list_of_btree :: \<open>(nat \<Rightarrow> 'a) \<Rightarrow> btree \<Rightarrow> 'a list\<close> where
+  \<open>list_of_btree f (Leaf x) = []\<close>
+| \<open>list_of_btree f (Branch (Leaf n) t) = f n # list_of_btree f t\<close>
+| \<open>list_of_btree f _ = undefined\<close>
+
+primrec btree_of_list :: \<open>('a \<Rightarrow> nat) \<Rightarrow> 'a list \<Rightarrow> btree\<close> where
+  \<open>btree_of_list f [] = Leaf 0\<close>
+| \<open>btree_of_list f (x # xs) = Branch (Leaf (f x)) (btree_of_list f xs)\<close>
+
+definition diag_list :: \<open>(nat \<Rightarrow> 'a) \<Rightarrow> nat \<Rightarrow> 'a list\<close> where
+  \<open>diag_list f n = list_of_btree f (diag_btree n)\<close>
+
+definition undiag_list :: \<open>('a \<Rightarrow> nat) \<Rightarrow> 'a list \<Rightarrow> nat\<close> where
+  \<open>undiag_list f xs = undiag_btree (btree_of_list f xs)\<close>
+
+theorem diag_undiag_list [simp]:
+  \<open>(\<And>x. d (u x) = x) \<Longrightarrow> diag_list d (undiag_list u xs) = xs\<close>
+  by (induct xs) (simp_all add: diag_list_def undiag_list_def)
+
+fun string_of_btree :: \<open>btree \<Rightarrow> string\<close> where
+  \<open>string_of_btree (Leaf x) = []\<close>
+| \<open>string_of_btree (Branch (Leaf n) t) = char_of n # string_of_btree t\<close>
+| \<open>string_of_btree _ = undefined\<close>
+
+primrec btree_of_string :: \<open>string \<Rightarrow> btree\<close> where
+  \<open>btree_of_string [] = Leaf 0\<close>
+| \<open>btree_of_string (x # xs) = Branch (Leaf (of_char x)) (btree_of_string xs)\<close>
+
+definition diag_string :: \<open>nat \<Rightarrow> string\<close> where
+  \<open>diag_string n = string_of_btree (diag_btree n)\<close>
+
+definition undiag_string :: \<open>string \<Rightarrow> nat\<close> where
+  \<open>undiag_string xs = undiag_btree (btree_of_string xs)\<close>
+
+theorem diag_undiag_string [simp]:
+  \<open>diag_string (undiag_string xs) = xs\<close>
+  by (induct xs) (simp_all add: diag_string_def undiag_string_def)
+
+lemma inj_undiag_string: \<open>inj undiag_string\<close>
+  by (metis diag_undiag_string inj_onI)
+
+fun
+  term_of_btree :: \<open>btree \<Rightarrow> tm\<close> and
+  term_list_of_btree :: \<open>btree \<Rightarrow> tm list\<close> where
+  \<open>term_of_btree (Leaf m) = Var m\<close>
+| \<open>term_of_btree (Branch (Leaf m) t) =
+     Fun (diag_string m) (term_list_of_btree t)\<close>
+| \<open>term_list_of_btree (Leaf m) = []\<close>
+| \<open>term_list_of_btree (Branch t1 t2) =
+     term_of_btree t1 # term_list_of_btree t2\<close>
+| \<open>term_of_btree (Branch (Branch _ _) _) = undefined\<close>
+
+primrec
+  btree_of_term :: \<open>tm \<Rightarrow> btree\<close> and
+  btree_of_term_list :: \<open>tm list \<Rightarrow> btree\<close> where
+  \<open>btree_of_term (Var m) = Leaf m\<close>
+| \<open>btree_of_term (Fun m ts) = Branch (Leaf (undiag_string m)) (btree_of_term_list ts)\<close>
+| \<open>btree_of_term_list [] = Leaf 0\<close>
+| \<open>btree_of_term_list (t # ts) = Branch (btree_of_term t) (btree_of_term_list ts)\<close>
+
+theorem term_btree:
+  shows \<open>term_of_btree (btree_of_term t) = t\<close>
+    and \<open>term_list_of_btree (btree_of_term_list ts) = ts\<close>
+  by (induct t and ts rule: btree_of_term.induct btree_of_term_list.induct) simp_all
+
+definition diag_term :: \<open>nat \<Rightarrow> tm\<close> where
+  \<open>diag_term n = term_of_btree (diag_btree n)\<close>
+
+definition undiag_term :: \<open>tm \<Rightarrow> nat\<close> where
+  \<open>undiag_term t = undiag_btree (btree_of_term t)\<close>
+
+theorem diag_undiag_term [simp]:
+  \<open>diag_term (undiag_term t) = t\<close>
+  by (simp add: diag_term_def undiag_term_def term_btree)
+
+fun form_of_btree :: \<open>btree \<Rightarrow> fm\<close> where
+  \<open>form_of_btree (Leaf 0) = Falsity\<close>
+| \<open>form_of_btree (Branch (Leaf 0) (Branch (Leaf m) (Leaf n))) =
+     Pre (diag_string m) (diag_list diag_term n)\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc 0)) (Branch t1 t2)) =
+     Con (form_of_btree t1) (form_of_btree t2)\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc 0))) (Branch t1 t2)) =
+     Dis (form_of_btree t1) (form_of_btree t2)\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc (Suc 0)))) (Branch t1 t2)) =
+     Imp (form_of_btree t1) (form_of_btree t2)\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc (Suc (Suc 0))))) t) =
+     Uni (form_of_btree t)\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc (Suc (Suc (Suc 0)))))) t) =
+     Exi (form_of_btree t)\<close>
+| \<open>form_of_btree (Leaf (Suc _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc (Suc (Suc (Suc (Suc _))))))) _) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc (Suc 0)))) (Leaf _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc (Suc 0))) (Leaf _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf (Suc 0)) (Leaf _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Branch _ _) _) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf 0) (Leaf _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf 0) (Branch (Branch _ _) _)) = undefined\<close>
+| \<open>form_of_btree (Branch (Leaf 0) (Branch (Leaf _) (Branch _ _))) = undefined\<close>
+
+primrec btree_of_form :: \<open>fm \<Rightarrow> btree\<close> where
+  \<open>btree_of_form Falsity = Leaf 0\<close>
+| \<open>btree_of_form (Pre b ts) = Branch (Leaf 0)
+     (Branch (Leaf (undiag_string b)) (Leaf (undiag_list undiag_term ts)))\<close>
+| \<open>btree_of_form (Con a b) = Branch (Leaf (Suc 0))
+     (Branch (btree_of_form a) (btree_of_form b))\<close>
+| \<open>btree_of_form (Dis a b) = Branch (Leaf (Suc (Suc 0)))
+     (Branch (btree_of_form a) (btree_of_form b))\<close>
+| \<open>btree_of_form (Imp a b) = Branch (Leaf (Suc (Suc (Suc 0))))
+     (Branch (btree_of_form a) (btree_of_form b))\<close>
+| \<open>btree_of_form (Uni a) = Branch (Leaf (Suc (Suc (Suc (Suc 0)))))
+     (btree_of_form a)\<close>
+| \<open>btree_of_form (Exi a) = Branch (Leaf (Suc (Suc (Suc (Suc (Suc 0))))))
+     (btree_of_form a)\<close>
+
+definition diag_form :: \<open>nat \<Rightarrow> fm\<close> where
+  \<open>diag_form n = form_of_btree (diag_btree n)\<close>
+
+definition undiag_form :: \<open>fm \<Rightarrow> nat\<close> where
+  \<open>undiag_form x = undiag_btree (btree_of_form x)\<close>
+
+theorem diag_undiag_form [simp]:
+  \<open>diag_form (undiag_form f) = f\<close>
+  by (induct f) (simp_all add: diag_form_def undiag_form_def)
+
+definition diag_form' :: \<open>nat \<Rightarrow> fm\<close> where
+  \<open>diag_form' = diag_form\<close>
+
+definition undiag_form' :: \<open>fm \<Rightarrow> nat\<close> where
+  \<open>undiag_form' = undiag_form\<close>
+
+theorem diag_undiag_form' [simp]: \<open>diag_form' (undiag_form' f) = f\<close>
+  by (simp add: diag_form'_def undiag_form'_def)
+
+abbreviation \<open>from_nat \<equiv> diag_form'\<close>
+abbreviation \<open>to_nat \<equiv> undiag_form'\<close>
 
 subsection \<open>Extension to maximal consistent sets\<close>
 
@@ -2709,36 +2923,21 @@ proof -
     by simp
 qed
 
-definition nat_of_string:: \<open>string \<Rightarrow> nat\<close> where
+definition nat_of_string :: \<open>string \<Rightarrow> nat\<close> where
   \<open>nat_of_string \<equiv> (SOME f. bij f)\<close>
 
-definition string_of_nat:: \<open>nat \<Rightarrow> string\<close> where
+definition string_of_nat :: \<open>nat \<Rightarrow> string\<close> where
   \<open>string_of_nat \<equiv> inv nat_of_string\<close>
 
-abbreviation countable :: \<open>'a set \<Rightarrow> bool\<close> where \<open>countable S \<equiv> \<exists>f::'a \<Rightarrow> nat. inj_on f S\<close>
-
-lemma nat_of_string_bij: \<open>bij nat_of_string\<close>
-proof -
-  have \<open>countable (UNIV::string set)\<close>
-    by auto
-  moreover have \<open>infinite (UNIV::string set)\<close>
-    using infinite_UNIV_listI by auto
-  ultimately obtain x where \<open>bij (x:: string \<Rightarrow> nat)\<close>
-    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
-  then show ?thesis
-    unfolding nat_of_string_def using someI by metis
-qed
-
-lemma string_of_nat_bij: \<open>bij string_of_nat\<close>
-  unfolding string_of_nat_def using nat_of_string_bij bij_betw_inv_into by auto
-
 lemma nat_of_string_string_of_nat [simp]: \<open>nat_of_string (string_of_nat n) = n\<close>
-  unfolding string_of_nat_def using nat_of_string_bij f_inv_into_f
-  by (simp add: bij_is_surj surj_f_inv_f)
+  using Schroeder_Bernstein bij_is_surj infinite_UNIV_listI infinite_iff_countable_subset
+    nat_of_string_def someI_ex string_of_nat_def surj_f_inv_f top_greatest inj_undiag_string
+  by (metis (mono_tags, lifting))
 
 lemma string_of_nat_nat_of_string [simp]: \<open>string_of_nat (nat_of_string n) = n\<close>
-  unfolding string_of_nat_def using nat_of_string_bij inv_into_f_f[of nat_of_string]
-  by (simp add: bij_is_inj)
+  using Schroeder_Bernstein UNIV_I bij_is_inj infinite_UNIV_listI infinite_iff_countable_subset
+    inv_into_f_f nat_of_string_def someI_ex string_of_nat_def top_greatest inj_undiag_string
+  by (metis (mono_tags, lifting))
 
 lemma infinite_htms: \<open>infinite (UNIV :: htm set)\<close>
 proof -
@@ -2748,22 +2947,26 @@ proof -
     using infinity[of ?undiago ?diago UNIV] by simp
 qed
 
+abbreviation countable :: \<open>'a set \<Rightarrow> bool\<close> where \<open>countable S \<equiv> \<exists>f :: 'a \<Rightarrow> nat. inj_on f S\<close>
+
 lemma countably_inf_bij:
-  assumes inf_a_uni: \<open>infinite (UNIV :: 'a::countable set)\<close>
-  assumes inf_b_uni: \<open>infinite (UNIV :: 'b::countable set)\<close>
+  assumes \<open>countable (UNIV :: 'a set)\<close>
+  assumes \<open>countable (UNIV :: 'b set)\<close>
+  assumes inf_a_uni: \<open>infinite (UNIV :: 'a set)\<close>
+  assumes inf_b_uni: \<open>infinite (UNIV :: 'b set)\<close>
   shows \<open>\<exists>b_of_a :: 'a \<Rightarrow> 'b. bij b_of_a\<close>
 proof -
-  let ?S = \<open>UNIV :: 'a::countable set\<close>
+  let ?S = \<open>UNIV :: 'a set\<close>
   have \<open>countable ?S\<close>
-    by auto
+    by (simp add: assms(1))
   moreover have \<open>infinite ?S\<close>
     using inf_a_uni by auto
   ultimately obtain nat_of_a where *: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
     using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
 
-  let ?T = \<open>UNIV :: 'b::countable set\<close>
+  let ?T = \<open>UNIV :: 'b set\<close>
   have \<open>countable ?T\<close>
-    by auto
+    by (simp add: assms(2))
   moreover have \<open>infinite ?T\<close>
     using inf_b_uni by auto
   ultimately obtain nat_of_b where **: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
@@ -2843,8 +3046,15 @@ next
     using Uni by simp
 qed simp_all
 
-instance htm :: countable
-  by countable_datatype
+lemma htm: \<open>\<exists>f :: htm \<Rightarrow> nat. inj f\<close>
+proof -
+  have \<open>\<exists>f :: htm \<Rightarrow> tm. inj f\<close>
+    unfolding inj_def using herbrand_semantics'(1) by metis
+  moreover have \<open>inj undiag_term\<close>
+    unfolding inj_def using diag_undiag_term by metis
+  ultimately show ?thesis
+    using inj_comp by metis
+qed
 
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
@@ -2852,7 +3062,8 @@ lemma sentence_completeness':
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
     and \<open>sentence p\<close>
     and \<open>list_all sentence z\<close>
-    and \<open>infinite (UNIV :: 'a::countable set)\<close>
+    and \<open>countable (UNIV :: 'a set)\<close>
+    and \<open>infinite (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
   have \<open>\<forall>(e :: nat \<Rightarrow> htm) f g.
@@ -2863,7 +3074,7 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms countably_inf_bij infinite_htms by blast
+      using assms countably_inf_bij infinite_htms htm by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
     let ?f = \<open>f_conv a_of_htm f\<close>
@@ -2881,12 +3092,13 @@ qed
 theorem sentence_completeness:
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
     and \<open>sentence p\<close>
-    and \<open>infinite (UNIV :: 'a::countable set)\<close>
+    and \<open>countable (UNIV :: 'a set)\<close>
+    and \<open>infinite (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: sentence_completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
-  using sentence_completeness by blast
+  using sentence_completeness inj_Suc by blast
 
 section \<open>Completeness for Open Formulas\<close>
 
@@ -3920,7 +4132,8 @@ subsection \<open>Completeness\<close>
 
 theorem completeness':
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
-    and \<open>infinite (UNIV :: 'a::countable set)\<close>
+    and \<open>countable (UNIV :: 'a set)\<close>
+    and \<open>infinite (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
   let ?p = \<open>put_imps p (rev z)\<close>
@@ -3941,17 +4154,18 @@ qed
 
 theorem completeness:
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
-    and \<open>infinite (UNIV :: 'a::countable set)\<close>
+    and \<open>countable (UNIV :: 'a set)\<close>
+    and \<open>infinite (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
-  using completeness by blast
+  using completeness infinite_UNIV_char_0 inj_Suc by blast
 
 theorem put_unis:
   assumes \<open>OK p []\<close>
   shows \<open>OK (put_unis m p) []\<close>
-  using assms valid_put_unis soundness completeness by blast
+  using assms valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using put_unis remove_unis by blast
@@ -3964,7 +4178,7 @@ theorem main: \<open>valid p \<longleftrightarrow> OK p []\<close>
 proof
   assume \<open>valid p\<close>
   with completeness show \<open>OK p []\<close>
-    using infinite_UNIV_nat .
+    using infinite_UNIV_char_0 inj_Suc by blast
 next
   assume \<open>OK p []\<close>
   with soundness show \<open>valid p\<close>
@@ -3989,8 +4203,8 @@ Based on:
   \<^url>\<open>https://www.isa-afp.org/entries/FOL-Fitting.shtml\<close>
 
   \<^item> Anders Schlichtkrull:
-  Formalization of First-Order Unordered Resolution.
-  \<^url>\<open>https://bitbucket.org/isafol/isafol/src/master/Unordered_Resolution/\<close>
+  The Resolution Calculus for First-Order Logic.
+  \<^url>\<open>https://www.isa-afp.org/entries/Resolution_FOL.shtml\<close>
 
   \<^item> Jørgen Villadsen, Andreas Halkjær From, Alexander Birch Jensen & Anders Schlichtkrull:
   NaDeA - Natural Deduction Assistant.
