@@ -10,130 +10,6 @@ section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
 theory Natural_Deduction_Assistant imports "HOL-Library.Countable" begin
 
-definition countable :: \<open>'a set \<Rightarrow> bool\<close> where
-  \<open>countable S \<longleftrightarrow> (\<exists>f::'a \<Rightarrow> nat. inj_on f S)\<close>
-
-declare countable_def [simp]
-
-primrec (in wellorder) enumerate :: \<open>'a set \<Rightarrow> nat \<Rightarrow> 'a\<close> where
-  enumerate_0: \<open>enumerate S 0 = (LEAST n. n \<in> S)\<close> |
-  enumerate_Suc: \<open>enumerate S (Suc n) = enumerate (S - {LEAST n. n \<in> S}) n\<close>
-
-lemma enumerate_Suc': \<open>enumerate S (Suc n) = enumerate (S - {enumerate S 0}) n\<close>
-  by simp
-
-lemma enumerate_in_set: \<open>infinite S \<Longrightarrow> enumerate S n \<in> S\<close>
-proof (induct n arbitrary: S)
-  case 0
-  then show ?case
-    by (fastforce intro: LeastI dest: infinite_imp_nonempty)
-next
-  case (Suc n)
-  then show ?case
-    using enumerate_Suc' by (metis DiffE infinite_remove)
-qed
-
-declare enumerate_0 [simp del]
-declare enumerate_Suc [simp del]
-
-lemma enumerate_step: \<open>infinite S \<Longrightarrow> enumerate S n < enumerate S (Suc n)\<close>
-proof (induct n arbitrary: S)
-  case 0
-  then have \<open>enumerate S 0 \<le> enumerate S (Suc 0)\<close>
-    by (simp add: enumerate_0 Least_le enumerate_in_set)
-  moreover have \<open>enumerate (S - {enumerate S 0}) 0 \<in> S - {enumerate S 0}\<close>
-    using 0 enumerate_in_set by (metis infinite_remove)
-  then have \<open>enumerate S 0 \<noteq> enumerate S (Suc 0)\<close>
-    using enumerate_Suc' by (metis DiffD2 singletonI)
-  ultimately show ?case
-    by simp
-next
-  case (Suc n)
-  then show ?case
-    by (simp add: enumerate_Suc')
-qed
-
-lemma enumerate_mono: \<open>m < n \<Longrightarrow> infinite S \<Longrightarrow> enumerate S m < enumerate S n\<close>
-  by (induct m n rule: less_Suc_induct) (simp_all add: enumerate_step)
-
-lemma enumerate_Suc'': \<open>infinite S \<Longrightarrow> enumerate S (Suc n) = (LEAST s. s \<in> S \<and> enumerate S n < s)\<close>
-proof (induct n arbitrary: S)
-  case 0
-  then have \<open>\<forall>s \<in> S. enumerate S 0 \<le> s\<close>
-    by (simp add: enumerate.simps Least_le)
-  then show ?case
-    unfolding enumerate_0 enumerate_Suc'
-    by (fastforce intro: arg_cong[where f = Least])
-next
-  case (Suc n)
-  then show ?case
-    using enumerate_mono[OF zero_less_Suc \<open>infinite S\<close>, of n]
-    by (fastforce intro: arg_cong[where f = Least] simp: enumerate_Suc')
-qed
-
-lemma enumerate_Ex:
-  fixes S :: \<open>nat set\<close>
-  assumes S: \<open>infinite S\<close>
-    and s: \<open>s \<in> S\<close>
-  shows \<open>\<exists>n. enumerate S n = s\<close>
-  using s
-proof (induct s rule: less_induct)
-  case (less s)
-  show ?case
-  proof (cases \<open>\<exists>y\<in>S. y < s\<close>)
-    case True
-    let ?y = \<open>Max {s'\<in>S. s' < s}\<close>
-    from True have y: \<open>?y < x = (\<forall>s'\<in>S. s' < s \<longrightarrow> s' < x)\<close> for x
-      by (subst Max_less_iff) auto
-    then have y_in: \<open>?y \<in> {s'\<in>S. s' < s}\<close>
-      by (intro Max_in) auto
-    with less.hyps obtain n where \<open>enumerate S n = ?y\<close>
-      by blast
-    with S have \<open>enumerate S (Suc n) = s\<close>
-      by (fastforce simp: y less enumerate_Suc'' intro: Least_equality)
-    then show ?thesis
-      by blast
-  next
-    case False
-    then have \<open>\<forall>t\<in>S. s \<le> t\<close> by fastforce
-    with \<open>s \<in> S\<close> show ?thesis
-      by (fastforce simp: enumerate_0 intro: exI[of _ 0] Least_equality)
-  qed
-qed
-
-lemma bij_enumerate:
-  fixes S :: \<open>nat set\<close>
-  assumes S: \<open>infinite S\<close>
-  shows \<open>bij_betw (enumerate S) UNIV S\<close>
-proof -
-  have \<open>n \<noteq> m \<Longrightarrow> enumerate S n \<noteq> enumerate S m\<close> for n m
-    using enumerate_mono[OF _ \<open>infinite S\<close>] by (auto simp: neq_iff)
-  then have \<open>inj (enumerate S)\<close>
-    unfolding inj_def by blast
-  moreover have \<open>\<forall>s \<in> S. \<exists>i. enumerate S i = s\<close>
-    using enumerate_Ex[OF S] by blast
-  moreover note \<open>infinite S\<close>
-  ultimately show ?thesis
-    unfolding bij_betw_def using enumerate_in_set by fast
-qed
-
-lemma countableE_infinite:
-  assumes \<open>countable S\<close> \<open>infinite S\<close>
-  obtains e :: \<open>'a \<Rightarrow> nat\<close> where \<open>bij_betw e S UNIV\<close>
-proof -
-  obtain f :: \<open>'a \<Rightarrow> nat\<close> where \<open>inj_on f S\<close>
-    using \<open>countable S\<close> by fastforce
-  then have \<open>bij_betw f S (f ` S)\<close>
-    unfolding bij_betw_def by blast
-  moreover from \<open>inj_on f S\<close> \<open>infinite S\<close> have inf_fS: \<open>infinite (f ` S)\<close>
-    using finite_imageD by blast
-  then have \<open>bij_betw (the_inv_into UNIV (enumerate (f ` S))) (f ` S) UNIV\<close>
-    using bij_betw_the_inv_into bij_enumerate by blast
-  ultimately have \<open>bij_betw (the_inv_into UNIV (enumerate (f ` S)) \<circ> f) S UNIV\<close>
-    by (rule bij_betw_trans)
-  then show thesis ..
-qed
-
 section \<open>Natural Deduction\<close>
 
 type_synonym id = \<open>char list\<close>
@@ -1484,13 +1360,11 @@ theorem finite_char_subset: \<open>subset_closed C \<Longrightarrow> C \<subsete
 
 subsection \<open>Enumerating datatypes\<close>
 
-instantiation tm :: countable begin
-instance by countable_datatype
-end
+instance tm :: countable
+  by countable_datatype
 
-instantiation fm :: countable begin
-instance by countable_datatype
-end
+instance fm :: countable
+  by countable_datatype
 
 subsection \<open>Extension to maximal consistent sets\<close>
 
@@ -2841,6 +2715,7 @@ definition nat_of_string:: \<open>string \<Rightarrow> nat\<close> where
 definition string_of_nat:: \<open>nat \<Rightarrow> string\<close> where
   \<open>string_of_nat \<equiv> inv nat_of_string\<close>
 
+
 lemma nat_of_string_bij: \<open>bij nat_of_string\<close>
 proof -
   have \<open>countable (UNIV::string set)\<close>
@@ -2848,7 +2723,7 @@ proof -
   moreover have \<open>infinite (UNIV::string set)\<close>
     using infinite_UNIV_listI by auto
   ultimately obtain x where \<open>bij (x:: string \<Rightarrow> nat)\<close>
-    using countableE_infinite by blast
+    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
   then show ?thesis
     unfolding nat_of_string_def using someI by metis
 qed
@@ -2883,7 +2758,7 @@ proof -
   moreover have \<open>infinite ?S\<close>
     using inf_a_uni by auto
   ultimately obtain nat_of_a where *: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
-    using countableE_infinite by blast
+    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
 
   let ?T = \<open>UNIV :: 'b::countable set\<close>
   have \<open>countable ?T\<close>
@@ -2891,7 +2766,7 @@ proof -
   moreover have \<open>infinite ?T\<close>
     using inf_b_uni by auto
   ultimately obtain nat_of_b where **: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
-    using countableE_infinite by blast
+    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
 
   let ?b_of_a = \<open>\<lambda>a. (inv nat_of_b) (nat_of_a a)\<close>
 
