@@ -1884,7 +1884,7 @@ theorem hintikka_model:
     semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) p) \<and>
      (Neg p \<in> H \<longrightarrow> closed 0 p \<longrightarrow>
     semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) (Neg p))\<close>
-proof (rule wf_induct[where a=p and r=\<open>measure size_formulas\<close>])
+proof (induct p rule: wf_induct)
   show \<open>wf (measure size_formulas)\<close>
     by blast
 next
