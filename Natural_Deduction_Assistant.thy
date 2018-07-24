@@ -2947,30 +2947,26 @@ proof -
     using infinity[of ?undiago ?diago UNIV] by simp
 qed
 
-abbreviation countable :: \<open>'a set \<Rightarrow> bool\<close> where \<open>countable S \<equiv> \<exists>f :: 'a \<Rightarrow> nat. inj_on f S\<close>
+definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
+  where
+    \<open>denumerable S \<equiv> infinite S \<and> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S)\<close>
 
 lemma countably_inf_bij:
-  assumes \<open>countable (UNIV :: 'a set)\<close>
-  assumes \<open>countable (UNIV :: 'b set)\<close>
-  assumes inf_a_uni: \<open>infinite (UNIV :: 'a set)\<close>
-  assumes inf_b_uni: \<open>infinite (UNIV :: 'b set)\<close>
+  assumes \<open>denumerable (UNIV :: 'a set)\<close>
+  assumes \<open>denumerable (UNIV :: 'b set)\<close>
   shows \<open>\<exists>b_of_a :: 'a \<Rightarrow> 'b. bij b_of_a\<close>
 proof -
   let ?S = \<open>UNIV :: 'a set\<close>
-  have \<open>countable ?S\<close>
-    by (simp add: assms(1))
-  moreover have \<open>infinite ?S\<close>
-    using inf_a_uni by auto
-  ultimately obtain nat_of_a where *: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
-    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
+  have \<open>denumerable ?S\<close>
+    using assms(1) by simp
+  then obtain nat_of_a where *: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
+    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def by metis
 
   let ?T = \<open>UNIV :: 'b set\<close>
-  have \<open>countable ?T\<close>
-    by (simp add: assms(2))
-  moreover have \<open>infinite ?T\<close>
-    using inf_b_uni by auto
-  ultimately obtain nat_of_b where **: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
-    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest by metis
+  have \<open>denumerable ?T\<close>
+    using assms(2) by simp
+  then obtain nat_of_b where **: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
+    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def by metis
 
   let ?b_of_a = \<open>\<lambda>a. (inv nat_of_b) (nat_of_a a)\<close>
 
@@ -3062,8 +3058,7 @@ lemma sentence_completeness':
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
     and \<open>sentence p\<close>
     and \<open>list_all sentence z\<close>
-    and \<open>countable (UNIV :: 'a set)\<close>
-    and \<open>infinite (UNIV :: 'a set)\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
   have \<open>\<forall>(e :: nat \<Rightarrow> htm) f g.
@@ -3074,7 +3069,7 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms countably_inf_bij infinite_htms htm by metis
+      using assms countably_inf_bij infinite_htms htm denumerable_def by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
     let ?f = \<open>f_conv a_of_htm f\<close>
@@ -3092,13 +3087,12 @@ qed
 theorem sentence_completeness:
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
     and \<open>sentence p\<close>
-    and \<open>countable (UNIV :: 'a set)\<close>
-    and \<open>infinite (UNIV :: 'a set)\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: sentence_completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
-  using sentence_completeness inj_Suc by blast
+  using sentence_completeness inj_Suc denumerable_def by blast
 
 section \<open>Completeness for Open Formulas\<close>
 
@@ -4132,8 +4126,7 @@ subsection \<open>Completeness\<close>
 
 theorem completeness':
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
-    and \<open>countable (UNIV :: 'a set)\<close>
-    and \<open>infinite (UNIV :: 'a set)\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
   let ?p = \<open>put_imps p (rev z)\<close>
@@ -4154,18 +4147,17 @@ qed
 
 theorem completeness:
   assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
-    and \<open>countable (UNIV :: 'a set)\<close>
-    and \<open>infinite (UNIV :: 'a set)\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
-  using completeness infinite_UNIV_char_0 inj_Suc by blast
+  using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 
 theorem put_unis:
   assumes \<open>OK p []\<close>
   shows \<open>OK (put_unis m p) []\<close>
-  using assms valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc by metis
+  using assms valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc denumerable_def by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using put_unis remove_unis by blast
@@ -4178,7 +4170,7 @@ theorem main: \<open>valid p \<longleftrightarrow> OK p []\<close>
 proof
   assume \<open>valid p\<close>
   with completeness show \<open>OK p []\<close>
-    using infinite_UNIV_char_0 inj_Suc by blast
+    using infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 next
   assume \<open>OK p []\<close>
   with soundness show \<open>valid p\<close>
