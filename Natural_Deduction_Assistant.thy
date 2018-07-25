@@ -2951,37 +2951,19 @@ definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
   where
     \<open>denumerable S \<equiv> infinite S \<and> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S)\<close>
 
-lemma countably_inf_bij:
+lemma denumerable_bij:
   assumes \<open>denumerable (UNIV :: 'a set)\<close>
   assumes \<open>denumerable (UNIV :: 'b set)\<close>
   shows \<open>\<exists>b_of_a :: 'a \<Rightarrow> 'b. bij b_of_a\<close>
 proof -
-  let ?S = \<open>UNIV :: 'a set\<close>
-  have \<open>denumerable ?S\<close>
-    using assms(1) by simp
-  then obtain nat_of_a where *: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
-    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def by metis
-
-  let ?T = \<open>UNIV :: 'b set\<close>
-  have \<open>denumerable ?T\<close>
-    using assms(2) by simp
-  then obtain nat_of_b where **: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
-    using Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def by metis
-
-  let ?b_of_a = \<open>\<lambda>a. (inv nat_of_b) (nat_of_a a)\<close>
-
-  have bij_nat_of_b: \<open>\<forall>n. nat_of_b (inv nat_of_b n) = n\<close>
-    using ** bij_betw_inv_into_right by fastforce
-  have \<open>\<forall>a. inv nat_of_a (nat_of_a a) = a\<close>
-    by (meson * UNIV_I bij_betw_inv_into_left)
-  then have \<open>inj (\<lambda>a. inv nat_of_b (nat_of_a a))\<close>
-    using bij_nat_of_b injI by (metis (mono_tags, lifting))
-  moreover have \<open>range (\<lambda>a. inv nat_of_b (nat_of_a a)) = UNIV\<close>
-    by (metis * ** bij_def image_image inj_imp_surj_inv)
-  ultimately have \<open>bij ?b_of_a\<close>
-    unfolding bij_def by auto
-  then show ?thesis
-    by auto
+  obtain nat_of_a where a: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
+    using assms(1) Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def
+    by metis
+  obtain nat_of_b where b: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
+    using assms(2) Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def
+    by metis
+  show ?thesis
+    using a b bij_betw_inv bij_comp by blast
 qed
 
 definition e_conv :: \<open>('a \<Rightarrow> 'b) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'b)\<close> where
@@ -3069,7 +3051,7 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms countably_inf_bij infinite_htms htm denumerable_def by metis
+      using assms denumerable_bij infinite_htms htm denumerable_def by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
     let ?f = \<open>f_conv a_of_htm f\<close>
@@ -4154,10 +4136,8 @@ theorem completeness:
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
   using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 
-theorem put_unis:
-  assumes \<open>OK p []\<close>
-  shows \<open>OK (put_unis m p) []\<close>
-  using assms valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc denumerable_def by metis
+theorem put_unis:\<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
+  using valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc denumerable_def by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using put_unis remove_unis by blast
