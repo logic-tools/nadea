@@ -3016,7 +3016,10 @@ proof -
 qed
 
 definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
-  where \<open>denumerable S \<equiv> \<exists>f. bij_betw f (UNIV :: nat set) S\<close>
+  where \<open>denumerable S \<equiv> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S) \<and> (\<exists>f :: nat \<Rightarrow> 'a. inj f \<and> range f \<subseteq> S)\<close>
+
+lemma denumerable_bij: \<open>denumerable S = (\<exists>f. bij_betw f (UNIV :: nat set) S)\<close>
+  using Schroeder_Bernstein UNIV_I bij_betw_def bij_betw_inv denumerable_def subsetI by metis
 
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
@@ -4122,7 +4125,7 @@ corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<
   using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 
 theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
-  using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_def
+  using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_bij
     Schroeder_Bernstein infinite_iff_countable_subset by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
