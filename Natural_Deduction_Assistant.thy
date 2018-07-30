@@ -3040,7 +3040,7 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms infinite_htms htm denumerable_bij
+      using assms(4) infinite_htms htm denumerable_bij
         Schroeder_Bernstein bij_comp infinite_iff_countable_subset top_greatest by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
@@ -3048,12 +3048,12 @@ proof -
     let ?g = \<open>g_conv a_of_htm g\<close>
 
     have \<open>list_all (semantics ?e ?f ?g) z \<longrightarrow> semantics ?e ?f ?g p\<close>
-      using assms by blast
+      using assms(1) by blast
     then show \<open>list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
       using p_a_of_hterm semantics_bij by (metis list.pred_cong)
   qed
   then show ?thesis
-    using assms natded_complete by blast
+    using assms(2) assms(3) natded_complete by blast
 qed
 
 theorem sentence_completeness:
@@ -3064,7 +3064,7 @@ theorem sentence_completeness:
   using assms by (simp add: sentence_completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
-  using sentence_completeness inj_Suc denumerable_bij by blast
+  using sentence_completeness denumerable_bij by blast
 
 section \<open>Completeness for Open Formulas\<close>
 
@@ -4104,13 +4104,13 @@ proof -
   let ?p = \<open>put_imps p (rev z)\<close>
 
   have *: \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g ?p\<close>
-    using assms semantics_put_imps by fastforce
+    using assms(1) semantics_put_imps by fastforce
   obtain m where **: \<open>sentence (put_unis m ?p)\<close>
     using ex_closure by blast
   moreover have \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g (put_unis m ?p)\<close>
     using * valid_put_unis by blast
   ultimately have \<open>OK (put_unis m ?p) []\<close>
-    using assms sentence_completeness by blast
+    using assms(2) sentence_completeness by blast
   then have \<open>OK ?p []\<close>
     using ** remove_unis_sentence by blast
   then show \<open>OK p z\<close>
@@ -4124,7 +4124,7 @@ theorem completeness:
   using assms by (simp add: completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
-  using completeness infinite_UNIV_char_0 inj_Suc denumerable_bij by blast
+  using completeness denumerable_bij by blast
 
 theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_bij
@@ -4141,7 +4141,7 @@ theorem main: \<open>valid p \<longleftrightarrow> OK p []\<close>
 proof
   assume \<open>valid p\<close>
   with completeness show \<open>OK p []\<close>
-    using infinite_UNIV_char_0 inj_Suc denumerable_bij by blast
+    using denumerable_bij by blast
 next
   assume \<open>OK p []\<close>
   with soundness show \<open>valid p\<close>
