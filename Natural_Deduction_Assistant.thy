@@ -2947,25 +2947,6 @@ proof -
     using infinity[of ?undiago ?diago UNIV] by simp
 qed
 
-definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
-  where
-    \<open>denumerable S \<equiv> infinite S \<and> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S)\<close>
-
-lemma denumerable_bij:
-  assumes \<open>denumerable (UNIV :: 'a set)\<close>
-  assumes \<open>denumerable (UNIV :: 'b set)\<close>
-  shows \<open>\<exists>b_of_a :: 'a \<Rightarrow> 'b. bij b_of_a\<close>
-proof -
-  obtain nat_of_a where a: \<open>bij (nat_of_a :: 'a \<Rightarrow> nat)\<close>
-    using assms(1) Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def
-    by metis
-  obtain nat_of_b where b: \<open>bij (nat_of_b :: 'b \<Rightarrow> nat)\<close>
-    using assms(2) Schroeder_Bernstein infinite_iff_countable_subset top_greatest denumerable_def
-    by metis
-  show ?thesis
-    using a b bij_betw_inv bij_comp by blast
-qed
-
 definition e_conv :: \<open>('a \<Rightarrow> 'b) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'b)\<close> where
   \<open>e_conv b_of_a e \<equiv> (\<lambda>n. b_of_a (e n))\<close>
 
@@ -3034,6 +3015,9 @@ proof -
     using inj_comp by metis
 qed
 
+definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
+  where \<open>denumerable S \<equiv> infinite S \<and> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S)\<close>
+
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
 lemma sentence_completeness':
@@ -3051,7 +3035,8 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms denumerable_bij infinite_htms htm denumerable_def by metis
+      using assms infinite_htms htm denumerable_def
+        Schroeder_Bernstein bij_comp infinite_iff_countable_subset top_greatest by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
     let ?f = \<open>f_conv a_of_htm f\<close>
@@ -4136,7 +4121,7 @@ theorem completeness:
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
   using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 
-theorem put_unis:\<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
+theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc denumerable_def by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
