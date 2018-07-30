@@ -3016,10 +3016,12 @@ proof -
 qed
 
 definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
-  where \<open>denumerable S \<equiv> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S) \<and> (\<exists>f :: nat \<Rightarrow> 'a. inj f \<and> range f \<subseteq> S)\<close>
+  where \<open>denumerable S \<equiv> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S) \<and> (\<exists>f :: nat \<Rightarrow> 'a. range f \<subseteq> S \<and> inj f)\<close>
 
 lemma denumerable_bij: \<open>denumerable S = (\<exists>f. bij_betw f (UNIV :: nat set) S)\<close>
   using Schroeder_Bernstein UNIV_I bij_betw_def bij_betw_inv denumerable_def subsetI by metis
+
+hide_fact denumerable_def
 
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
@@ -3038,7 +3040,7 @@ proof -
       and g :: \<open>id \<Rightarrow> htm list \<Rightarrow> bool\<close>
 
     obtain a_of_htm :: \<open>htm \<Rightarrow> 'a\<close> where p_a_of_hterm: \<open>bij a_of_htm\<close>
-      using assms infinite_htms htm denumerable_def
+      using assms infinite_htms htm denumerable_bij
         Schroeder_Bernstein bij_comp infinite_iff_countable_subset top_greatest by metis
 
     let ?e = \<open>e_conv a_of_htm e\<close>
@@ -3062,7 +3064,7 @@ theorem sentence_completeness:
   using assms by (simp add: sentence_completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
-  using sentence_completeness inj_Suc denumerable_def by blast
+  using sentence_completeness inj_Suc denumerable_bij by blast
 
 section \<open>Completeness for Open Formulas\<close>
 
@@ -4122,7 +4124,7 @@ theorem completeness:
   using assms by (simp add: completeness')
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
-  using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
+  using completeness infinite_UNIV_char_0 inj_Suc denumerable_bij by blast
 
 theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_bij
@@ -4139,7 +4141,7 @@ theorem main: \<open>valid p \<longleftrightarrow> OK p []\<close>
 proof
   assume \<open>valid p\<close>
   with completeness show \<open>OK p []\<close>
-    using infinite_UNIV_char_0 inj_Suc denumerable_def by blast
+    using infinite_UNIV_char_0 inj_Suc denumerable_bij by blast
 next
   assume \<open>OK p []\<close>
   with soundness show \<open>valid p\<close>
