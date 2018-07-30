@@ -3016,7 +3016,7 @@ proof -
 qed
 
 definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
-  where \<open>denumerable S \<equiv> infinite S \<and> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S)\<close>
+  where \<open>denumerable S \<equiv> \<exists>f. bij_betw f (UNIV :: nat set) S\<close>
 
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
@@ -4122,7 +4122,8 @@ corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<
   using completeness infinite_UNIV_char_0 inj_Suc denumerable_def by blast
 
 theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
-  using valid_put_unis soundness completeness infinite_UNIV_char_0 inj_Suc denumerable_def by metis
+  using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_def
+    Schroeder_Bernstein infinite_iff_countable_subset by metis
 
 theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
   using put_unis remove_unis by blast
