@@ -3005,21 +3005,48 @@ next
     using Uni by simp
 qed simp_all
 
+fun
+  hterm_of_btree :: \<open>btree \<Rightarrow> htm\<close> and
+  hterm_list_of_btree :: \<open>btree \<Rightarrow> htm list\<close> where
+  \<open>hterm_of_btree (Leaf _) = undefined\<close>
+| \<open>hterm_of_btree (Branch (Leaf m) t) =
+     HFun (diag_string m) (hterm_list_of_btree t)\<close>
+| \<open>hterm_list_of_btree (Leaf m) = []\<close>
+| \<open>hterm_list_of_btree (Branch t1 t2) =
+     hterm_of_btree t1 # hterm_list_of_btree t2\<close>
+| \<open>hterm_of_btree (Branch (Branch _ _) _) = undefined\<close>
+
+primrec
+  btree_of_hterm :: \<open>htm \<Rightarrow> btree\<close> and
+  btree_of_hterm_list :: \<open>htm list \<Rightarrow> btree\<close> where
+  \<open>btree_of_hterm (HFun m ts) = Branch (Leaf (undiag_string m)) (btree_of_hterm_list ts)\<close>
+| \<open>btree_of_hterm_list [] = Leaf 0\<close>
+| \<open>btree_of_hterm_list (t # ts) = Branch (btree_of_hterm t) (btree_of_hterm_list ts)\<close>
+
+theorem hterm_btree:
+  shows \<open>hterm_of_btree (btree_of_hterm t) = t\<close>
+    and \<open>hterm_list_of_btree (btree_of_hterm_list ts) = ts\<close>
+  by (induct t and ts rule: btree_of_hterm.induct btree_of_hterm_list.induct) simp_all
+
+definition diag_hterm :: \<open>nat \<Rightarrow> htm\<close> where
+  \<open>diag_hterm n = hterm_of_btree (diag_btree n)\<close>
+
+definition undiag_hterm :: \<open>htm \<Rightarrow> nat\<close> where
+  \<open>undiag_hterm t = undiag_btree (btree_of_hterm t)\<close>
+
+theorem diag_undiag_hterm [simp]:
+  \<open>diag_hterm (undiag_hterm t) = t\<close>
+  by (simp add: diag_hterm_def undiag_hterm_def hterm_btree)
+
 lemma htm: \<open>\<exists>f :: htm \<Rightarrow> nat. inj f\<close>
-proof -
-  have \<open>\<exists>f :: htm \<Rightarrow> tm. inj f\<close>
-    unfolding inj_def using herbrand_semantics'(1) by metis
-  moreover have \<open>inj undiag_term\<close>
-    unfolding inj_def using diag_undiag_term by metis
-  ultimately show ?thesis
-    using inj_comp by metis
-qed
+  unfolding inj_def using diag_undiag_hterm by metis
 
 definition denumerable :: \<open>'a set \<Rightarrow> bool\<close>
   where \<open>denumerable S \<equiv> (\<exists>f :: 'a \<Rightarrow> nat. inj_on f S) \<and> (\<exists>f :: nat \<Rightarrow> 'a. range f \<subseteq> S \<and> inj f)\<close>
 
-lemma denumerable_bij: \<open>denumerable S = (\<exists>f. bij_betw f (UNIV :: nat set) S)\<close>
-  using Schroeder_Bernstein UNIV_I bij_betw_def bij_betw_inv denumerable_def subsetI by metis
+lemma denumerable_bij: \<open>denumerable S \<longleftrightarrow> (\<exists>f. bij_betw f (UNIV :: nat set) S)\<close>
+  unfolding denumerable_def
+  using Schroeder_Bernstein UNIV_I bij_betw_def bij_betw_inv subsetI by metis
 
 hide_fact denumerable_def
 
