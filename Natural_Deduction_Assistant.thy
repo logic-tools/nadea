@@ -319,8 +319,7 @@ proof -
     done
 qed
 
-lemma open_example:
-  \<open>OK (Dis (Pre ''p'' [Var x]) (Imp Falsity Falsity)) []\<close>
+lemma open_example: \<open>OK (Dis (Pre ''p'' [Var x]) (Imp Falsity Falsity)) []\<close>
   apply (rule Dis_I2)
   apply (rule Imp_I)
   apply (rule Assume)
@@ -358,14 +357,11 @@ lemma allnew [simp]: \<open>list_all (new c) z = news c z\<close>
   by (induct z) simp_all
 
 lemma map' [simp]:
-  \<open>new_term n t \<Longrightarrow>
-    semantics_term e (f(n := x)) t = semantics_term e f t\<close>
-  \<open>new_list n l \<Longrightarrow>
-    semantics_list e (f(n := x)) l = semantics_list e f l\<close>
+  \<open>new_term n t \<Longrightarrow> semantics_term e (f(n := x)) t = semantics_term e f t\<close>
+  \<open>new_list n l \<Longrightarrow> semantics_list e (f(n := x)) l = semantics_list e f l\<close>
   by (induct t and l rule: semantics_term.induct semantics_list.induct) auto
 
-lemma map [simp]:
-  \<open>new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p\<close>
+lemma map [simp]: \<open>new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p\<close>
   by (induct p arbitrary: e) simp_all
 
 lemma allmap' [simp]: \<open>list_all (\<lambda>p. new c p) z \<Longrightarrow>
@@ -377,15 +373,12 @@ lemma allmap [simp]: \<open>news c z \<Longrightarrow>
   by simp
 
 lemma substitute' [simp]:
-  \<open>semantics_term e f (sub_term v s t) =
-   semantics_term (put e v (semantics_term e f s)) f t\<close>
-  \<open>semantics_list e f (sub_list v s l) =
-   semantics_list (put e v (semantics_term e f s)) f l\<close>
+  \<open>semantics_term e f (sub_term v s t) = semantics_term (put e v (semantics_term e f s)) f t\<close>
+  \<open>semantics_list e f (sub_list v s l) = semantics_list (put e v (semantics_term e f s)) f l\<close>
   by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
 
 lemma substitute [simp]:
-  \<open>semantics e f g (sub v t p) =
-   semantics (put e v (semantics_term e f t)) f g p\<close>
+  \<open>semantics e f g (sub v t p) = semantics (put e v (semantics_term e f t)) f g p\<close>
 proof (induct p arbitrary: e v t)
   case (Exi p)
   have \<open>semantics e f g (sub v t (Exi p)) =
@@ -394,8 +387,7 @@ proof (induct p arbitrary: e v t)
   also have \<open>\<dots> = (\<exists>x. semantics (put (put e 0 x) (v + 1)
       (semantics_term (put e 0 x) f (inc_term t))) f g p)\<close>
     using Exi by simp
-  also have \<open>\<dots> =
-      (\<exists>x. semantics (put (put e v (semantics_term e f t)) 0 x) f g p)\<close>
+  also have \<open>\<dots> = (\<exists>x. semantics (put (put e v (semantics_term e f t)) 0 x) f g p)\<close>
     using commute increment(1) by metis
   finally show ?case
     by simp
@@ -416,8 +408,7 @@ qed simp_all
 lemma member_set [simp]: \<open>p \<in> set z = member p z\<close>
   by (induct z) simp_all
 
-lemma soundness':
-  \<open>OK p z \<Longrightarrow> list_all (semantics e f g) z \<Longrightarrow> semantics e f g p\<close>
+lemma soundness': \<open>OK p z \<Longrightarrow> list_all (semantics e f g) z \<Longrightarrow> semantics e f g p\<close>
 proof (induct p z arbitrary: f rule: OK.induct)
   case (Exi_E p z q c)
   then obtain x where \<open>semantics (put e 0 x) f g p\<close>
@@ -426,8 +417,7 @@ proof (induct p z arbitrary: f rule: OK.induct)
     using \<open>news c (p # q # z)\<close> by simp
   then have \<open>semantics e (f(c := \<lambda>w. x)) g (sub 0 (Fun c []) p)\<close>
     by simp
-  then have
-    \<open>list_all (semantics e (f(c := \<lambda>w. x)) g) (sub 0 (Fun c []) p # z)\<close>
+  then have \<open>list_all (semantics e (f(c := \<lambda>w. x)) g) (sub 0 (Fun c []) p # z)\<close>
     using Exi_E by simp
   then have \<open>semantics e (f(c := \<lambda>w. x)) g q\<close>
     using Exi_E by blast
@@ -559,8 +549,7 @@ proof (induct t and l rule: closed_term.induct closed_list.induct)
     using closed_mono'(1) by auto
 qed simp_all
 
-lemma sub_closed [simp]:
-  \<open>closed_term 0 t \<Longrightarrow> closed (Suc i) p \<Longrightarrow> closed i (sub i t p)\<close>
+lemma sub_closed [simp]: \<open>closed_term 0 t \<Longrightarrow> closed (Suc i) p \<Longrightarrow> closed i (sub i t p)\<close>
   by (induct p arbitrary: i t) simp_all
 
 subsection \<open>Parameters\<close>
@@ -620,8 +609,7 @@ lemma psubst_closed' [simp]:
   \<open>closed_list i (psubst_list f l) = closed_list i l\<close>
   by (induct t and l rule: closed_term.induct closed_list.induct) simp_all
 
-lemma psubst_closed [simp]:
-  \<open>closed i (psubst f p) = closed i p\<close>
+lemma psubst_closed [simp]: \<open>closed i (psubst f p) = closed i p\<close>
   by (induct p arbitrary: i) simp_all
 
 lemma psubst_inc [simp]:
@@ -634,8 +622,7 @@ lemma psubst_sub' [simp]:
   \<open>psubst_list f (sub_list i u l) = sub_list i (psubst_term f u) (psubst_list f l)\<close>
   by (induct t and l rule: psubst_term.induct psubst_list.induct) simp_all
 
-lemma psubst_sub [simp]:
-  \<open>psubst f (sub i t P) = sub i (psubst_term f t) (psubst f P)\<close>
+lemma psubst_sub [simp]: \<open>psubst f (sub i t P) = sub i (psubst_term f t) (psubst f P)\<close>
   by (induct P arbitrary: i t) simp_all
 
 lemma psubst_upd' [simp]:
@@ -646,8 +633,7 @@ lemma psubst_upd' [simp]:
 lemma psubst_upd [simp]: \<open>x \<notin> params P \<Longrightarrow> psubst (f(x := y)) P = psubst f P\<close>
   by (induct P) simp_all
 
-lemma psubst_id':
-  \<open>psubst_term id t = t\<close> \<open>psubst_list (\<lambda>x. x) l = l\<close>
+lemma psubst_id': \<open>psubst_term id t = t\<close> \<open>psubst_list (\<lambda>x. x) l = l\<close>
   by (induct t and l rule: psubst_term.induct psubst_list.induct) simp_all
 
 lemma psubst_id [simp]: \<open>psubst id = id\<close>
@@ -670,8 +656,7 @@ lemma psubst_semantics' [simp]:
   \<open>semantics_list e f (psubst_list h l) = semantics_list e (\<lambda>x. f (h x)) l\<close>
   by (induct t and l rule: semantics_term.induct semantics_list.induct) simp_all
 
-lemma psubst_semantics:
-  \<open>semantics e f g (psubst h p) = semantics e (\<lambda>x. f (h x)) g p\<close>
+lemma psubst_semantics: \<open>semantics e f g (psubst h p) = semantics e (\<lambda>x. f (h x)) g p\<close>
   by (induct p arbitrary: e) simp_all
 
 section \<open>Completeness\<close>
@@ -1046,8 +1031,7 @@ qed
 subsection \<open>Finite character\<close>
 
 definition finite_char :: \<open>'a set set \<Rightarrow> bool\<close> where
-  \<open>finite_char C =
-    (\<forall>S. S \<in> C = (\<forall>S'. finite S' \<longrightarrow> S' \<subseteq> S \<longrightarrow> S' \<in> C))\<close>
+  \<open>finite_char C = (\<forall>S. S \<in> C = (\<forall>S'. finite S' \<longrightarrow> S' \<subseteq> S \<longrightarrow> S' \<in> C))\<close>
 
 definition mk_finite_char :: \<open>'a set set \<Rightarrow> 'a set set\<close> where
   \<open>mk_finite_char C = {S. \<forall>S'. S' \<subseteq> S \<longrightarrow> finite S' \<longrightarrow> S' \<in> C}\<close>
@@ -1459,8 +1443,7 @@ definition diag_list :: \<open>(nat \<Rightarrow> 'a) \<Rightarrow> nat \<Righta
 definition undiag_list :: \<open>('a \<Rightarrow> nat) \<Rightarrow> 'a list \<Rightarrow> nat\<close> where
   \<open>undiag_list f xs = undiag_btree (btree_of_list f xs)\<close>
 
-theorem diag_undiag_list [simp]:
-  \<open>(\<And>x. d (u x) = x) \<Longrightarrow> diag_list d (undiag_list u xs) = xs\<close>
+theorem diag_undiag_list [simp]: \<open>(\<And>x. d (u x) = x) \<Longrightarrow> diag_list d (undiag_list u xs) = xs\<close>
   by (induct xs) (simp_all add: diag_list_def undiag_list_def)
 
 fun string_of_btree :: \<open>btree \<Rightarrow> string\<close> where
@@ -1478,8 +1461,7 @@ definition diag_string :: \<open>nat \<Rightarrow> string\<close> where
 definition undiag_string :: \<open>string \<Rightarrow> nat\<close> where
   \<open>undiag_string xs = undiag_btree (btree_of_string xs)\<close>
 
-theorem diag_undiag_string [simp]:
-  \<open>diag_string (undiag_string xs) = xs\<close>
+theorem diag_undiag_string [simp]: \<open>diag_string (undiag_string xs) = xs\<close>
   by (induct xs) (simp_all add: diag_string_def undiag_string_def)
 
 lemma inj_undiag_string: \<open>inj undiag_string\<close>
@@ -1515,8 +1497,7 @@ definition diag_term :: \<open>nat \<Rightarrow> tm\<close> where
 definition undiag_term :: \<open>tm \<Rightarrow> nat\<close> where
   \<open>undiag_term t = undiag_btree (btree_of_term t)\<close>
 
-theorem diag_undiag_term [simp]:
-  \<open>diag_term (undiag_term t) = t\<close>
+theorem diag_undiag_term [simp]: \<open>diag_term (undiag_term t) = t\<close>
   by (simp add: diag_term_def undiag_term_def term_btree)
 
 fun form_of_btree :: \<open>btree \<Rightarrow> fm\<close> where
@@ -1564,8 +1545,7 @@ definition diag_form :: \<open>nat \<Rightarrow> fm\<close> where
 definition undiag_form :: \<open>fm \<Rightarrow> nat\<close> where
   \<open>undiag_form x = undiag_btree (btree_of_form x)\<close>
 
-theorem diag_undiag_form [simp]:
-  \<open>diag_form (undiag_form f) = f\<close>
+theorem diag_undiag_form [simp]: \<open>diag_form (undiag_form f) = f\<close>
   by (induct f) (simp_all add: diag_form_def undiag_form_def)
 
 definition diag_form' :: \<open>nat \<Rightarrow> fm\<close> where
@@ -1604,7 +1584,8 @@ qed
 lemma chain_index:
   assumes ch: \<open>is_chain f\<close> and fin: \<open>finite F\<close>
   shows \<open>F \<subseteq> (\<Union>n. f n) \<Longrightarrow> \<exists>n. F \<subseteq> f n\<close>
-  using fin proof (induct rule: finite_induct)
+  using fin
+proof (induct rule: finite_induct)
   case empty
   then show ?case by blast
 next
@@ -1619,8 +1600,6 @@ next
     using is_chainD' ch \<open>x \<in> f m\<close> \<open>m \<le> max n m\<close> by fast
   moreover have \<open>F \<subseteq> f (max n m)\<close>
     using is_chainD' ch \<open>F \<subseteq> f n\<close> \<open>n \<le> max n m\<close> by fast
-  moreover have \<open>x \<in> f (max n m) \<and> F \<subseteq> f (max n m)\<close>
-    using calculation by blast
   ultimately show ?case by blast
 qed
 
@@ -1682,9 +1661,7 @@ definition Extend :: \<open>fm set \<Rightarrow> fm set set \<Rightarrow> (nat \
 theorem is_chain_extend: \<open>is_chain (extend S C f)\<close>
   by (simp add: is_chain_def) blast
 
-lemma finite_params' [simp]:
-  \<open>finite (params_term t)\<close>
-  \<open>finite (params_list l)\<close>
+lemma finite_params' [simp]: \<open>finite (params_term t)\<close> \<open>finite (params_list l)\<close>
   by (induct t and l rule: params_term.induct params_list.induct) simp_all
 
 lemma finite_params [simp]: \<open>finite (params p)\<close>
@@ -1769,8 +1746,8 @@ lemma extend_in_C_stop:
   shows \<open>extend S C f (Suc n) \<in> C\<close>
   using assms by simp
 
-theorem extend_in_C: \<open>alt_consistency C \<Longrightarrow> S \<in> C \<Longrightarrow>
-    infinite (- (\<Union>p \<in> S. params p)) \<Longrightarrow> extend S C f n \<in> C\<close>
+theorem extend_in_C:
+  \<open>alt_consistency C \<Longrightarrow> S \<in> C \<Longrightarrow> infinite (- (\<Union>p \<in> S. params p)) \<Longrightarrow> extend S C f n \<in> C\<close>
 proof (induct n)
   case 0
   then show ?case by simp
@@ -1787,13 +1764,7 @@ theorem Extend_in_C: \<open>alt_consistency C \<Longrightarrow> finite_char C \<
   unfolding Extend_def by blast
 
 theorem Extend_subset: \<open>S \<subseteq> Extend S C f\<close>
-proof
-  fix x
-  assume \<open>x \<in> S\<close>
-  then have \<open>x \<in> extend S C f 0\<close> by simp
-  then show \<open>x \<in> Extend S C f\<close>
-    unfolding Extend_def by blast
-qed
+  unfolding Extend_def using Union_upper extend.simps(1) range_eqI by metis
 
 definition maximal :: \<open>'a set \<Rightarrow> 'a set set \<Rightarrow> bool\<close> where
   \<open>maximal S C = (\<forall>S' \<in> C. S \<subseteq> S' \<longrightarrow> S = S')\<close>
@@ -1808,8 +1779,6 @@ proof (intro ballI impI)
   moreover have \<open>S' \<subseteq> (\<Union>x. extend S C f x)\<close>
   proof (rule ccontr)
     assume \<open>\<not> S' \<subseteq> (\<Union>x. extend S C f x)\<close>
-    then have \<open>\<exists>z. z \<in> S' \<and> z \<notin> (\<Union>x. extend S C f x)\<close>
-      by blast
     then obtain z where \<open>z \<in> S'\<close> and *: \<open>z \<notin> (\<Union>x. extend S C f x)\<close>
       by blast
     then obtain n where \<open>z = f n\<close>
@@ -1848,11 +1817,9 @@ definition hintikka :: \<open>fm set \<Rightarrow> bool\<close> where
     (\<forall>A B. Imp A B \<in> H \<longrightarrow> Neg A \<in> H \<or> B \<in> H) \<and>
     (\<forall>A B. Neg (Imp A B) \<in> H \<longrightarrow> A \<in> H \<and> Neg B \<in> H) \<and>
     (\<forall>P t. closed_term 0 t \<longrightarrow> Uni P \<in> H \<longrightarrow> sub 0 t P \<in> H) \<and>
-    (\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> H \<longrightarrow>
-      Neg (sub 0 t P) \<in> H) \<and>
+    (\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> H \<longrightarrow> Neg (sub 0 t P) \<in> H) \<and>
     (\<forall>P. Exi P \<in> H \<longrightarrow> (\<exists>t. closed_term 0 t \<and> sub 0 t P \<in> H)) \<and>
-    (\<forall>P. Neg (Uni P) \<in> H \<longrightarrow>
-      (\<exists>t. closed_term 0 t \<and> Neg (sub 0 t P) \<in> H)))\<close>
+    (\<forall>P. Neg (Uni P) \<in> H \<longrightarrow> (\<exists>t. closed_term 0 t \<and> Neg (sub 0 t P) \<in> H)))\<close>
 
 datatype htm = HFun id \<open>htm list\<close>
 
@@ -1880,10 +1847,8 @@ theorem closed_htm [simp]:
 
 theorem hintikka_model:
   assumes hin: \<open>hintikka H\<close>
-  shows \<open>(p \<in> H \<longrightarrow> closed 0 p \<longrightarrow>
-    semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) p) \<and>
-     (Neg p \<in> H \<longrightarrow> closed 0 p \<longrightarrow>
-    semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) (Neg p))\<close>
+  shows \<open>(p \<in> H \<longrightarrow> closed 0 p \<longrightarrow> semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) p) \<and>
+     (Neg p \<in> H \<longrightarrow> closed 0 p \<longrightarrow> semantics e HFun (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) (Neg p))\<close>
 proof (induct p rule: wf_induct)
   show \<open>wf (measure size_formulas)\<close>
     by blast
@@ -2075,8 +2040,8 @@ qed
 lemma Exi_in_extend:
   assumes \<open>extend S C f n \<union> {f n} \<in> C\<close> (is \<open>?S' \<in> C\<close>)
     and \<open>Exi P = f n\<close>
-  shows \<open>sub 0 (Fun (SOME k. k \<notin> (\<Union>p \<in> ?S'. params p)) []) P
-          \<in> extend S C f (Suc n)\<close> (is \<open>sub 0 ?t P \<in> _\<close>)
+  shows \<open>sub 0 (Fun (SOME k. k \<notin> (\<Union>p \<in> ?S'. params p)) []) P \<in> extend S C f (Suc n)\<close>
+    (is \<open>sub 0 ?t P \<in> _\<close>)
 proof -
   have \<open>\<exists>p. f n = Exi p\<close>
     using \<open>Exi P = f n\<close> by metis
@@ -2093,8 +2058,8 @@ qed
 lemma Neg_Uni_in_extend:
   assumes \<open>extend S C f n \<union> {f n} \<in> C\<close> (is \<open>?S' \<in> C\<close>)
     and \<open>Neg (Uni P) = f n\<close>
-  shows \<open>Neg (sub 0 (Fun (SOME k. k \<notin> (\<Union>p \<in> ?S'. params p)) []) P)
-          \<in> extend S C f (Suc n)\<close> (is \<open>Neg (sub 0 ?t P) \<in> _\<close>)
+  shows \<open>Neg (sub 0 (Fun (SOME k. k \<notin> (\<Union>p \<in> ?S'. params p)) []) P) \<in> extend S C f (Suc n)\<close>
+    (is \<open>Neg (sub 0 ?t P) \<in> _\<close>)
 proof -
   have \<open>f n \<noteq> Exi P\<close>
     using \<open>Neg (Uni P) = f n\<close> by auto
@@ -2272,8 +2237,7 @@ theorem model_existence:
 
 subsection \<open>Completeness using Herbrand terms\<close>
 
-theorem OK_consistency:
-  \<open>consistency {set G |G. \<not> (OK Falsity G)}\<close>
+theorem OK_consistency: \<open>consistency {set G |G. \<not> (OK Falsity G)}\<close>
   unfolding consistency_def
 proof (intro conjI allI impI notI)
   fix S
@@ -2650,8 +2614,7 @@ qed
 
 theorem natded_complete:
   assumes \<open>closed 0 p\<close> and \<open>list_all (closed 0) z\<close>
-    and mod: \<open>\<forall>(e :: nat \<Rightarrow> htm) f g.
-      list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+    and mod: \<open>\<forall>(e :: nat \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
   shows \<open>OK p z\<close>
 proof (rule Boole, rule ccontr)
   fix e
@@ -2689,8 +2652,7 @@ qed
 subsection \<open>Löwenheim-Skolem\<close>
 
 theorem sat_consistency:
-  \<open>consistency {S. infinite (- (\<Union>p \<in> S. params p)) \<and>
-    (\<exists>f. \<forall>p \<in> S. semantics e f g p)}\<close>
+  \<open>consistency {S. infinite (- (\<Union>p \<in> S. params p)) \<and> (\<exists>f. \<forall>p \<in> S. semantics e f g p)}\<close>
   (is \<open>consistency ?C\<close>)
   unfolding consistency_def
 proof (intro allI impI conjI)
@@ -2860,30 +2822,26 @@ proof -
   moreover have \<open>even (length (double ys))\<close>
     by (induct ys) simp_all
   ultimately show ?thesis
-    by metis
+    by fastforce
 qed
 
-lemma doublep_infinite_params:
-  \<open>infinite (- (\<Union>p \<in> psubst double ` S. params p))\<close>
+lemma doublep_infinite_params: \<open>infinite (- (\<Union>p \<in> psubst double ` S. params p))\<close>
 proof (rule infinite_super)
   fix a
   show \<open>infinite (range (\<lambda>xs :: id. a # double xs))\<close>
     using infinite_double_Cons by metis
 next
   fix a
-  show \<open>range (\<lambda>xs. a # double xs) \<subseteq>
-      - (\<Union>p \<in> psubst double ` S. params p)\<close>
+  show \<open>range (\<lambda>xs. a # double xs) \<subseteq> - (\<Union>p \<in> psubst double ` S. params p)\<close>
     using double_Cons_neq by fastforce
 qed
 
 theorem loewenheim_skolem:
   assumes \<open>\<forall>p \<in> S. semantics e f g p\<close> \<open>\<forall>p \<in> S. closed 0 p\<close>
-  defines \<open>C \<equiv> {S. infinite (- (\<Union>p \<in> S. params p)) \<and>
-                      (\<exists>f. \<forall>p \<in> S. semantics e f g p)}\<close>
+  defines \<open>C \<equiv> {S. infinite (- (\<Union>p \<in> S. params p)) \<and> (\<exists>f. \<forall>p \<in> S. semantics e f g p)}\<close>
   defines \<open>C' \<equiv> mk_finite_char (mk_alt_consistency (close C))\<close>
   defines \<open>H \<equiv> Extend (psubst double ` S) C' from_nat\<close>
-  shows \<open>\<forall>p \<in> S. semantics e' (\<lambda>xs. HFun (double xs))
-          (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) p\<close>
+  shows \<open>\<forall>p \<in> S. semantics e' (\<lambda>xs. HFun (double xs)) (\<lambda>i l. Pre i (tms_of_htms l) \<in> H) p\<close>
 proof (intro ballI impI)
   fix p
   assume \<open>p \<in> S\<close>
@@ -2961,21 +2919,17 @@ definition g_conv ::
 lemma semantics_bij':
   assumes \<open>bij (b_of_a :: 'a \<Rightarrow> 'b)\<close>
   shows
-    \<open>semantics_term (e_conv b_of_a e) (f_conv b_of_a f) p =
-     b_of_a (semantics_term e f p)\<close>
-    \<open>semantics_list (e_conv b_of_a e) (f_conv b_of_a f) l =
-     map b_of_a (semantics_list e f l)\<close>
+    \<open>semantics_term (e_conv b_of_a e) (f_conv b_of_a f) p = b_of_a (semantics_term e f p)\<close>
+    \<open>semantics_list (e_conv b_of_a e) (f_conv b_of_a f) l = map b_of_a (semantics_list e f l)\<close>
   unfolding e_conv_def f_conv_def using assms
   by (induct p and l rule: semantics_term.induct semantics_list.induct) (simp_all add: bij_is_inj)
 
-lemma put_e_conv:
-  \<open>(put (e_conv b_of_a e) m (b_of_a x)) = e_conv b_of_a (put e m x)\<close>
+lemma put_e_conv: \<open>(put (e_conv b_of_a e) m (b_of_a x)) = e_conv b_of_a (put e m x)\<close>
   unfolding e_conv_def by auto
 
 lemma semantics_bij:
   assumes \<open>bij (b_of_a :: 'a \<Rightarrow> 'b)\<close>
-  shows \<open>semantics e f g p =
-    semantics (e_conv b_of_a e) (f_conv b_of_a f) (g_conv b_of_a g) p\<close>
+  shows \<open>semantics e f g p = semantics (e_conv b_of_a e) (f_conv b_of_a f) (g_conv b_of_a g) p\<close>
 proof (induct p arbitrary: e f g)
   case (Pre a l)
   then show ?case
@@ -2987,8 +2941,7 @@ next
     and ?f = \<open>f_conv b_of_a f\<close>
     and ?g = \<open>g_conv b_of_a g\<close>
 
-  have \<open>(\<exists>x'. semantics (put ?e 0 x') ?f ?g p) =
-        (\<exists>x. semantics (put ?e 0 (b_of_a x)) ?f ?g p)\<close>
+  have \<open>(\<exists>x'. semantics (put ?e 0 x') ?f ?g p) = (\<exists>x. semantics (put ?e 0 (b_of_a x)) ?f ?g p)\<close>
     using assms by (metis bij_pointE)
   also have \<open>\<dots> = (\<exists>x. semantics (e_conv b_of_a (put e 0 x)) ?f ?g p)\<close>
     using put_e_conv by metis
@@ -3034,8 +2987,7 @@ definition diag_hterm :: \<open>nat \<Rightarrow> htm\<close> where
 definition undiag_hterm :: \<open>htm \<Rightarrow> nat\<close> where
   \<open>undiag_hterm t = undiag_btree (btree_of_hterm t)\<close>
 
-theorem diag_undiag_hterm [simp]:
-  \<open>diag_hterm (undiag_hterm t) = t\<close>
+theorem diag_undiag_hterm [simp]: \<open>diag_hterm (undiag_hterm t) = t\<close>
   by (simp add: diag_hterm_def undiag_hterm_def hterm_btree)
 
 lemma htm: \<open>\<exists>f :: htm \<Rightarrow> nat. inj f\<close>
@@ -3136,9 +3088,10 @@ next
     using OK.Imp_I by simp
 next
   case (Dis_E p q z r)
-  then have \<open>OK (Dis (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
-    and \<open>OK (psubst f r) (psubst f p # map (psubst f) z)\<close>
-    and \<open>OK (psubst f r) (psubst f q # map (psubst f) z)\<close>
+  then have
+    \<open>OK (Dis (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
+    \<open>OK (psubst f r) (psubst f p # map (psubst f) z)\<close>
+    \<open>OK (psubst f r) (psubst f q # map (psubst f) z)\<close>
     by simp_all
   then show ?case
     using OK.Dis_E by blast
