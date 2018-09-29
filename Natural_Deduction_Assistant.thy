@@ -3151,7 +3151,7 @@ next
   ultimately have \<open>OK (psubst ?f q) (map (psubst ?f) z)\<close>
     using OK.Exi_E by blast
   moreover have \<open>list_all (new c) z\<close>
-     using Exi_E by simp
+    using Exi_E by simp
   then have \<open>map (psubst ?f) z = map (psubst f) z\<close>
     unfolding list_all_iff by simp
   ultimately show ?case
