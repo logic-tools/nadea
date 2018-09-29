@@ -3879,7 +3879,7 @@ next
   have \<open>news c z\<close>
     using Uni_I by simp
   then have \<open>set z \<subseteq> set ?z'\<close>
-    using Uni_I psubst_new_subset allnew new_params by (metis Ball_set UN_iff)
+    by (metis (no_types))
   then have \<open>OK (sub 0 (Fun c []) p) ?z'\<close>
     using Uni_I by blast
 
