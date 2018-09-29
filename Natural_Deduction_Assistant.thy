@@ -3359,24 +3359,38 @@ lemma new_subc_put':
 lemma new_subc_put: \<open>new_term c s \<Longrightarrow> subc c s (sub m t p) = subc c s (sub m (subc_term c s t) p)\<close>
 proof (induct p arbitrary: s m t)
   case Falsity
-  then show ?case
+  show ?case
     by simp
 next
   case (Pre i l)
+  have \<open>subc_list c s (sub_list m t l) = subc_list c s (sub_list m (subc_term c s t) l)\<close>
+    using Pre.prems new_subc_put'(2) by blast
   then show ?case
-    using new_subc_put' by (metis sub.simps(2) subc.simps(2))
+    by simp
 next
   case (Imp p q)
-  then show ?case
-    by (metis sub.simps(3) subc.simps(3))
+  have \<open>subc c s (sub m t p) = subc c s (sub m (subc_term c s t) p)\<close>
+    using Imp.hyps(1) Imp.prems by blast
+  moreover have \<open>subc c s (sub m t q) = subc c s (sub m (subc_term c s t) q)\<close>
+    using Imp.hyps(2) Imp.prems by blast
+  ultimately show ?case
+    by simp
 next
   case (Dis p q)
-  then show ?case
-    by (metis sub.simps(4) subc.simps(4))
+  have \<open>subc c s (sub m t p) = subc c s (sub m (subc_term c s t) p)\<close>
+    using Dis.hyps(1) Dis.prems by blast
+  moreover have \<open>subc c s (sub m t q) = subc c s (sub m (subc_term c s t) q)\<close>
+    using Dis.hyps(2) Dis.prems by blast
+  ultimately show ?case
+    by simp
 next
   case (Con p q)
-  then show ?case
-    by (metis sub.simps(5) subc.simps(5))
+  have \<open>subc c s (sub m t p) = subc c s (sub m (subc_term c s t) p)\<close>
+    using Con.hyps(1) Con.prems by blast
+  moreover have \<open>subc c s (sub m t q) = subc c s (sub m (subc_term c s t) q)\<close>
+    using Con.hyps(2) Con.prems by blast
+  ultimately show ?case
+    by simp
 next
   case (Exi p)
   have \<open>subc c s (sub m (subc_term c s t) (Exi p)) =
