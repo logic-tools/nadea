@@ -3135,10 +3135,6 @@ next
     using Exi_E by blast
   then have \<open>new fresh (psubst ?f p)\<close> \<open>new fresh (psubst ?f q)\<close> \<open>news fresh (map (psubst ?f) z)\<close>
     using * new_psubst_image news_psubst by (fastforce simp add: image_Un)+
-  then have \<open>map (psubst ?f) z = map (psubst f) z\<close>
-    using Exi_E allnew new_params
-    by (metis (mono_tags, lifting) Ball_set map_eq_conv news.simps(2) psubst_upd)
-
   have \<open>OK (psubst ?f (Exi p)) (map (psubst ?f) z)\<close>
     using Exi_E by blast
   then have \<open>OK (Exi (psubst ?f p)) (map (psubst ?f) z)\<close>
@@ -3154,8 +3150,12 @@ next
     by simp
   ultimately have \<open>OK (psubst ?f q) (map (psubst ?f) z)\<close>
     using OK.Exi_E by blast
-  then show ?case
-    using Exi_E \<open>map (psubst ?f) z = map (psubst f) z\<close> by simp
+  moreover have \<open>list_all (new c) z\<close>
+     using Exi_E by simp
+  then have \<open>map (psubst ?f) z = map (psubst f) z\<close>
+    unfolding list_all_iff by simp
+  ultimately show ?case
+    using Exi_E by simp
 next
   case (Exi_I t p z)
   then show ?case
