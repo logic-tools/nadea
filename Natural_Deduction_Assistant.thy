@@ -1498,7 +1498,7 @@ definition undiag_term :: \<open>tm \<Rightarrow> nat\<close> where
   \<open>undiag_term t = undiag_btree (btree_of_term t)\<close>
 
 theorem diag_undiag_term [simp]: \<open>diag_term (undiag_term t) = t\<close>
-  by (simp add: diag_term_def undiag_term_def term_btree)
+  unfolding diag_term_def undiag_term_def using term_btree by simp
 
 fun form_of_btree :: \<open>btree \<Rightarrow> fm\<close> where
   \<open>form_of_btree (Leaf 0) = Falsity\<close>
@@ -1546,7 +1546,7 @@ definition undiag_form :: \<open>fm \<Rightarrow> nat\<close> where
   \<open>undiag_form x = undiag_btree (btree_of_form x)\<close>
 
 theorem diag_undiag_form [simp]: \<open>diag_form (undiag_form f) = f\<close>
-  by (induct f) (simp_all add: diag_form_def undiag_form_def)
+  unfolding diag_form_def undiag_form_def by (induct f) simp_all
 
 definition diag_form' :: \<open>nat \<Rightarrow> fm\<close> where
   \<open>diag_form' = diag_form\<close>
@@ -1566,7 +1566,7 @@ definition is_chain :: \<open>(nat \<Rightarrow> 'a set) \<Rightarrow> bool\<clo
   \<open>is_chain f = (\<forall>n. f n \<subseteq> f (Suc n))\<close>
 
 lemma is_chainD: \<open>is_chain f \<Longrightarrow> x \<in> f m \<Longrightarrow> x \<in> f (m + n)\<close>
-  by (induct n) (auto simp: is_chain_def)
+  unfolding is_chain_def by (induct n) auto
 
 lemma is_chainD':
   assumes \<open>is_chain f\<close> and \<open>x \<in> f m\<close> and \<open>m \<le> k\<close>
@@ -3523,7 +3523,7 @@ next
     have \<open>new_term d ?s\<close>
       using fresh psubst_new_free'(1) by simp
     then have \<open>psubst_term ?f ?s = psubst_term (id(fresh := d)) ?s\<close>
-      using new_params' by (metis fun_upd_twist psubst_upd'(1))
+      using new_params' fun_upd_twist(1) psubst_upd'(1) by metis
     then have psubst_s: \<open>psubst_term ?f ?s = s\<close>
       using fresh psubst_new_away' by simp
 
@@ -3703,7 +3703,7 @@ next
     have \<open>new_term d ?s\<close>
       using fresh psubst_new_free' by simp
     then have \<open>psubst_term ?f ?s = psubst_term (id(fresh := d)) ?s\<close>
-      by (metis fun_upd_twist new_params'(1) psubst_upd'(1))
+      using new_params' fun_upd_twist(1) psubst_upd'(1) by metis
     then have psubst_s: \<open>psubst_term ?f ?s = s\<close>
       using fresh psubst_new_away' by simp
 
