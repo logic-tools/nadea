@@ -3256,15 +3256,15 @@ lemma subc_psubst' [simp]:
     psubst_term f (subc_term c s t) = subc_term (f c) (psubst_term f s) (psubst_term f t)\<close>
   \<open>(\<forall>x \<in> params_list l. x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
     psubst_list f (subc_list c s l) = subc_list (f c) (psubst_term f s) (psubst_list f l)\<close>
-  by (induct t and l rule: psubst_term.induct psubst_list.induct) auto
+  by (induct t and l rule: psubst_term.induct psubst_list.induct) simp_all
 
 lemma subc_psubst: \<open>(\<forall>x \<in> params p. x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
     psubst f (subc c s p) = subc (f c) (psubst_term f s) (psubst f p)\<close>
-  using params_inc by (induct p arbitrary: s) simp_all
+  by (induct p arbitrary: s) simp_all
 
 lemma subcs_psubst: \<open>(\<forall>x \<in> (\<Union>p \<in> set z. params p). x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
     map (psubst f) (subcs c s z) = subcs (f c) (psubst_term f s) (map (psubst f) z)\<close>
-  using subc_psubst by (induct z) (simp_all add: Ball_def)
+  using subc_psubst by (induct z) simp_all
 
 lemma new_inc' [simp]:
   \<open>new_term c t \<Longrightarrow> new_term c (inc_term t)\<close>
@@ -3277,11 +3277,7 @@ lemma new_subc' [simp]:
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
 lemma new_subc [simp]: \<open>new_term d s \<Longrightarrow> new d p \<Longrightarrow> new d (subc c s p)\<close>
-  using new_inc' proof (induct p arbitrary: s)
-  case (Pre i l)
-  then show ?case
-    using new_subc' by simp
-qed simp_all
+  using new_inc' new_subc' by (induct p arbitrary: s) simp_all
 
 lemma news_subcs: \<open>new_term d s \<Longrightarrow> news d z \<Longrightarrow> news d (subcs c s z)\<close>
   using new_subc by (induct z) simp_all
@@ -3292,11 +3288,7 @@ lemma psubst_new_free' [simp]:
   by (induct t and l rule: params_term.induct params_list.induct) auto
 
 lemma psubst_new_free: \<open>c \<noteq> n \<Longrightarrow> new n (psubst (id(n := c)) p)\<close>
-proof (induct p)
-  case (Pre i l)
-  then show ?case
-    using psubst_new_free' by fastforce
-qed simp_all
+  using psubst_new_free' by (induct p) simp_all
 
 lemma map_psubst_new_free: \<open>c \<noteq> n \<Longrightarrow> news n (map (psubst (id(n := c))) z)\<close>
   using psubst_new_free by (induct z) simp_all
