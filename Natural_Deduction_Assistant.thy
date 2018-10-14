@@ -3285,7 +3285,7 @@ lemma news_subcs: \<open>new_term d s \<Longrightarrow> news d z \<Longrightarro
 lemma psubst_new_free' [simp]:
   \<open>c \<noteq> n \<Longrightarrow> new_term n (psubst_term (id(n := c)) t)\<close>
   \<open>c \<noteq> n \<Longrightarrow> new_list n (psubst_list (id(n := c)) l)\<close>
-  by (induct t and l rule: params_term.induct params_list.induct) auto
+  by (induct t and l rule: params_term.induct params_list.induct) simp_all
 
 lemma psubst_new_free: \<open>c \<noteq> n \<Longrightarrow> new n (psubst (id(n := c)) p)\<close>
   using psubst_new_free' by (induct p) simp_all
@@ -3535,7 +3535,7 @@ next
     ultimately have \<open>map (psubst ?f) z = z\<close>
       by (induct z) simp_all
     moreover have \<open>\<forall>x \<in> \<Union>p \<in> set z. params p. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
-      by auto
+      by simp
     ultimately have psubst_z: \<open>map (psubst ?f) (subcs c ?s z) = subcs c s z\<close>
       using \<open>?f c = c\<close> psubst_s subcs_psubst by simp
 
