@@ -3246,10 +3246,10 @@ lemma subc_new' [simp]:
   by (induct t and l rule: new_term.induct new_list.induct) auto
 
 lemma subc_new [simp]: \<open>new c p \<Longrightarrow> subc c s p = p\<close>
-  using subc_new' by (induct p arbitrary: s) simp_all
+  by (induct p arbitrary: s) simp_all
 
-lemma subcs_news: \<open>news c z \<Longrightarrow> subcs c s z = z\<close>
-  using subc_new by (induct z) simp_all
+lemma subcs_news [simp]: \<open>news c z \<Longrightarrow> subcs c s z = z\<close>
+  by (induct z) simp_all
 
 lemma subc_psubst' [simp]:
   \<open>(\<forall>x \<in> params_term t. x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
@@ -3341,7 +3341,7 @@ lemma inc_subc:
 lemma new_subc_put':
   \<open>new_term c s \<Longrightarrow> subc_term c s (sub_term m u t) = subc_term c s (sub_term m (subc_term c s u) t)\<close>
   \<open>new_term c s \<Longrightarrow> subc_list c s (sub_list m u l) = subc_list c s (sub_list m (subc_term c s u) l)\<close>
-  using new_subc_same' subc_new'
+  using new_subc_same'
   by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
 
 lemma new_subc_put: \<open>new_term c s \<Longrightarrow> subc c s (sub m t p) = subc c s (sub m (subc_term c s t) p)\<close>
@@ -3402,7 +3402,7 @@ qed
 lemma subc_sub_new':
   \<open>new_term c u \<Longrightarrow> subc_term c (sub_term m u s) (sub_term m u t) = sub_term m u (subc_term c s t)\<close>
   \<open>new_term c u \<Longrightarrow> subc_list c (sub_term m u s) (sub_list m u l) = sub_list m u (subc_list c s l)\<close>
-  using subc_new' by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
+  by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
 
 lemma subc_sub_new:
   \<open>new_term c t \<Longrightarrow> subc c (sub_term m t s) (sub m t p) = sub m t (subc c s p)\<close>
@@ -3413,11 +3413,11 @@ proof (induct p arbitrary: m t s)
 next
   case (Exi p)
   then show ?case
-    using inc_sub' new_inc' subc_new' by fastforce
+    using inc_sub' new_inc' by fastforce
 next
   case (Uni p)
   then show ?case
-    using inc_sub' new_inc' subc_new' by fastforce
+    using inc_sub' new_inc' by fastforce
 qed simp_all
 
 lemma subc_sub_0_new:
@@ -3492,7 +3492,7 @@ next
     moreover have \<open>new c q\<close> and \<open>news c z\<close>
       using Exi_E True by simp_all
     ultimately show ?thesis
-      using subc_new subcs_news by simp
+      by simp
   next
     case False
     let ?params = \<open>params p \<union> params q \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> {c} \<union> {d}\<close>
@@ -3672,7 +3672,7 @@ next
     moreover have \<open>new c p\<close> and \<open>news c z\<close>
       using Uni_I True by simp_all
     ultimately show ?thesis
-      using subc_new subcs_news by simp
+      by simp
   next
     case False
     let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> {c} \<union> {d}\<close>
