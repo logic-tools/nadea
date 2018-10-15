@@ -3400,7 +3400,7 @@ lemma subc_sub_new':
 
 lemma subc_sub_new:
   \<open>new_term c t \<Longrightarrow> subc c (sub_term m t s) (sub m t p) = sub m t (subc c s p)\<close>
-using subc_sub_new' inc_sub' new_inc' by (induct p arbitrary: m t s) simp_all
+  using subc_sub_new' inc_sub' new_inc' by (induct p arbitrary: m t s) simp_all
 
 lemma subc_sub_0_new [simp]:
   \<open>new_term c t \<Longrightarrow> subc c s (sub 0 t p) = sub 0 t (subc c (inc_term s) p)\<close>
