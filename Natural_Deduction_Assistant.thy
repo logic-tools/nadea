@@ -3922,7 +3922,7 @@ lemma subc_sub_closed_var' [simp]:
   \<open>new_list c l \<Longrightarrow> closed_list (Suc m) l \<Longrightarrow> subc_list c (Var m) (sub_list m (Fun c []) l) = l\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) auto
 
-lemma subc_sub_closed_var: \<open>new c p \<Longrightarrow> closed (Suc m) p \<Longrightarrow>
+lemma subc_sub_closed_var [simp]: \<open>new c p \<Longrightarrow> closed (Suc m) p \<Longrightarrow>
     subc c (Var m) (sub m (Fun c []) p) = p\<close>
   by (induct p arbitrary: m) simp_all
 
@@ -3933,7 +3933,7 @@ primrec put_unis :: \<open>nat \<Rightarrow> fm \<Rightarrow> fm\<close> where
 lemma sub_put_unis [simp]: \<open>sub i (Fun c []) (put_unis k p) = put_unis k (sub (i + k) (Fun c []) p)\<close>
   by (induct k arbitrary: i) simp_all
 
-lemma closed_put_unis: \<open>closed m (put_unis k p) = closed (m + k) p\<close>
+lemma closed_put_unis [simp]: \<open>closed m (put_unis k p) = closed (m + k) p\<close>
   by (induct k arbitrary: m) simp_all
 
 lemma valid_put_unis: \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p \<Longrightarrow>
@@ -3969,7 +3969,7 @@ lemma vars_for_consts: \<open>OK p [] \<Longrightarrow> OK (vars_for_consts p xs
 lemma vars_for_consts_for_unis:
   \<open>closed (length cs) p \<Longrightarrow> list_all (\<lambda>c. new c p) cs \<Longrightarrow> distinct cs \<Longrightarrow>
    vars_for_consts (consts_for_unis (put_unis (length cs) p) cs) cs = p\<close>
-  using sub_new_all subc_sub_closed_var by (induct cs arbitrary: p) (auto simp: list_all_iff)
+  using sub_new_all by (induct cs arbitrary: p) (auto simp: list_all_iff)
 
 lemma fresh_constant: \<open>\<exists>c. c \<notin> set cs \<and> new c p\<close>
 proof -
@@ -4017,7 +4017,7 @@ proof (induct t and l rule: closed_term.induct closed_list.induct)
     by auto
 qed auto
 
-lemma ex_closed: \<open>\<exists>m. closed m p\<close>
+lemma ex_closed [simp]: \<open>\<exists>m. closed m p\<close>
 proof (induct p)
   case (Imp p q)
   then show ?case
@@ -4049,7 +4049,7 @@ next
 qed simp_all
 
 lemma ex_closure: \<open>\<exists>m. sentence (put_unis m p)\<close>
-  using ex_closed closed_put_unis by simp
+  by simp
 
 lemma remove_unis_sentence:
   assumes \<open>sentence (put_unis m p)\<close> \<open>OK (put_unis m p) []\<close>
@@ -4064,7 +4064,7 @@ proof -
       (put_unis (length cs) p) cs) cs) []\<close>
     using vars_for_consts by blast
   moreover have \<open>closed (length cs) p\<close>
-    using assms \<open>length cs = m\<close> closed_put_unis by simp
+    using assms \<open>length cs = m\<close> by simp
   ultimately show \<open>OK p []\<close>
     using vars_for_consts_for_unis * ** by simp
 qed
