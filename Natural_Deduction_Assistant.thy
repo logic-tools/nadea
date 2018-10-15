@@ -3331,11 +3331,7 @@ lemma new_subc_same' [simp]:
   by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
 
 lemma new_subc_same: \<open>new_term c s \<Longrightarrow> new c (subc c s p)\<close>
-  using new_inc' inc_sub' proof (induct p arbitrary: s)
-  case (Pre i l)
-  then show ?case
-    using new_subc_same' by simp
-qed simp_all
+  using new_inc' new_subc_same' by (induct p arbitrary: s) simp_all
 
 lemma inc_subc:
   \<open>inc_term (subc_term c s t) = subc_term c (inc_term s) (inc_term t)\<close>
