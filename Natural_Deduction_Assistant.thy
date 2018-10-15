@@ -3275,7 +3275,7 @@ lemma new_subc':
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
 lemma new_subc: \<open>new_term d s \<Longrightarrow> new d p \<Longrightarrow> new d (subc c s p)\<close>
-  using new_inc' new_subc' by (induct p arbitrary: s) simp_all
+  using new_subc' by (induct p arbitrary: s) simp_all
 
 lemma news_subcs: \<open>new_term d s \<Longrightarrow> news d z \<Longrightarrow> news d (subcs c s z)\<close>
   using new_subc by (induct z) simp_all
@@ -3400,21 +3400,9 @@ lemma subc_sub_new':
 
 lemma subc_sub_new:
   \<open>new_term c t \<Longrightarrow> subc c (sub_term m t s) (sub m t p) = sub m t (subc c s p)\<close>
-proof (induct p arbitrary: m t s)
-  case (Pre i l)
-  then show ?case
-    using subc_sub_new' by simp
-next
-  case (Exi p)
-  then show ?case
-    using inc_sub' new_inc' by fastforce
-next
-  case (Uni p)
-  then show ?case
-    using inc_sub' new_inc' by fastforce
-qed simp_all
+using subc_sub_new' inc_sub' new_inc' by (induct p arbitrary: m t s) simp_all
 
-lemma subc_sub_0_new:
+lemma subc_sub_0_new [simp]:
   \<open>new_term c t \<Longrightarrow> subc c s (sub 0 t p) = sub 0 t (subc c (inc_term s) p)\<close>
   using subc_sub_new sub_0_inc by metis
 
@@ -3538,7 +3526,7 @@ next
       using Exi_E fresh by simp
     finally have psubst_p: \<open>psubst ?f (subc c ?s (sub 0 (Fun d []) p)) =
         sub 0 (Fun fresh []) (subc c (inc_term s) p)\<close>
-      using subc_sub_0_new \<open>new_term (?f c) (Fun fresh [])\<close> \<open>?f c = c\<close> by simp
+      using \<open>new_term (?f c) (Fun fresh [])\<close> \<open>?f c = c\<close> by simp
 
     have \<open>\<forall>x \<in> params q. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
       using f by blast
@@ -3601,7 +3589,7 @@ next
   moreover have \<open>new_term c (subc_term c ?s t)\<close>
     using \<open>new_term c ?s\<close> new_subc_same' by blast
   ultimately have \<open>OK (sub 0 (subc_term c ?s t) (subc c (inc_term ?s) p)) (subcs c ?s z)\<close>
-    using subc_sub_0_new by simp
+    by simp
 
   then have \<open>OK (subc c ?s (Exi p)) (subcs c ?s z)\<close>
     using OK.Exi_I by simp
@@ -3648,7 +3636,7 @@ next
   moreover have \<open>new_term c (subc_term c ?s t)\<close>
     using \<open>new_term c ?s\<close> new_subc_same' by blast
   ultimately have \<open>OK (subc c ?s (sub 0 (subc_term c ?s t) p)) (subcs c ?s z)\<close>
-    using subc_sub_0_new by simp
+    by simp
   then have \<open>OK (subc c ?s (sub 0 t p)) (subcs c ?s z)\<close>
     using new_subc_put \<open>new_term c ?s\<close> by metis
   then have \<open>OK (psubst ?g (subc c ?s (sub 0 t p))) (map (psubst ?g) (subcs c ?s z))\<close>
@@ -3701,7 +3689,7 @@ next
       using Uni_I fresh by simp
     finally have psubst_p: \<open>psubst ?f (subc c ?s (sub 0 (Fun d []) p)) =
         sub 0 (Fun fresh []) (subc c (inc_term s) p)\<close>
-      using subc_sub_0_new \<open>new_term c (Fun fresh [])\<close> by simp
+      using \<open>new_term c (Fun fresh [])\<close> by simp
 
     have \<open>news d z\<close>
       using Uni_I by simp
@@ -3730,12 +3718,9 @@ next
     then have \<open>new fresh (subc c (inc_term s) p)\<close>
       using fresh new_subc by simp
     moreover have \<open>news fresh (subcs c s z)\<close>
-      using \<open>news fresh z\<close> \<open>new_term fresh s\<close> news_subcs by blast
-    ultimately have news_pz: \<open>news fresh (subc c (inc_term s) p # subcs c s z)\<close>
-      by fastforce
-
-    show \<open>OK (subc c s (Uni p)) (subcs c s z)\<close>
-      using OK.Uni_I sub_p news_pz by simp
+      using \<open>news fresh z\<close> \<open>new_term fresh s\<close> news_subcs by fast
+    ultimately show \<open>OK (subc c s (Uni p)) (subcs c s z)\<close>
+      using OK.Uni_I sub_p by simp
   qed
 qed
 
