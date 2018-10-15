@@ -4052,14 +4052,6 @@ proof -
     using vars_for_consts_for_unis * ** by simp
 qed
 
-theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
-  using ex_closure put_unis_collapse valid_put_unis remove_unis_sentence list.pred_inject(1)
-    natded_complete soundness
-  by metis
-
-corollary \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close> \<open>OK (put_unis m p) [] \<Longrightarrow> OK p []\<close>
-  using any_unis put_unis.simps(1) by metis+
-
 subsection \<open>Completeness\<close>
 
 theorem completeness':
@@ -4114,6 +4106,12 @@ proof
     unfolding main .
   with soundness show \<open>semantics e f g p\<close> .
 qed
+
+theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
+  using main ex_closure put_unis_collapse remove_unis_sentence valid_put_unis by metis
+
+corollary \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close> \<open>OK (put_unis m p) [] \<Longrightarrow> OK p []\<close>
+  using any_unis put_unis.simps(1) by metis+
 
 section \<open>Acknowledgements\<close>
 
