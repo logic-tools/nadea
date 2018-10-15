@@ -3266,23 +3266,23 @@ lemma subcs_psubst: \<open>(\<forall>x \<in> (\<Union>p \<in> set z. params p). 
     map (psubst f) (subcs c s z) = subcs (f c) (psubst_term f s) (map (psubst f) z)\<close>
   using subc_psubst by (induct z) simp_all
 
-lemma new_inc' [simp]:
+lemma new_inc':
   \<open>new_term c t \<Longrightarrow> new_term c (inc_term t)\<close>
   \<open>new_list c l \<Longrightarrow> new_list c (inc_list l)\<close>
   by (induct t and l rule: new_term.induct new_list.induct) simp_all
 
-lemma new_subc' [simp]:
+lemma new_subc':
   \<open>new_term d s \<Longrightarrow> new_term d t \<Longrightarrow> new_term d (subc_term c s t)\<close>
   \<open>new_term d s \<Longrightarrow> new_list d l \<Longrightarrow> new_list d (subc_list c s l)\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
-lemma new_subc [simp]: \<open>new_term d s \<Longrightarrow> new d p \<Longrightarrow> new d (subc c s p)\<close>
+lemma new_subc: \<open>new_term d s \<Longrightarrow> new d p \<Longrightarrow> new d (subc c s p)\<close>
   using new_inc' new_subc' by (induct p arbitrary: s) simp_all
 
 lemma news_subcs: \<open>new_term d s \<Longrightarrow> news d z \<Longrightarrow> news d (subcs c s z)\<close>
   using new_subc by (induct z) simp_all
 
-lemma psubst_new_free' [simp]:
+lemma psubst_new_free':
   \<open>c \<noteq> n \<Longrightarrow> new_term n (psubst_term (id(n := c)) t)\<close>
   \<open>c \<noteq> n \<Longrightarrow> new_list n (psubst_list (id(n := c)) l)\<close>
   by (induct t and l rule: params_term.induct params_list.induct) simp_all
@@ -3293,21 +3293,17 @@ lemma psubst_new_free: \<open>c \<noteq> n \<Longrightarrow> new n (psubst (id(n
 lemma map_psubst_new_free: \<open>c \<noteq> n \<Longrightarrow> news n (map (psubst (id(n := c))) z)\<close>
   using psubst_new_free by (induct z) simp_all
 
-lemma psubst_new_away':
+lemma psubst_new_away' [simp]:
   \<open>new_term fresh t \<Longrightarrow> psubst_term (id(fresh := c)) (psubst_term (id(c := fresh)) t) = t\<close>
   \<open>new_list fresh l \<Longrightarrow> psubst_list (id(fresh := c)) (psubst_list (id(c := fresh)) l) = l\<close>
   by (induct t and l rule: psubst_term.induct psubst_list.induct) auto
 
-lemma psubst_new_away: \<open>new fresh p \<Longrightarrow> psubst (id(fresh := c)) (psubst (id(c := fresh)) p) = p\<close>
-proof (induct p)
-  case (Pre i l)
-  then show ?case
-    by (metis new.simps(2) psubst.simps(2) psubst_new_away'(2))
-qed simp_all
+lemma psubst_new_away [simp]: \<open>new fresh p \<Longrightarrow> psubst (id(fresh := c)) (psubst (id(c := fresh)) p) = p\<close>
+  by (induct p) simp_all
 
 lemma map_psubst_new_away:
   \<open>news fresh z \<Longrightarrow> map (psubst (id(fresh := c))) (map (psubst (id(c := fresh))) z) = z\<close>
-  using psubst_new_away by (induct z) simp_all
+  by (induct z) simp_all
 
 lemma psubst_new':
   \<open>new_term c t \<Longrightarrow> psubst_term (id(c := x)) t = t\<close>
@@ -3320,12 +3316,12 @@ lemma psubst_new: \<open>new c p \<Longrightarrow> psubst (id(c := x)) p = p\<cl
 lemma map_psubst_new: \<open>news c z \<Longrightarrow> map (psubst (id(c := x))) z = z\<close>
   using psubst_new by (induct z) simp_all
 
-lemma inc_sub' [simp]:
+lemma inc_sub':
   \<open>inc_term (sub_term m u t) = sub_term (m + 1) (inc_term u) (inc_term t)\<close>
   \<open>inc_list (sub_list m u l) = sub_list (m + 1) (inc_term u) (inc_list l)\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
-lemma new_subc_same' [simp]:
+lemma new_subc_same':
   \<open>new_term c s \<Longrightarrow> new_term c (subc_term c s t)\<close>
   \<open>new_term c s \<Longrightarrow> new_list c (subc_list c s l)\<close>
   by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
