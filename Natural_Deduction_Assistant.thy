@@ -1,10 +1,8 @@
-(*
-
+text \<open>
 Authors: Andreas Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
 
-https://www.isa-afp.org/LICENSE
-
-*)
+License: https://www.isa-afp.org/LICENSE
+\<close>
 
 section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
