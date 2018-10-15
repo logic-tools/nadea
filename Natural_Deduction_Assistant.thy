@@ -1,10 +1,10 @@
+section \<open>Natural Deduction Assistant (NaDeA)\<close>
+
 text \<open>
 Authors: Andreas Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
 
 License: https://www.isa-afp.org/LICENSE
 \<close>
-
-section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
 theory Natural_Deduction_Assistant imports Main begin
 
