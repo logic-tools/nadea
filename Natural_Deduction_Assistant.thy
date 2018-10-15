@@ -574,17 +574,17 @@ primrec params :: \<open>fm \<Rightarrow> id set\<close> where
 lemma new_params' [simp]:
   \<open>new_term c t = (c \<notin> params_term t)\<close>
   \<open>new_list c l = (c \<notin> params_list l)\<close>
-  by (induct t and l rule: new_term.induct new_list.induct) auto
+  by (induct t and l rule: new_term.induct new_list.induct) simp_all
 
 lemma new_params [simp]: \<open>new x p = (x \<notin> params p)\<close>
   by (induct p) simp_all
 
-lemma news_params: \<open>list_all (\<lambda>p. c \<notin> params p) z = news c z\<close>
+lemma news_params [simp]: \<open>news c z = list_all (\<lambda>p. c \<notin> params p) z\<close>
   by (induct z) simp_all
 
-lemma params_inc:
-  \<open>params_term t = params_term (inc_term t)\<close>
-  \<open>params_list l = params_list (inc_list l)\<close>
+lemma params_inc [simp]:
+  \<open>params_term (inc_term t) = params_term t\<close>
+  \<open>params_list (inc_list l) = params_list l\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
 primrec
@@ -2544,7 +2544,7 @@ proof (intro conjI allI impI notI)
 
     { assume \<open>OK Falsity (sub 0 (Fun x []) P # G)\<close>
       moreover have \<open>news x (P # Falsity # G)\<close>
-        using ** news_params by (simp add: list_all_iff)
+        using ** by (simp add: list_all_iff)
       ultimately have \<open>OK Falsity G\<close>
         using Exi_E \<open>OK (Exi P) G\<close> by fast
       then have False
@@ -2583,7 +2583,7 @@ proof (intro conjI allI impI notI)
     then have \<open>OK (sub 0 (Fun x []) P) (?x # G)\<close>
       using Boole by blast
     moreover have \<open>news x (P # ?x # G)\<close>
-      using ** news_params by (simp add: list_all_iff)
+      using ** by (simp add: list_all_iff)
     ultimately have \<open>OK (Uni P) (?x # G)\<close>
       using Uni_I by fast
     moreover have \<open>OK (Neg (Uni P)) (?x # G)\<close>
@@ -2597,7 +2597,7 @@ proof (intro conjI allI impI notI)
       then have \<open>OK (sub 0 (Fun x []) P) G\<close>
         using Boole by blast
       moreover have \<open>news x (P # G)\<close>
-        using ** news_params by (simp add: list_all_iff)
+        using ** by (simp add: list_all_iff)
       ultimately have \<open>OK (Uni P) G\<close>
         using Uni_I by blast
       then have \<open>OK Falsity G\<close>
@@ -3227,13 +3227,13 @@ lemma sub_0_inc:
   \<open>sub_list 0 s (inc_list l) = l\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
-lemma sub_new' [simp]:
+lemma sub_new':
   \<open>new_term c s \<Longrightarrow> new_term c t \<Longrightarrow> new_term c (sub_term m s t)\<close>
   \<open>new_term c s \<Longrightarrow> new_list c l \<Longrightarrow> new_list c (sub_list m s l)\<close>
   by (induct t and l rule: sub_term.induct sub_list.induct) simp_all
 
 lemma sub_new: \<open>new_term c s \<Longrightarrow> new c p \<Longrightarrow> new c (sub m s p)\<close>
-  using params_inc sub_new' by (induct p arbitrary: m s) simp_all
+  using sub_new' by (induct p arbitrary: m s) simp_all
 
 lemma sub_new_all:
   assumes \<open>a \<notin> set cs\<close> \<open>list_all (\<lambda>c. new c p) cs\<close>
@@ -3818,7 +3818,7 @@ next
   have \<open>news c z\<close>
     using Exi_E by simp
   then have \<open>set z \<subseteq> set ?z'\<close>
-    using Exi_E psubst_new_subset news_params by (simp add: Ball_set)
+    using Exi_E psubst_new_subset by (simp add: Ball_set)
   then have \<open>OK (Exi p) ?z'\<close>
     using Exi_E by blast
 
@@ -3830,7 +3830,7 @@ next
   moreover have \<open>news c ?z'\<close>
     using fresh map_psubst_new_free by simp
   then have \<open>news c (p # q # ?z')\<close>
-    using Exi_E news_params by simp
+    using Exi_E by simp
 
   ultimately have \<open>OK q ?z'\<close>
     using Exi_E OK.Exi_E by blast
@@ -3877,7 +3877,7 @@ next
   then have \<open>list_all (\<lambda>p. c \<notin> params p) (p # ?z')\<close>
     using Uni_I by (simp add: list_all_iff)
   then have \<open>news c (p # ?z')\<close>
-    using news_params by blast
+    by simp
 
   ultimately have \<open>OK (Uni p) ?z'\<close>
     using Uni_I OK.Uni_I by blast
