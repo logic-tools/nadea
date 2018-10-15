@@ -4052,9 +4052,13 @@ proof -
     using vars_for_consts_for_unis * ** by simp
 qed
 
-theorem remove_unis: \<open>OK (put_unis m p) [] \<Longrightarrow> OK p []\<close>
-  using ex_closure put_unis_collapse valid_put_unis remove_unis_sentence
-  by (metis list.pred_inject(1) natded_complete soundness)
+theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
+  using ex_closure put_unis_collapse valid_put_unis remove_unis_sentence list.pred_inject(1)
+    natded_complete soundness
+  by metis
+
+corollary \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close> \<open>OK (put_unis m p) [] \<Longrightarrow> OK p []\<close>
+  using any_unis put_unis.simps(1) by metis+
 
 subsection \<open>Completeness\<close>
 
@@ -4087,13 +4091,6 @@ theorem completeness:
 
 corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
   using completeness denumerable_bij by blast
-
-theorem put_unis: \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close>
-  using valid_put_unis soundness completeness infinite_UNIV_char_0 denumerable_bij
-    Schroeder_Bernstein infinite_iff_countable_subset by metis
-
-theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p) []\<close>
-  using put_unis remove_unis by blast
 
 section \<open>Main Result\<close> \<comment> \<open>NaDeA is sound and complete\<close>
 
