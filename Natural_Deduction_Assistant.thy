@@ -1359,7 +1359,8 @@ proof (induct n)
   then show ?case by simp
 next
   case (Suc n')
-  then show ?case proof (induct n')
+  then show ?case
+  proof (induct n')
     case 0
     then show ?case by simp
   next
@@ -1375,7 +1376,8 @@ proof (induct n)
   then show ?case by simp
 next
   case (Suc n')
-  then show ?case proof (induct n')
+  then show ?case
+  proof (induct n')
     case 0
     then show ?case by simp
   next
@@ -1862,7 +1864,8 @@ next
     (Neg x \<in> H \<longrightarrow> closed 0 x \<longrightarrow> ?semantics (Neg x))\<close>
   proof (cases x)
     case Falsity
-    show ?thesis proof (intro conjI impI)
+    show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close>
       then show \<open>?semantics x\<close>
         using Falsity hin by (simp add: hintikka_def)
@@ -1873,7 +1876,8 @@ next
     qed
   next
     case (Pre p ts)
-    show ?thesis proof (intro conjI impI)
+    show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       then show \<open>?semantics x\<close> using Pre by simp
     next
@@ -1887,7 +1891,8 @@ next
     qed
   next
     case (Con A B)
-    then show ?thesis proof (intro conjI impI)
+    then show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       then have \<open>Con A B \<in> H\<close> and \<open>closed 0 (Con A B)\<close>
         using Con by simp_all
@@ -1906,7 +1911,8 @@ next
     qed
   next
     case (Dis A B)
-    then show ?thesis proof (intro conjI impI)
+    then show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       then have \<open>Dis A B \<in> H\<close> and \<open>closed 0 (Dis A B)\<close>
         using Dis by simp_all
@@ -1925,7 +1931,8 @@ next
     qed
   next
     case (Imp A B)
-    then show ?thesis proof (intro conjI impI)
+    then show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       then have \<open>Imp A B \<in> H\<close> and \<open>closed 0 (Imp A B)\<close>
         using Imp by simp_all
@@ -1944,7 +1951,8 @@ next
     qed
   next
     case (Uni P)
-    then show ?thesis proof (intro conjI impI)
+    then show ?thesis
+    proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       have \<open>\<forall>z. semantics (put e 0 z) HFun (\<lambda>a ts. Pre a (tms_of_htms ts) \<in> H) P\<close>
       proof (rule allI)
@@ -1990,7 +1998,8 @@ next
     qed
   next
     case (Exi P)
-    then show ?thesis proof (intro conjI impI allI)
+    then show ?thesis
+    proof (intro conjI impI allI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
       then have \<open>\<exists>t. closed_term 0 t \<and> (sub 0 t P) \<in> H\<close>
         using Exi hin unfolding hintikka_def by blast
@@ -3467,7 +3476,8 @@ next
     using OK.Con_I by simp
 next
   case (Exi_E p z q d)
-  then show ?case proof (cases \<open>c = d\<close>)
+  then show ?case
+  proof (cases \<open>c = d\<close>)
     case True
     then have \<open>OK q z\<close>
       using Exi_E OK.Exi_E by blast
@@ -3647,7 +3657,8 @@ next
     using subc_psubst c s p z by simp
 next
   case (Uni_I d p z)
-  then show ?case proof (cases \<open>c = d\<close>)
+  then show ?case
+  proof (cases \<open>c = d\<close>)
     case True
     then have \<open>OK (Uni p) z\<close>
       using Uni_I OK.Uni_I by blast
