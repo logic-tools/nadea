@@ -4043,8 +4043,7 @@ proof -
     using assms fresh_constants by blast
   then have \<open>OK (consts_for_unis (put_unis (length cs) p) cs) []\<close>
     using assms consts_for_unis by blast
-  then have \<open>OK (vars_for_consts (consts_for_unis
-      (put_unis (length cs) p) cs) cs) []\<close>
+  then have \<open>OK (vars_for_consts (consts_for_unis (put_unis (length cs) p) cs) cs) []\<close>
     using vars_for_consts by blast
   moreover have \<open>closed (length cs) p\<close>
     using assms \<open>length cs = m\<close> by simp
