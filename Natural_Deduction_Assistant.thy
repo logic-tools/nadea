@@ -1885,7 +1885,7 @@ next
       then have \<open>Neg (Pre p ts) \<in> H\<close>
         using Pre by simp
       then have \<open>Pre p ts \<notin> H\<close>
-        using hin unfolding hintikka_def by fast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
         using Pre \<open>closed 0 x\<close> by simp
     qed
@@ -1905,7 +1905,7 @@ next
       then have \<open>Neg (Con A B) \<in> H\<close> and \<open>closed 0 (Con A B)\<close>
         using Con by simp_all
       then have \<open>Neg A \<in> H \<or> Neg B \<in> H\<close>
-        using hin unfolding hintikka_def by blast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
         using Con wf \<open>closed 0 (Con A B)\<close> by force
     qed
@@ -1917,7 +1917,7 @@ next
       then have \<open>Dis A B \<in> H\<close> and \<open>closed 0 (Dis A B)\<close>
         using Dis by simp_all
       then have \<open>A \<in> H \<or> B \<in> H\<close>
-        using hin unfolding hintikka_def by blast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics x\<close>
         using Dis wf \<open>closed 0 (Dis A B)\<close> by fastforce
     next
@@ -1925,7 +1925,7 @@ next
       then have \<open>Neg (Dis A B) \<in> H\<close> and \<open>closed 0 (Dis A B)\<close>
         using Dis by simp_all
       then have \<open>Neg A \<in> H \<and> Neg B \<in> H\<close>
-        using hin unfolding hintikka_def by blast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
         using Dis wf \<open>closed 0 (Dis A B)\<close> by force
     qed
@@ -1937,7 +1937,7 @@ next
       then have \<open>Imp A B \<in> H\<close> and \<open>closed 0 (Imp A B)\<close>
         using Imp by simp_all
       then have \<open>Neg A \<in> H \<or> B \<in> H\<close>
-        using hin unfolding hintikka_def by blast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics x\<close>
         using Imp wf \<open>closed 0 (Imp A B)\<close> by force
     next
@@ -1945,7 +1945,7 @@ next
       then have \<open>Neg (Imp A B) \<in> H\<close> and \<open>closed 0 (Imp A B)\<close>
         using Imp by simp_all
       then have \<open>A \<in> H \<and> Neg B \<in> H\<close>
-        using hin unfolding hintikka_def by blast
+        using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
         using Imp wf \<open>closed 0 (Imp A B)\<close> by force
     qed
@@ -1961,7 +1961,7 @@ next
         have \<open>Uni P \<in> H\<close> and \<open>closed 0 (Uni P)\<close>
           using Uni by simp_all
         then have *: \<open>\<forall>P t. closed_term 0 t \<longrightarrow> Uni P \<in> H \<longrightarrow> sub 0 t P \<in> H\<close>
-          using hin unfolding hintikka_def by blast
+          using hin unfolding hintikka_def by meson
         from \<open>closed 0 (Uni P)\<close>
         have \<open>closed (Suc 0) P\<close> by simp
 
@@ -2027,7 +2027,7 @@ next
         have \<open>Neg (Exi P) \<in> H\<close> and \<open>closed 0 (Neg (Exi P))\<close>
           using Exi by simp_all
         then have *: \<open>\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> H \<longrightarrow> Neg (sub 0 t P) \<in> H\<close>
-          using hin unfolding hintikka_def by blast
+          using hin unfolding hintikka_def by meson
         from \<open>closed 0 (Neg (Exi P))\<close>
         have \<open>closed (Suc 0) P\<close> by simp
 
@@ -3265,13 +3265,13 @@ lemma subc_psubst' [simp]:
     psubst_list f (subc_list c s l) = subc_list (f c) (psubst_term f s) (psubst_list f l)\<close>
   by (induct t and l rule: psubst_term.induct psubst_list.induct) simp_all
 
-lemma subc_psubst: \<open>(\<forall>x \<in> params p. x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
+lemma subc_psubst [simp]: \<open>(\<forall>x \<in> params p. x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
     psubst f (subc c s p) = subc (f c) (psubst_term f s) (psubst f p)\<close>
   by (induct p arbitrary: s) simp_all
 
-lemma subcs_psubst: \<open>(\<forall>x \<in> (\<Union>p \<in> set z. params p). x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
+lemma subcs_psubst [simp]: \<open>(\<forall>x \<in> (\<Union>p \<in> set z. params p). x \<noteq> c \<longrightarrow> f x \<noteq> f c) \<Longrightarrow>
     map (psubst f) (subcs c s z) = subcs (f c) (psubst_term f s) (map (psubst f) z)\<close>
-  using subc_psubst by (induct z) simp_all
+  by (induct z) simp_all
 
 lemma new_inc':
   \<open>new_term c t \<Longrightarrow> new_term c (inc_term t)\<close>
@@ -3334,7 +3334,7 @@ lemma new_subc_same':
   by (induct t and l rule: subc_term.induct subc_list.induct) simp_all
 
 lemma new_subc_same: \<open>new_term c s \<Longrightarrow> new c (subc c s p)\<close>
-  using new_inc' new_subc_same' by (induct p arbitrary: s) simp_all
+  using new_subc_same' by (induct p arbitrary: s) simp_all
 
 lemma inc_subc:
   \<open>inc_term (subc_term c s t) = subc_term c (inc_term s) (inc_term t)\<close>
@@ -3409,7 +3409,7 @@ lemma subc_sub_new':
 
 lemma subc_sub_new:
   \<open>new_term c t \<Longrightarrow> subc c (sub_term m t s) (sub m t p) = sub m t (subc c s p)\<close>
-  using subc_sub_new' inc_sub' new_inc' by (induct p arbitrary: m t s) simp_all
+  using subc_sub_new' inc_sub' by (induct p arbitrary: m t s) simp_all
 
 lemma subc_sub_0_new [simp]:
   \<open>new_term c t \<Longrightarrow> subc c s (sub 0 t p) = sub 0 t (subc c (inc_term s) p)\<close>
@@ -3525,7 +3525,7 @@ next
     moreover have \<open>\<forall>x \<in> \<Union>p \<in> set z. params p. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
       by simp
     ultimately have psubst_z: \<open>map (psubst ?f) (subcs c ?s z) = subcs c s z\<close>
-      using \<open>?f c = c\<close> psubst_s subcs_psubst by simp
+      using \<open>?f c = c\<close> psubst_s by simp
 
     have \<open>psubst ?f (subc c ?s (sub 0 (Fun d []) p)) =
       subc (?f c) (psubst_term ?f ?s) (psubst ?f (sub 0 (Fun d []) p))\<close>
@@ -3536,7 +3536,7 @@ next
       using Exi_E fresh by simp
     finally have psubst_p: \<open>psubst ?f (subc c ?s (sub 0 (Fun d []) p)) =
         sub 0 (Fun fresh []) (subc c (inc_term s) p)\<close>
-      using \<open>new_term (?f c) (Fun fresh [])\<close> \<open>?f c = c\<close> by simp
+      using \<open>new_term (?f c) (Fun fresh [])\<close> \<open>?f c = c\<close> by (simp del: subc_psubst)
 
     have \<open>\<forall>x \<in> params q. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
       using f by blast
@@ -3549,12 +3549,12 @@ next
       by simp
     then have \<open>OK (psubst ?f (subc c ?s q)) (psubst ?f (subc c ?s (sub 0 (Fun d []) p))
           # map (psubst ?f) (subcs c ?s z))\<close>
-      using OK_psubst by fastforce
+      using OK_psubst by (fastforce simp del: subc_psubst subcs_psubst)
     then have q: \<open>OK (subc c s q) (sub 0 (Fun fresh []) (subc c (inc_term s) p) # subcs c s z)\<close>
       using psubst_q psubst_z psubst_p by simp
 
     have \<open>new fresh (subc c (inc_term s) p)\<close>
-      using fresh new_subc new_inc' by simp
+      using fresh new_subc by simp
     moreover have \<open>new fresh (subc c s q)\<close>
       using fresh new_subc by simp
     moreover have \<open>news fresh (subcs c s z)\<close>
@@ -3590,7 +3590,7 @@ next
   moreover have \<open>map (psubst ?g) z = z\<close>
     using fresh by (induct z) simp_all
   ultimately have z: \<open>map (psubst ?g) (subcs c ?s z) = subcs c s z\<close>
-    using s subcs_psubst by simp
+    using s by simp
 
   have \<open>new_term c ?s\<close>
     using fresh psubst_new_free' by simp
@@ -3634,7 +3634,7 @@ next
   moreover have \<open>map (psubst ?g) z = z\<close>
     using fresh by (induct z) simp_all
   ultimately have z: \<open>map (psubst ?g) (subcs c ?s z) = subcs c s z\<close>
-    using s subcs_psubst by simp
+    using s by simp
 
   have \<open>new_term c ?s\<close>
     using fresh psubst_new_free' by simp
@@ -3711,12 +3711,12 @@ next
     moreover have \<open>\<forall>x \<in> \<Union>p \<in> set z. params p. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
       by auto
     ultimately have psubst_z: \<open>map (psubst ?f) (subcs c ?s z) = subcs c s z\<close>
-      using \<open>?f c = c\<close> psubst_s subcs_psubst by simp
+      using \<open>?f c = c\<close> psubst_s by simp
 
     have \<open>OK (subc c ?s (sub 0 (Fun d []) p)) (subcs c ?s z)\<close>
       using Uni_I by blast
     then have \<open>OK (psubst ?f (subc c ?s (sub 0 (Fun d []) p))) (map (psubst ?f) (subcs c ?s z))\<close>
-      using OK_psubst by fastforce
+      using OK_psubst by blast
     then have \<open>OK (psubst ?f (subc c ?s (sub 0 (Fun d []) p))) (subcs c s z)\<close>
       using psubst_z by simp
     then have sub_p: \<open>OK (sub 0 (Fun fresh []) (subc c (inc_term s) p)) (subcs c s z)\<close>
@@ -3725,7 +3725,7 @@ next
     have \<open>new_term fresh s\<close>
       using fresh by simp
     then have \<open>new_term fresh (inc_term s)\<close>
-      using new_inc' by simp
+      by simp
     then have \<open>new fresh (subc c (inc_term s) p)\<close>
       using fresh new_subc by simp
     moreover have \<open>news fresh (subcs c s z)\<close>
