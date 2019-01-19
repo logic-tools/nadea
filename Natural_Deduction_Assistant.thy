@@ -86,7 +86,7 @@ primrec sub :: \<open>nat \<Rightarrow> tm \<Rightarrow> fm \<Rightarrow> fm\<cl
 
 inductive OK :: \<open>fm \<Rightarrow> fm list \<Rightarrow> bool\<close> where
   Assume: \<open>member p z \<Longrightarrow> OK p z\<close> |
-  Boole: \<open>OK Falsity ((Imp p Falsity) # z) \<Longrightarrow> OK p z\<close> |
+  Boole: \<open>OK Falsity (Imp p Falsity # z) \<Longrightarrow> OK p z\<close> |
   Imp_E: \<open>OK (Imp p q) z \<Longrightarrow> OK p z \<Longrightarrow> OK q z\<close> |
   Imp_I: \<open>OK q (p # z) \<Longrightarrow> OK (Imp p q) z\<close> |
   Dis_E: \<open>OK (Dis p q) z \<Longrightarrow> OK r (p # z) \<Longrightarrow> OK r (q # z) \<Longrightarrow> OK r z\<close> |
@@ -95,7 +95,7 @@ inductive OK :: \<open>fm \<Rightarrow> fm list \<Rightarrow> bool\<close> where
   Con_E1: \<open>OK (Con p q) z \<Longrightarrow> OK p z\<close> |
   Con_E2: \<open>OK (Con p q) z \<Longrightarrow> OK q z\<close> |
   Con_I: \<open>OK p z \<Longrightarrow> OK q z \<Longrightarrow> OK (Con p q) z\<close> |
-  Exi_E: \<open>OK (Exi p) z \<Longrightarrow> OK q ((sub 0 (Fun c []) p) # z) \<Longrightarrow> news c (p # q # z) \<Longrightarrow> OK q z\<close> |
+  Exi_E: \<open>OK (Exi p) z \<Longrightarrow> OK q (sub 0 (Fun c []) p # z) \<Longrightarrow> news c (p # q # z) \<Longrightarrow> OK q z\<close> |
   Exi_I: \<open>OK (sub 0 t p) z \<Longrightarrow> OK (Exi p) z\<close> |
   Uni_E: \<open>OK (Uni p) z \<Longrightarrow> OK (sub 0 t p) z\<close> |
   Uni_I: \<open>OK (sub 0 (Fun c []) p) z \<Longrightarrow> news c (p # z) \<Longrightarrow> OK (Uni p) z\<close>
@@ -3077,56 +3077,6 @@ proof (induct p z arbitrary: f rule: OK.induct)
   then show ?case
     using OK.Assume member_psubst by blast
 next
-  case (Boole p z)
-  then have \<open>OK Falsity (Neg (psubst f p) # map (psubst f) z)\<close>
-    by simp
-  then show ?case
-    using OK.Boole by blast
-next
-  case (Imp_E p q z)
-  then have \<open>OK (Imp (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
-    and \<open>OK (psubst f p) (map (psubst f) z)\<close>
-    by simp_all
-  then show ?case
-    using OK.Imp_E by blast
-next
-  case (Imp_I q p z)
-  then show ?case
-    using OK.Imp_I by simp
-next
-  case (Dis_E p q z r)
-  then have
-    \<open>OK (Dis (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
-    \<open>OK (psubst f r) (psubst f p # map (psubst f) z)\<close>
-    \<open>OK (psubst f r) (psubst f q # map (psubst f) z)\<close>
-    by simp_all
-  then show ?case
-    using OK.Dis_E by blast
-next
-  case (Dis_I1 p z q)
-  then show ?case
-    using OK.Dis_I1 by simp
-next
-  case (Dis_I2 q z p)
-  then show ?case
-    using OK.Dis_I2 by simp
-next
-  case (Con_E1 p q z)
-  then have \<open>OK (Con (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
-    by simp
-  then show ?case
-    using OK.Con_E1 by blast
-next
-  case (Con_E2 p q z)
-  then have \<open>OK (Con (psubst f p) (psubst f q)) (map (psubst f) z)\<close>
-    by simp
-  then show ?case
-    using OK.Con_E2 by blast
-next
-  case (Con_I p z q)
-  then show ?case
-    using OK.Con_I by simp
-next
   case (Exi_E p z q c)
   let ?params = \<open>params p \<union> params q \<union> (\<Union>p \<in> set z. params p)\<close>
 
@@ -3164,14 +3114,6 @@ next
   ultimately show ?case
     using Exi_E by simp
 next
-  case (Exi_I t p z)
-  then show ?case
-    using OK.Exi_I by fastforce
-next
-  case (Uni_E p z t)
-  then show ?case
-    using OK.Uni_E by simp
-next
   case (Uni_I c p z)
   let ?params = \<open>params p \<union>(\<Union>p \<in> set z. params p)\<close>
 
@@ -3204,7 +3146,7 @@ next
     using OK.Uni_I by blast
   then show ?case
     using Uni_I \<open>map (psubst ?f) z = map (psubst f) z\<close> by simp
-qed
+qed (auto intro: OK.intros)
 
 subsection \<open>Substitution for constants\<close>
 
@@ -3424,12 +3366,6 @@ proof (induct p z arbitrary: c s rule: OK.induct)
   then show ?case
     using member_subc OK.Assume by blast
 next
-  case (Boole p z)
-  then have \<open>OK Falsity (Neg (subc c s p) # subcs c s z)\<close>
-    by simp
-  then show ?case
-    using OK.Boole by blast
-next
   case (Imp_E p q z)
   then have
     \<open>OK (Imp (subc c s p) (subc c s q)) (subcs c s z)\<close>
@@ -3437,10 +3373,6 @@ next
     by simp_all
   then show ?case
     using OK.Imp_E by blast
-next
-  case (Imp_I q p z)
-  then show ?case
-    using OK.Imp_I by simp
 next
   case (Dis_E p q z r)
   then have
@@ -3450,30 +3382,6 @@ next
     by simp_all
   then show ?case
     using OK.Dis_E by blast
-next
-  case (Dis_I1 p z q)
-  then show ?case
-    using OK.Dis_I1 by simp
-next
-  case (Dis_I2 q z p)
-  then show ?case
-    using OK.Dis_I2 by simp
-next
-  case (Con_E1 p q z)
-  then have \<open>OK (Con (subc c s p) (subc c s q)) (subcs c s z)\<close>
-    by simp
-  then show ?case
-    using OK.Con_E1 by blast
-next
-  case (Con_E2 p q z)
-  then have \<open>OK (Con (subc c s p) (subc c s q)) (subcs c s z)\<close>
-    by simp
-  then show ?case
-    using OK.Con_E2 by blast
-next
-  case (Con_I p z q)
-  then show ?case
-    using OK.Con_I by simp
 next
   case (Exi_E p z q d)
   then show ?case
@@ -3733,7 +3641,7 @@ next
     ultimately show \<open>OK (subc c s (Uni p)) (subcs c s z)\<close>
       using OK.Uni_I sub_p by simp
   qed
-qed
+qed (auto intro: OK.intros)
 
 subsection \<open>Weakening assumptions\<close>
 
@@ -3757,10 +3665,6 @@ next
   then show ?case
     using OK.Boole by blast
 next
-  case (Imp_E p q z)
-  then show ?case
-    using OK.Imp_E by blast
-next
   case (Imp_I q p z)
   then have \<open>OK q (p # z')\<close>
     using subset_cons by metis
@@ -3772,26 +3676,6 @@ next
     using subset_cons by metis+
   then show ?case
     using OK.Dis_E Dis_E by blast
-next
-  case (Dis_I1 p z q)
-  then show ?case
-    using OK.Dis_I1 by blast
-next
-  case (Dis_I2 q z p)
-  then show ?case
-    using OK.Dis_I2 by blast
-next
-  case (Con_E1 p q z)
-  then show ?case
-    using OK.Con_E1 by blast
-next
-  case (Con_E2 p q z)
-  then show ?case
-    using OK.Con_E2 by blast
-next
-  case (Con_I p z q)
-  then show ?case
-    using OK.Con_I by blast
 next
   case (Exi_E p z q c)
   let ?params = \<open>params p \<union> params q \<union> (\<Union>p \<in> set z'. params p) \<union> {c}\<close>
@@ -3834,14 +3718,6 @@ next
   ultimately show \<open>OK q z'\<close>
     by simp
 next
-  case (Exi_I t p z)
-  then show ?case
-    using OK.Exi_I by blast
-next
-  case (Uni_E p z t)
-  then show ?case
-    using OK.Uni_E by blast
-next
   case (Uni_I c p z)
   let ?params = \<open>params p \<union> (\<Union>p \<in> set z'. params p) \<union> {c}\<close>
 
@@ -3880,7 +3756,7 @@ next
     using fresh Uni_I by simp
   ultimately show \<open>OK (Uni p) z'\<close>
     by simp
-qed
+qed (auto intro: OK.intros)
 
 subsection \<open>Implications and assumptions\<close>
 
@@ -3973,9 +3849,7 @@ proof -
     using ex_new_if_finite UnI1 UnI2 infinite_UNIV_listI new_params by metis
 qed
 
-lemma fresh_constants:
-  assumes \<open>sentence (put_unis m p)\<close>
-  shows \<open>\<exists>cs. length cs = m \<and> list_all (\<lambda>c. new c p) cs \<and> distinct cs\<close>
+lemma fresh_constants: \<open>\<exists>cs. length cs = m \<and> list_all (\<lambda>c. new c p) cs \<and> distinct cs\<close>
 proof (induct m)
   case (Suc m)
   then obtain cs where \<open>length cs = m \<and> list_all (\<lambda>c. new c p) cs \<and> distinct cs\<close>
