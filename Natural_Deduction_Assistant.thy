@@ -469,7 +469,7 @@ primrec size_formulas :: \<open>fm \<Rightarrow> nat\<close> where
 lemma sub_size_formulas [simp]: \<open>size_formulas (sub i t p) = size_formulas p\<close>
   by (induct p arbitrary: i t) simp_all
 
-subsection \<open>Extra rules\<close>
+subsection \<open>Extra Rules\<close>
 
 lemma explosion: \<open>OK (Imp Falsity p) z\<close>
   apply (rule Imp_I) apply (rule Boole) apply (rule Assume) by simp
@@ -483,7 +483,7 @@ lemma Falsity_E: \<open>OK Falsity z \<Longrightarrow> OK p z\<close>
 lemma Boole': \<open>OK p (Neg p # z) \<Longrightarrow> OK p z\<close>
   apply (rule Boole) apply (rule Imp_E) apply (rule Assume) by simp iprover
 
-subsection \<open>Closed formulas\<close>
+subsection \<open>Closed Formulas\<close>
 
 primrec
   closed_term :: \<open>nat \<Rightarrow> tm \<Rightarrow> bool\<close> and
@@ -659,7 +659,7 @@ lemma psubst_semantics: \<open>semantics e f g (psubst h p) = semantics e (\<lam
 
 section \<open>Completeness\<close>
 
-subsection \<open>Consistent sets\<close>
+subsection \<open>Consistent Sets\<close>
 
 definition consistency :: \<open>fm set set \<Rightarrow> bool\<close> where
   \<open>consistency C = (\<forall>S. S \<in> C \<longrightarrow>
@@ -862,7 +862,7 @@ proof
     by simp
 qed
 
-subsection \<open>Closure under subsets\<close>
+subsection \<open>Closure under Subsets\<close>
 
 definition close :: \<open>fm set set \<Rightarrow> fm set set\<close> where
   \<open>close C = {S. \<exists>S' \<in> C. S \<subseteq> S'}\<close>
@@ -1026,7 +1026,7 @@ proof (intro ballI allI impI)
     unfolding mk_alt_consistency_def by blast
 qed
 
-subsection \<open>Finite character\<close>
+subsection \<open>Finite Character\<close>
 
 definition finite_char :: \<open>'a set set \<Rightarrow> bool\<close> where
   \<open>finite_char C = (\<forall>S. S \<in> C = (\<forall>S'. finite S' \<longrightarrow> S' \<subseteq> S \<longrightarrow> S' \<in> C))\<close>
@@ -1340,7 +1340,7 @@ qed
 theorem finite_char_subset: \<open>subset_closed C \<Longrightarrow> C \<subseteq> mk_finite_char C\<close>
   unfolding mk_finite_char_def subset_closed_def by blast
 
-subsection \<open>Enumerating datatypes\<close>
+subsection \<open>Enumerating Datatypes\<close>
 
 primrec diag :: \<open>nat \<Rightarrow> (nat \<times> nat)\<close> where
   \<open>diag 0 = (0, 0)\<close>
@@ -1560,7 +1560,7 @@ theorem diag_undiag_form' [simp]: \<open>diag_form' (undiag_form' f) = f\<close>
 abbreviation \<open>from_nat \<equiv> diag_form'\<close>
 abbreviation \<open>to_nat \<equiv> undiag_form'\<close>
 
-subsection \<open>Extension to maximal consistent sets\<close>
+subsection \<open>Extension to Maximal Consistent Sets\<close>
 
 definition is_chain :: \<open>(nat \<Rightarrow> 'a set) \<Rightarrow> bool\<close> where
   \<open>is_chain f = (\<forall>n. f n \<subseteq> f (Suc n))\<close>
@@ -1803,7 +1803,7 @@ proof (intro ballI impI)
     by simp
 qed
 
-subsection \<open>Hintikka sets and Herbrand models\<close>
+subsection \<open>Hintikka Sets and Herbrand Models\<close>
 
 definition hintikka :: \<open>fm set \<Rightarrow> bool\<close> where
   \<open>hintikka H =
@@ -2205,7 +2205,7 @@ proof (intro allI impI conjI)
       by blast }
 qed
 
-subsection \<open>Model existence\<close>
+subsection \<open>Model Existence\<close>
 
 lemma hintikka_Extend_S:
   assumes \<open>consistency C\<close> and \<open>S \<in> C\<close>
@@ -2242,7 +2242,7 @@ theorem model_existence:
   shows \<open>semantics e HFun (\<lambda>a ts. Pre a (tms_of_htms ts) \<in> H) p\<close>
   using assms hintikka_model hintikka_Extend_S Extend_subset by blast
 
-subsection \<open>Completeness using Herbrand terms\<close>
+subsection \<open>Completeness Using Herbrand Terms\<close>
 
 theorem OK_consistency: \<open>consistency {set G |G. \<not> (OK Falsity G)}\<close>
   unfolding consistency_def
@@ -2871,7 +2871,7 @@ proof (intro ballI impI)
     using psubst_semantics by blast
 qed
 
-subsection \<open>Countable variants\<close>
+subsection \<open>Countable Variants\<close>
 
 lemma infinity:
   assumes inj: \<open>\<forall>n :: nat. undiago (diago n) = n\<close>
@@ -3148,7 +3148,7 @@ next
     using Uni_I \<open>map (psubst ?f) z = map (psubst f) z\<close> by simp
 qed (auto intro: OK.intros)
 
-subsection \<open>Substitution for constants\<close>
+subsection \<open>Substitution for Constants\<close>
 
 primrec
   subc_term :: \<open>id \<Rightarrow> tm \<Rightarrow> tm \<Rightarrow> tm\<close> and
@@ -3643,7 +3643,7 @@ next
   qed
 qed (auto intro: OK.intros)
 
-subsection \<open>Weakening assumptions\<close>
+subsection \<open>Weakening Assumptions\<close>
 
 lemma psubst_new_subset:
   assumes \<open>set z \<subseteq> set z'\<close> \<open>c \<notin> (\<Union>p \<in> set z. params p)\<close>
@@ -3758,7 +3758,7 @@ next
     by simp
 qed (auto intro: OK.intros)
 
-subsection \<open>Implications and assumptions\<close>
+subsection \<open>Implications and Assumptions\<close>
 
 primrec put_imps :: \<open>fm \<Rightarrow> fm list \<Rightarrow> fm\<close> where
   \<open>put_imps p [] = p\<close> |
@@ -3785,7 +3785,7 @@ qed
 lemma remove_imps: \<open>OK (put_imps p z) z' \<Longrightarrow> OK p (rev z @ z')\<close>
   using shift_imp_assum by (induct z arbitrary: z') simp_all
 
-subsection \<open>Closure elimination\<close>
+subsection \<open>Closure Elimination\<close>
 
 lemma subc_sub_closed_var' [simp]:
   \<open>new_term c t \<Longrightarrow> closed_term (Suc m) t \<Longrightarrow> subc_term c (Var m) (sub_term m (Fun c []) t) = t\<close>
