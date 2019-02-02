@@ -338,7 +338,7 @@ fun put :: \<open>(nat \<Rightarrow> 'a) \<Rightarrow> nat \<Rightarrow> 'a \<Ri
 lemma \<open>put e 0 x = (\<lambda>n. if n = 0 then x else e (n - 1))\<close>
   by simp
 
-lemma simps [simp]:
+lemma
   \<open>semantics e f g (Exi p) = (\<exists>x. semantics (put e 0 x) f g p)\<close>
   \<open>semantics e f g (Uni p) = (\<forall>x. semantics (put e 0 x) f g p)\<close>
   by simp_all
@@ -362,13 +362,8 @@ lemma map' [simp]:
 lemma map [simp]: \<open>new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p\<close>
   by (induct p arbitrary: e) simp_all
 
-lemma allmap' [simp]: \<open>list_all (\<lambda>p. new c p) z \<Longrightarrow>
-  list_all (semantics e (f(c := m)) g) z = list_all (semantics e f g) z\<close>
+lemma allmap [simp]: \<open>news c z \<Longrightarrow> list_all (semantics e (f(c := m)) g) z = list_all (semantics e f g) z\<close>
   by (induct z) simp_all
-
-lemma allmap [simp]: \<open>news c z \<Longrightarrow>
-  list_all (semantics e (f(c := m)) g) z = list_all (semantics e f g) z\<close>
-  by simp
 
 lemma substitute' [simp]:
   \<open>semantics_term e f (sub_term v s t) = semantics_term (put e v (semantics_term e f s)) f t\<close>
@@ -1788,7 +1783,8 @@ proof (intro ballI impI)
     have \<open>extend S C f n \<union> {f n} \<subseteq> S'\<close> by blast
 
     from \<open>finite_char C\<close>
-    have \<open>subset_closed C\<close> using finite_char_closed by blast
+    have \<open>subset_closed C\<close>
+      using finite_char_closed by blast
     then have \<open>\<forall>S' \<in> C. \<forall>S \<subseteq> S'. S \<in> C\<close>
       unfolding subset_closed_def by simp
     then have \<open>\<forall>S \<subseteq> S'. S \<in> C\<close>
@@ -1797,7 +1793,8 @@ proof (intro ballI impI)
       using \<open>extend S C f n \<union> {f n} \<subseteq> S'\<close> by blast
     then have \<open>z \<in> extend S C f (Suc n)\<close>
       using \<open>z \<notin> (\<Union>x. extend S C f x)\<close> \<open>z = f n\<close> by simp
-    then show False using * by blast
+    then show False
+      using * by blast
   qed
   ultimately show \<open>(\<Union>x. extend S C f x) = S'\<close>
     by simp
@@ -1879,7 +1876,8 @@ next
     show ?thesis
     proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
-      then show \<open>?semantics x\<close> using Pre by simp
+      then show \<open>?semantics x\<close>
+        using Pre by simp
     next
       assume \<open>Neg x \<in> H\<close> and \<open>closed 0 x\<close>
       then have \<open>Neg (Pre p ts) \<in> H\<close>
