@@ -4,6 +4,8 @@ text \<open>
 Authors: Andreas Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
 
 License: https://www.isa-afp.org/LICENSE
+
+Intertwined Development of Sequent Calculus: https://www.isa-afp.org/entries/FOL_Seq_Calc1.html
 \<close>
 
 theory Natural_Deduction_Assistant imports Main begin
@@ -362,7 +364,8 @@ lemma map' [simp]:
 lemma map [simp]: \<open>new n p \<Longrightarrow> semantics e (f(n := x)) g p = semantics e f g p\<close>
   by (induct p arbitrary: e) simp_all
 
-lemma allmap [simp]: \<open>news c z \<Longrightarrow> list_all (semantics e (f(c := m)) g) z = list_all (semantics e f g) z\<close>
+lemma allmap [simp]: \<open>news c z \<Longrightarrow>
+    list_all (semantics e (f(c := m)) g) z = list_all (semantics e f g) z\<close>
   by (induct z) simp_all
 
 lemma substitute' [simp]:
@@ -440,7 +443,7 @@ proof -
   then show \<open>\<exists>p. OK p []\<close>
     by iprover
 next
-  have \<open>\<not> semantics (e :: nat \<Rightarrow> unit) f g Falsity\<close> for e f g
+  have \<open>\<not> semantics (e :: _ \<Rightarrow> unit) f g Falsity\<close> for e f g
     by simp
   then show \<open>\<exists>p. \<not> OK p []\<close>
     using soundness by iprover
@@ -451,6 +454,8 @@ section \<open>Utilities\<close>
 lemma set_inter_compl_diff: \<open>- A \<inter> B = B - A\<close> unfolding Diff_eq using inf_commute .
 
 abbreviation Neg :: \<open>fm \<Rightarrow> fm\<close> where \<open>Neg p \<equiv> Imp p Falsity\<close>
+
+abbreviation Truth :: \<open>fm\<close> where \<open>Truth \<equiv> Neg Falsity\<close>
 
 primrec size_formulas :: \<open>fm \<Rightarrow> nat\<close> where
   \<open>size_formulas Falsity = 0\<close> |
@@ -652,7 +657,7 @@ lemma psubst_semantics' [simp]:
 lemma psubst_semantics: \<open>semantics e f g (psubst h p) = semantics e (\<lambda>x. f (h x)) g p\<close>
   by (induct p arbitrary: e) simp_all
 
-section \<open>Completeness\<close>
+section \<open>Completeness for Closed Formulas\<close>
 
 subsection \<open>Consistent Sets\<close>
 
@@ -660,13 +665,12 @@ definition consistency :: \<open>fm set set \<Rightarrow> bool\<close> where
   \<open>consistency C = (\<forall>S. S \<in> C \<longrightarrow>
     (\<forall>p ts. \<not> (Pre p ts \<in> S \<and> Neg (Pre p ts) \<in> S)) \<and>
     Falsity \<notin> S \<and>
-    (\<forall>Z. Neg (Neg Z) \<in> S \<longrightarrow> S \<union> {Z} \<in> C) \<and>
-    (\<forall>A B. Con A B \<in> S \<longrightarrow> S \<union> {A, B} \<in> C) \<and>
-    (\<forall>A B. Neg (Dis A B) \<in> S \<longrightarrow> S \<union> {Neg A, Neg B} \<in> C) \<and>
-    (\<forall>A B. Dis A B \<in> S \<longrightarrow> S \<union> {A} \<in> C \<or> S \<union> {B} \<in> C) \<and>
-    (\<forall>A B. Neg (Con A B) \<in> S \<longrightarrow> S \<union> {Neg A} \<in> C \<or> S \<union> {Neg B} \<in> C) \<and>
-    (\<forall>A B. Imp A B \<in> S \<longrightarrow> S \<union> {Neg A} \<in> C \<or> S \<union> {B} \<in> C) \<and>
-    (\<forall>A B. Neg (Imp A B) \<in> S \<longrightarrow> S \<union> {A, Neg B} \<in> C) \<and>
+    (\<forall>p q. Con p q \<in> S \<longrightarrow> S \<union> {p, q} \<in> C) \<and>
+    (\<forall>p q. Neg (Dis p q) \<in> S \<longrightarrow> S \<union> {Neg p, Neg q} \<in> C) \<and>
+    (\<forall>p q. Dis p q \<in> S \<longrightarrow> S \<union> {p} \<in> C \<or> S \<union> {q} \<in> C) \<and>
+    (\<forall>p q. Neg (Con p q) \<in> S \<longrightarrow> S \<union> {Neg p} \<in> C \<or> S \<union> {Neg q} \<in> C) \<and>
+    (\<forall>p q. Imp p q \<in> S \<longrightarrow> S \<union> {Neg p} \<in> C \<or> S \<union> {q} \<in> C) \<and>
+    (\<forall>p q. Neg (Imp p q) \<in> S \<longrightarrow> S \<union> {p, Neg q} \<in> C) \<and>
     (\<forall>P t. closed_term 0 t \<longrightarrow> Uni P \<in> S \<longrightarrow> S \<union> {sub 0 t P} \<in> C) \<and>
     (\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> S \<longrightarrow> S \<union> {Neg (sub 0 t P)} \<in> C) \<and>
     (\<forall>P. Exi P \<in> S \<longrightarrow> (\<exists>x. S \<union> {sub 0 (Fun x []) P} \<in> C)) \<and>
@@ -676,13 +680,12 @@ definition alt_consistency :: \<open>fm set set \<Rightarrow> bool\<close> where
   \<open>alt_consistency C = (\<forall>S. S \<in> C \<longrightarrow>
      (\<forall>p ts. \<not> (Pre p ts \<in> S \<and> Neg (Pre p ts) \<in> S)) \<and>
      Falsity \<notin> S \<and>
-     (\<forall>Z. Neg (Neg Z) \<in> S \<longrightarrow> S \<union> {Z} \<in> C) \<and>
-     (\<forall>A B. Con A B \<in> S \<longrightarrow> S \<union> {A, B} \<in> C) \<and>
-     (\<forall>A B. Neg (Dis A B) \<in> S \<longrightarrow> S \<union> {Neg A, Neg B} \<in> C) \<and>
-     (\<forall>A B. Dis A B \<in> S \<longrightarrow> S \<union> {A} \<in> C \<or> S \<union> {B} \<in> C) \<and>
-     (\<forall>A B. Neg (Con A B) \<in> S \<longrightarrow> S \<union> {Neg A} \<in> C \<or> S \<union> {Neg B} \<in> C) \<and>
-     (\<forall>A B. Imp A B \<in> S \<longrightarrow> S \<union> {Neg A} \<in> C \<or> S \<union> {B} \<in> C) \<and>
-     (\<forall>A B. Neg (Imp A B) \<in> S \<longrightarrow> S \<union> {A, Neg B} \<in> C) \<and>
+     (\<forall>p q. Con p q \<in> S \<longrightarrow> S \<union> {p, q} \<in> C) \<and>
+     (\<forall>p q. Neg (Dis p q) \<in> S \<longrightarrow> S \<union> {Neg p, Neg q} \<in> C) \<and>
+     (\<forall>p q. Dis p q \<in> S \<longrightarrow> S \<union> {p} \<in> C \<or> S \<union> {q} \<in> C) \<and>
+     (\<forall>p q. Neg (Con p q) \<in> S \<longrightarrow> S \<union> {Neg p} \<in> C \<or> S \<union> {Neg q} \<in> C) \<and>
+     (\<forall>p q. Imp p q \<in> S \<longrightarrow> S \<union> {Neg p} \<in> C \<or> S \<union> {q} \<in> C) \<and>
+     (\<forall>p q. Neg (Imp p q) \<in> S \<longrightarrow> S \<union> {p, Neg q} \<in> C) \<and>
      (\<forall>P t. closed_term 0 t \<longrightarrow> Uni P \<in> S \<longrightarrow> S \<union> {sub 0 t P} \<in> C) \<and>
      (\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> S \<longrightarrow> S \<union> {Neg (sub 0 t P)} \<in> C) \<and>
      (\<forall>P x. (\<forall>a \<in> S. x \<notin> params a) \<longrightarrow> Exi P \<in> S \<longrightarrow> S \<union> {sub 0 (Fun x []) P} \<in> C) \<and>
@@ -723,67 +726,58 @@ proof (intro allI impI conjI)
   then show \<open>Falsity \<notin> S'\<close>
     by force
 
-  { fix Z
-    assume \<open>Neg (Neg Z) \<in> S'\<close>
-    then have \<open>psubst f (Neg (Neg Z)) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Con p q \<in> S'\<close>
+    then have \<open>psubst f (Con p q) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {psubst f Z} \<in> C\<close>
+    then have \<open>?S \<union> {psubst f p, psubst f q} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {Z} \<in> ?C'\<close>
+    then show \<open>S' \<union> {p, q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
-  { fix A B
-    assume \<open>Con A B \<in> S'\<close>
-    then have \<open>psubst f (Con A B) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> S'\<close>
+    then have \<open>psubst f (Neg (Dis p q)) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {psubst f A, psubst f B} \<in> C\<close>
+    then have \<open>?S \<union> {Neg (psubst f p), Neg (psubst f q)} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {A, B} \<in> ?C'\<close>
+    then show \<open>S' \<union> {Neg p, Neg q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
-  { fix A B
-    assume \<open>Neg (Dis A B) \<in> S'\<close>
-    then have \<open>psubst f (Neg (Dis A B)) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> S'\<close>
+    then have \<open>psubst f (Neg (Imp p q)) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {Neg (psubst f A), Neg (psubst f B)} \<in> C\<close>
+    then have \<open>?S \<union> {psubst f p, Neg (psubst f q)} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {Neg A, Neg B} \<in> ?C'\<close>
+    then show \<open>S' \<union> {p, Neg q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
-  { fix A B
-    assume \<open>Neg (Imp A B) \<in> S'\<close>
-    then have \<open>psubst f (Neg (Imp A B)) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Dis p q \<in> S'\<close>
+    then have \<open>psubst f (Dis p q) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {psubst f A, Neg (psubst f B)} \<in> C\<close>
+    then have \<open>?S \<union> {psubst f p} \<in> C \<or> ?S \<union> {psubst f q} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {A, Neg B} \<in> ?C'\<close>
+    then show \<open>S' \<union> {p} \<in> ?C' \<or> S' \<union> {q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
-  { fix A B
-    assume \<open>Dis A B \<in> S'\<close>
-    then have \<open>psubst f (Dis A B) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> S'\<close>
+    then have \<open>psubst f (Neg (Con p q)) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {psubst f A} \<in> C \<or> ?S \<union> {psubst f B} \<in> C\<close>
+    then have \<open>?S \<union> {Neg (psubst f p)} \<in> C \<or> ?S \<union> {Neg (psubst f q)} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {A} \<in> ?C' \<or> S' \<union> {B} \<in> ?C'\<close>
+    then show \<open>S' \<union> {Neg p} \<in> ?C' \<or> S' \<union> {Neg q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
-  { fix A B
-    assume \<open>Neg (Con A B) \<in> S'\<close>
-    then have \<open>psubst f (Neg (Con A B)) \<in> ?S\<close>
+  { fix p q
+    assume \<open>Imp p q \<in> S'\<close>
+    then have \<open>psubst f (Imp p q) \<in> ?S\<close>
       by blast
-    then have \<open>?S \<union> {Neg (psubst f A)} \<in> C \<or> ?S \<union> {Neg (psubst f B)} \<in> C\<close>
+    then have \<open>?S \<union> {Neg (psubst f p)} \<in> C \<or> ?S \<union> {psubst f q} \<in> C\<close>
       using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {Neg A} \<in> ?C' \<or> S' \<union> {Neg B} \<in> ?C'\<close>
-      unfolding mk_alt_consistency_def by auto }
-
-  { fix A B
-    assume \<open>Imp A B \<in> S'\<close>
-    then have \<open>psubst f (Imp A B) \<in> ?S\<close>
-      by blast
-    then have \<open>?S \<union> {Neg (psubst f A)} \<in> C \<or> ?S \<union> {psubst f B} \<in> C\<close>
-      using conc sc by (simp add: consistency_def)
-    then show \<open>S' \<union> {Neg A} \<in> ?C' \<or> S' \<union> {B} \<in> ?C'\<close>
+    then show \<open>S' \<union> {Neg p} \<in> ?C' \<or> S' \<union> {q} \<in> ?C'\<close>
       unfolding mk_alt_consistency_def by auto }
 
   { fix P t
@@ -896,67 +890,58 @@ proof (intro allI impI conjI)
     then show \<open>Falsity \<notin> S'\<close>
       using \<open>S' \<subseteq> S\<close> by blast }
 
-  { fix Z
-    assume \<open>Neg (Neg Z) \<in> S'\<close>
-    then have \<open>Neg (Neg Z) \<in> S\<close>
+  { fix p q
+    assume \<open>Con p q \<in> S'\<close>
+    then have \<open>Con p q \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {Z} \<in> C\<close>
+    then have \<open>S \<union> {p, q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {Z} \<in> close C\<close>
+    then show \<open>S' \<union> {p, q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
-  { fix A B
-    assume \<open>Con A B \<in> S'\<close>
-    then have \<open>Con A B \<in> S\<close>
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> S'\<close>
+    then have \<open>Neg (Dis p q) \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {A, B} \<in> C\<close>
+    then have \<open>S \<union> {Neg p, Neg q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {A, B} \<in> close C\<close>
+    then show \<open>S' \<union> {Neg p, Neg q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
-  { fix A B
-    assume \<open>Neg (Dis A B) \<in> S'\<close>
-    then have \<open>Neg (Dis A B) \<in> S\<close>
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> S'\<close>
+    then have \<open>Neg (Imp p q) \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {Neg A, Neg B} \<in> C\<close>
-      using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {Neg A, Neg B} \<in> close C\<close>
-      using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
-
-  { fix A B
-    assume \<open>Neg (Imp A B) \<in> S'\<close>
-    then have \<open>Neg (Imp A B) \<in> S\<close>
-      using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {A, Neg B} \<in> C\<close>
+    then have \<open>S \<union> {p, Neg q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by blast
-    then show \<open>S' \<union> {A, Neg B} \<in> close C\<close>
+    then show \<open>S' \<union> {p, Neg q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
-  { fix A B
-    assume \<open>Dis A B \<in> S'\<close>
-    then have \<open>Dis A B \<in> S\<close>
+  { fix p q
+    assume \<open>Dis p q \<in> S'\<close>
+    then have \<open>Dis p q \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {A} \<in> C \<or> S \<union> {B} \<in> C\<close>
+    then have \<open>S \<union> {p} \<in> C \<or> S \<union> {q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {A} \<in> close C \<or> S' \<union> {B} \<in> close C\<close>
+    then show \<open>S' \<union> {p} \<in> close C \<or> S' \<union> {q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
-  { fix A B
-    assume \<open>Neg (Con A B) \<in> S'\<close>
-    then have \<open>Neg (Con A B) \<in> S\<close>
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> S'\<close>
+    then have \<open>Neg (Con p q) \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {Neg A} \<in> C \<or> S \<union> {Neg B} \<in> C\<close>
+    then have \<open>S \<union> {Neg p} \<in> C \<or> S \<union> {Neg q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {Neg A} \<in> close C \<or> S' \<union> {Neg B} \<in> close C\<close>
+    then show \<open>S' \<union> {Neg p} \<in> close C \<or> S' \<union> {Neg q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
-  { fix A B
-    assume \<open>Imp A B \<in> S'\<close>
-    then have \<open>Imp A B \<in> S\<close>
+  { fix p q
+    assume \<open>Imp p q \<in> S'\<close>
+    then have \<open>Imp p q \<in> S\<close>
       using \<open>S' \<subseteq> S\<close> by blast
-    then have \<open>S \<union> {Neg A} \<in> C \<or> S \<union> {B} \<in> C\<close>
+    then have \<open>S \<union> {Neg p} \<in> C \<or> S \<union> {q} \<in> C\<close>
       using \<open>S \<in> C\<close> conc unfolding consistency_def by simp
-    then show \<open>S' \<union> {Neg A} \<in> close C \<or> S' \<union> {B} \<in> close C\<close>
+    then show \<open>S' \<union> {Neg p} \<in> close C \<or> S' \<union> {q} \<in> close C\<close>
       using \<open>S' \<subseteq> S\<close> subset_in_close by blast }
 
   { fix P t
@@ -1067,109 +1052,88 @@ proof (intro allI impI conjI)
       using altconc unfolding alt_consistency_def by fast
   qed
 
-  { fix Z
-    assume *: \<open>Neg (Neg Z) \<in> S\<close>
-    show \<open>S \<union> {Z} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Con p q \<in> S\<close>
+    show \<open>S \<union> {p, q} \<in> mk_finite_char C\<close>
       unfolding mk_finite_char_def
     proof (intro allI impI CollectI)
       fix S'
-      let ?S' = \<open>S' - {Z} \<union> {Neg (Neg Z)}\<close>
+      let ?S' = \<open>S' - {p, q} \<union> {Con p q}\<close>
 
-      assume \<open>S' \<subseteq> S \<union> {Z}\<close> and \<open>finite S'\<close>
+      assume \<open>S' \<subseteq> S \<union> {p, q}\<close> and \<open>finite S'\<close>
       then have \<open>?S' \<subseteq> S\<close>
         using * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite S'\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {Z} \<in> C\<close>
+      then have \<open>?S' \<union> {p, q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then show \<open>S' \<in> C\<close>
         using sc by blast
     qed }
 
-  { fix A B
-    assume *: \<open>Con A B \<in> S\<close>
-    show \<open>S \<union> {A, B} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Neg (Dis p q) \<in> S\<close>
+    show \<open>S \<union> {Neg p, Neg q} \<in> mk_finite_char C\<close>
       unfolding mk_finite_char_def
     proof (intro allI impI CollectI)
       fix S'
-      let ?S' = \<open>S' - {A, B} \<union> {Con A B}\<close>
+      let ?S' = \<open>S' - {Neg p, Neg q} \<union> {Neg (Dis p q)}\<close>
 
-      assume \<open>S' \<subseteq> S \<union> {A, B}\<close> and \<open>finite S'\<close>
+      assume \<open>S' \<subseteq> S \<union> {Neg p, Neg q}\<close> and \<open>finite S'\<close>
       then have \<open>?S' \<subseteq> S\<close>
         using * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite S'\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {A, B} \<in> C\<close>
+      then have \<open>?S' \<union> {Neg p, Neg q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then show \<open>S' \<in> C\<close>
         using sc by blast
     qed }
 
-  { fix A B
-    assume *: \<open>Neg (Dis A B) \<in> S\<close>
-    show \<open>S \<union> {Neg A, Neg B} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Neg (Imp p q) \<in> S\<close>
+    show \<open>S \<union> {p, Neg q} \<in> mk_finite_char C\<close>
       unfolding mk_finite_char_def
     proof (intro allI impI CollectI)
       fix S'
-      let ?S' = \<open>S' - {Neg A, Neg B} \<union> {Neg (Dis A B)}\<close>
+      let ?S' = \<open>S' - {p, Neg q} \<union> {Neg (Imp p q)}\<close>
 
-      assume \<open>S' \<subseteq> S \<union> {Neg A, Neg B}\<close> and \<open>finite S'\<close>
+      assume \<open>S' \<subseteq> S \<union> {p, Neg q}\<close> and \<open>finite S'\<close>
       then have \<open>?S' \<subseteq> S\<close>
         using * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite S'\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {Neg A, Neg B} \<in> C\<close>
+      then have \<open>?S' \<union> {p, Neg q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then show \<open>S' \<in> C\<close>
         using sc by blast
     qed }
 
-  { fix A B
-    assume *: \<open>Neg (Imp A B) \<in> S\<close>
-    show \<open>S \<union> {A, Neg B} \<in> mk_finite_char C\<close>
-      unfolding mk_finite_char_def
-    proof (intro allI impI CollectI)
-      fix S'
-      let ?S' = \<open>S' - {A, Neg B} \<union> {Neg (Imp A B)}\<close>
-
-      assume \<open>S' \<subseteq> S \<union> {A, Neg B}\<close> and \<open>finite S'\<close>
-      then have \<open>?S' \<subseteq> S\<close>
-        using * by blast
-      moreover have \<open>finite ?S'\<close>
-        using \<open>finite S'\<close> by blast
-      ultimately have \<open>?S' \<in> C\<close>
-        using finc by blast
-      then have \<open>?S' \<union> {A, Neg B} \<in> C\<close>
-        using altconc unfolding alt_consistency_def by simp
-      then show \<open>S' \<in> C\<close>
-        using sc by blast
-    qed }
-
-  { fix A B
-    assume *: \<open>Dis A B \<in> S\<close>
-    show \<open>S \<union> {A} \<in> mk_finite_char C \<or> S \<union> {B} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Dis p q \<in> S\<close>
+    show \<open>S \<union> {p} \<in> mk_finite_char C \<or> S \<union> {q} \<in> mk_finite_char C\<close>
     proof (rule ccontr)
       assume \<open>\<not> ?thesis\<close>
       then obtain Sa and Sb
-        where \<open>Sa \<subseteq> S \<union> {A}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
-          and \<open>Sb \<subseteq> S \<union> {B}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
+        where \<open>Sa \<subseteq> S \<union> {p}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
+          and \<open>Sb \<subseteq> S \<union> {q}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
         unfolding mk_finite_char_def by blast
 
-      let ?S' = \<open>(Sa - {A}) \<union> (Sb - {B}) \<union> {Dis A B}\<close>
+      let ?S' = \<open>(Sa - {p}) \<union> (Sb - {q}) \<union> {Dis p q}\<close>
 
       have \<open>?S' \<subseteq> S\<close>
-        using \<open>Sa \<subseteq> S \<union> {A}\<close> \<open>Sb \<subseteq> S \<union> {B}\<close> * by blast
+        using \<open>Sa \<subseteq> S \<union> {p}\<close> \<open>Sb \<subseteq> S \<union> {q}\<close> * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite Sa\<close> \<open>finite Sb\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {A} \<in> C \<or> ?S' \<union> {B} \<in> C\<close>
+      then have \<open>?S' \<union> {p} \<in> C \<or> ?S' \<union> {q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then have \<open>Sa \<in> C \<or> Sb \<in> C\<close>
         using sc by blast
@@ -1177,25 +1141,25 @@ proof (intro allI impI conjI)
         using \<open>Sa \<notin> C\<close> \<open>Sb \<notin> C\<close> by blast
     qed }
 
-  { fix A B
-    assume *: \<open>Neg (Con A B) \<in> S\<close>
-    show \<open>S \<union> {Neg A} \<in> mk_finite_char C \<or> S \<union> {Neg B} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Neg (Con p q) \<in> S\<close>
+    show \<open>S \<union> {Neg p} \<in> mk_finite_char C \<or> S \<union> {Neg q} \<in> mk_finite_char C\<close>
     proof (rule ccontr)
       assume \<open>\<not> ?thesis\<close>
       then obtain Sa and Sb
-        where \<open>Sa \<subseteq> S \<union> {Neg A}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
-          and \<open>Sb \<subseteq> S \<union> {Neg B}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
+        where \<open>Sa \<subseteq> S \<union> {Neg p}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
+          and \<open>Sb \<subseteq> S \<union> {Neg q}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
         unfolding mk_finite_char_def by blast
 
-      let ?S' = \<open>(Sa - {Neg A}) \<union> (Sb - {Neg B}) \<union> {Neg (Con A B)}\<close>
+      let ?S' = \<open>(Sa - {Neg p}) \<union> (Sb - {Neg q}) \<union> {Neg (Con p q)}\<close>
 
       have \<open>?S' \<subseteq> S\<close>
-        using \<open>Sa \<subseteq> S \<union> {Neg A}\<close> \<open>Sb \<subseteq> S \<union> {Neg B}\<close> * by blast
+        using \<open>Sa \<subseteq> S \<union> {Neg p}\<close> \<open>Sb \<subseteq> S \<union> {Neg q}\<close> * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite Sa\<close> \<open>finite Sb\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {Neg A} \<in> C \<or> ?S' \<union> {Neg B} \<in> C\<close>
+      then have \<open>?S' \<union> {Neg p} \<in> C \<or> ?S' \<union> {Neg q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then have \<open>Sa \<in> C \<or> Sb \<in> C\<close>
         using sc by blast
@@ -1203,25 +1167,25 @@ proof (intro allI impI conjI)
         using \<open>Sa \<notin> C\<close> \<open>Sb \<notin> C\<close> by blast
     qed }
 
-  { fix A B
-    assume *: \<open>Imp A B \<in> S\<close>
-    show \<open>S \<union> {Neg A} \<in> mk_finite_char C \<or> S \<union> {B} \<in> mk_finite_char C\<close>
+  { fix p q
+    assume *: \<open>Imp p q \<in> S\<close>
+    show \<open>S \<union> {Neg p} \<in> mk_finite_char C \<or> S \<union> {q} \<in> mk_finite_char C\<close>
     proof (rule ccontr)
       assume \<open>\<not> ?thesis\<close>
       then obtain Sa and Sb
-        where \<open>Sa \<subseteq> S \<union> {Neg A}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
-          and \<open>Sb \<subseteq> S \<union> {B}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
+        where \<open>Sa \<subseteq> S \<union> {Neg p}\<close> and \<open>finite Sa\<close> and \<open>Sa \<notin> C\<close>
+          and \<open>Sb \<subseteq> S \<union> {q}\<close> and \<open>finite Sb\<close> and \<open>Sb \<notin> C\<close>
         unfolding mk_finite_char_def by blast
 
-      let ?S' = \<open>(Sa - {Neg A}) \<union> (Sb - {B}) \<union> {Imp A B}\<close>
+      let ?S' = \<open>(Sa - {Neg p}) \<union> (Sb - {q}) \<union> {Imp p q}\<close>
 
       have \<open>?S' \<subseteq> S\<close>
-        using \<open>Sa \<subseteq> S \<union> {Neg A}\<close> \<open>Sb \<subseteq> S \<union> {B}\<close> * by blast
+        using \<open>Sa \<subseteq> S \<union> {Neg p}\<close> \<open>Sb \<subseteq> S \<union> {q}\<close> * by blast
       moreover have \<open>finite ?S'\<close>
         using \<open>finite Sa\<close> \<open>finite Sb\<close> by blast
       ultimately have \<open>?S' \<in> C\<close>
         using finc by blast
-      then have \<open>?S' \<union> {Neg A} \<in> C \<or> ?S' \<union> {B} \<in> C\<close>
+      then have \<open>?S' \<union> {Neg p} \<in> C \<or> ?S' \<union> {q} \<in> C\<close>
         using altconc unfolding alt_consistency_def by simp
       then have \<open>Sa \<in> C \<or> Sb \<in> C\<close>
         using sc by blast
@@ -1806,13 +1770,12 @@ definition hintikka :: \<open>fm set \<Rightarrow> bool\<close> where
   \<open>hintikka H =
     ((\<forall>p ts. \<not> (Pre p ts \<in> H \<and> Neg (Pre p ts) \<in> H)) \<and>
     Falsity \<notin> H \<and>
-    (\<forall>Z. Neg (Neg Z) \<in> H \<longrightarrow> Z \<in> H) \<and>
-    (\<forall>A B. Con A B \<in> H \<longrightarrow> A \<in> H \<and> B \<in> H) \<and>
-    (\<forall>A B. Neg (Dis A B) \<in> H \<longrightarrow> Neg A \<in> H \<and> Neg B \<in> H) \<and>
-    (\<forall>A B. Dis A B \<in> H \<longrightarrow> A \<in> H \<or> B \<in> H) \<and>
-    (\<forall>A B. Neg (Con A B) \<in> H \<longrightarrow> Neg A \<in> H \<or> Neg B \<in> H) \<and>
-    (\<forall>A B. Imp A B \<in> H \<longrightarrow> Neg A \<in> H \<or> B \<in> H) \<and>
-    (\<forall>A B. Neg (Imp A B) \<in> H \<longrightarrow> A \<in> H \<and> Neg B \<in> H) \<and>
+    (\<forall>p q. Con p q \<in> H \<longrightarrow> p \<in> H \<and> q \<in> H) \<and>
+    (\<forall>p q. Neg (Dis p q) \<in> H \<longrightarrow> Neg p \<in> H \<and> Neg q \<in> H) \<and>
+    (\<forall>p q. Dis p q \<in> H \<longrightarrow> p \<in> H \<or> q \<in> H) \<and>
+    (\<forall>p q. Neg (Con p q) \<in> H \<longrightarrow> Neg p \<in> H \<or> Neg q \<in> H) \<and>
+    (\<forall>p q. Imp p q \<in> H \<longrightarrow> Neg p \<in> H \<or> q \<in> H) \<and>
+    (\<forall>p q. Neg (Imp p q) \<in> H \<longrightarrow> p \<in> H \<and> Neg q \<in> H) \<and>
     (\<forall>P t. closed_term 0 t \<longrightarrow> Uni P \<in> H \<longrightarrow> sub 0 t P \<in> H) \<and>
     (\<forall>P t. closed_term 0 t \<longrightarrow> Neg (Exi P) \<in> H \<longrightarrow> Neg (sub 0 t P) \<in> H) \<and>
     (\<forall>P. Exi P \<in> H \<longrightarrow> (\<exists>t. closed_term 0 t \<and> sub 0 t P \<in> H)) \<and>
@@ -1888,64 +1851,64 @@ next
         using Pre \<open>closed 0 x\<close> by simp
     qed
   next
-    case (Con A B)
+    case (Con p q)
     then show ?thesis
     proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Con A B \<in> H\<close> and \<open>closed 0 (Con A B)\<close>
+      then have \<open>Con p q \<in> H\<close> and \<open>closed 0 (Con p q)\<close>
         using Con by simp_all
-      then have \<open>A \<in> H \<and> B \<in> H\<close>
+      then have \<open>p \<in> H \<and> q \<in> H\<close>
         using Con hin unfolding hintikka_def by blast
       then show \<open>?semantics x\<close>
-        using Con wf \<open>closed 0 (Con A B)\<close> by simp
+        using Con wf \<open>closed 0 (Con p q)\<close> by simp
     next
       assume \<open>Neg x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Neg (Con A B) \<in> H\<close> and \<open>closed 0 (Con A B)\<close>
+      then have \<open>Neg (Con p q) \<in> H\<close> and \<open>closed 0 (Con p q)\<close>
         using Con by simp_all
-      then have \<open>Neg A \<in> H \<or> Neg B \<in> H\<close>
+      then have \<open>Neg p \<in> H \<or> Neg q \<in> H\<close>
         using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
-        using Con wf \<open>closed 0 (Con A B)\<close> by force
+        using Con wf \<open>closed 0 (Con p q)\<close> by force
     qed
   next
-    case (Dis A B)
+    case (Dis p q)
     then show ?thesis
     proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Dis A B \<in> H\<close> and \<open>closed 0 (Dis A B)\<close>
+      then have \<open>Dis p q \<in> H\<close> and \<open>closed 0 (Dis p q)\<close>
         using Dis by simp_all
-      then have \<open>A \<in> H \<or> B \<in> H\<close>
+      then have \<open>p \<in> H \<or> q \<in> H\<close>
         using hin unfolding hintikka_def by meson
       then show \<open>?semantics x\<close>
-        using Dis wf \<open>closed 0 (Dis A B)\<close> by fastforce
+        using Dis wf \<open>closed 0 (Dis p q)\<close> by fastforce
     next
       assume \<open>Neg x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Neg (Dis A B) \<in> H\<close> and \<open>closed 0 (Dis A B)\<close>
+      then have \<open>Neg (Dis p q) \<in> H\<close> and \<open>closed 0 (Dis p q)\<close>
         using Dis by simp_all
-      then have \<open>Neg A \<in> H \<and> Neg B \<in> H\<close>
+      then have \<open>Neg p \<in> H \<and> Neg q \<in> H\<close>
         using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
-        using Dis wf \<open>closed 0 (Dis A B)\<close> by force
+        using Dis wf \<open>closed 0 (Dis p q)\<close> by force
     qed
   next
-    case (Imp A B)
+    case (Imp p q)
     then show ?thesis
     proof (intro conjI impI)
       assume \<open>x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Imp A B \<in> H\<close> and \<open>closed 0 (Imp A B)\<close>
+      then have \<open>Imp p q \<in> H\<close> and \<open>closed 0 (Imp p q)\<close>
         using Imp by simp_all
-      then have \<open>Neg A \<in> H \<or> B \<in> H\<close>
+      then have \<open>Neg p \<in> H \<or> q \<in> H\<close>
         using hin unfolding hintikka_def by meson
       then show \<open>?semantics x\<close>
-        using Imp wf \<open>closed 0 (Imp A B)\<close> by force
+        using Imp wf \<open>closed 0 (Imp p q)\<close> by force
     next
       assume \<open>Neg x \<in> H\<close> and \<open>closed 0 x\<close>
-      then have \<open>Neg (Imp A B) \<in> H\<close> and \<open>closed 0 (Imp A B)\<close>
+      then have \<open>Neg (Imp p q) \<in> H\<close> and \<open>closed 0 (Imp p q)\<close>
         using Imp by simp_all
-      then have \<open>A \<in> H \<and> Neg B \<in> H\<close>
+      then have \<open>p \<in> H \<and> Neg q \<in> H\<close>
         using hin unfolding hintikka_def by meson
       then show \<open>?semantics (Neg x)\<close>
-        using Imp wf \<open>closed 0 (Imp A B)\<close> by force
+        using Imp wf \<open>closed 0 (Imp p q)\<close> by force
     qed
   next
     case (Uni P)
@@ -2100,53 +2063,46 @@ proof (intro allI impI conjI)
   show \<open>Falsity \<notin> ?H\<close>
     using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by blast
 
-  { fix Z
-    assume \<open>Neg (Neg Z) \<in> ?H\<close>
-    then have \<open>?H \<union> {Z} \<in> C\<close>
+  { fix p q
+    assume \<open>Con p q \<in> ?H\<close>
+    then have \<open>?H \<union> {p, q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by fast
-    then show \<open>Z \<in> ?H\<close>
-      using \<open>maximal ?H C\<close> unfolding maximal_def by fast }
-
-  { fix A B
-    assume \<open>Con A B \<in> ?H\<close>
-    then have \<open>?H \<union> {A, B} \<in> C\<close>
-      using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by fast
-    then show \<open>A \<in> ?H\<close> and \<open>B \<in> ?H\<close>
+    then show \<open>p \<in> ?H\<close> and \<open>q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast+ }
 
-  { fix A B
-    assume \<open>Neg (Dis A B) \<in> ?H\<close>
-    then have \<open>?H \<union> {Neg A, Neg B} \<in> C\<close>
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> ?H\<close>
+    then have \<open>?H \<union> {Neg p, Neg q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by fast
-    then show \<open>Neg A \<in> ?H\<close> and \<open>Neg B \<in> ?H\<close>
+    then show \<open>Neg p \<in> ?H\<close> and \<open>Neg q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast+ }
 
-  { fix A B
-    assume \<open>Neg (Imp A B) \<in> ?H\<close>
-    then have \<open>?H \<union> {A, Neg B} \<in> C\<close>
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> ?H\<close>
+    then have \<open>?H \<union> {p, Neg q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by blast
-    then show \<open>A \<in> ?H\<close> and \<open>Neg B \<in> ?H\<close>
+    then show \<open>p \<in> ?H\<close> and \<open>Neg q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast+ }
 
-  { fix A B
-    assume \<open>Dis A B \<in> ?H\<close>
-    then have \<open>?H \<union> {A} \<in> C \<or> ?H \<union> {B} \<in> C\<close>
+  { fix p q
+    assume \<open>Dis p q \<in> ?H\<close>
+    then have \<open>?H \<union> {p} \<in> C \<or> ?H \<union> {q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by fast
-    then show \<open>A \<in> ?H \<or> B \<in> ?H\<close>
+    then show \<open>p \<in> ?H \<or> q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast }
 
-  { fix A B
-    assume \<open>Neg (Con A B) \<in> ?H\<close>
-    then have \<open>?H \<union> {Neg A} \<in> C \<or> ?H \<union> {Neg B} \<in> C\<close>
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> ?H\<close>
+    then have \<open>?H \<union> {Neg p} \<in> C \<or> ?H \<union> {Neg q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by simp
-    then show \<open>Neg A \<in> ?H \<or> Neg B \<in> ?H\<close>
+    then show \<open>Neg p \<in> ?H \<or> Neg q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast }
 
-  { fix A B
-    assume \<open>Imp A B \<in> ?H\<close>
-    then have \<open>?H \<union> {Neg A} \<in> C \<or> ?H \<union> {B} \<in> C\<close>
+  { fix p q
+    assume \<open>Imp p q \<in> ?H\<close>
+    then have \<open>?H \<union> {Neg p} \<in> C \<or> ?H \<union> {q} \<in> C\<close>
       using \<open>?H \<in> C\<close> altc unfolding alt_consistency_def by simp
-    then show \<open>Neg A \<in> ?H \<or> B \<in> ?H\<close>
+    then show \<open>Neg p \<in> ?H \<or> q \<in> ?H\<close>
       using \<open>maximal ?H C\<close> unfolding maximal_def by fast }
 
   { fix P t
@@ -2242,376 +2198,357 @@ theorem model_existence:
 
 subsection \<open>Completeness Using Herbrand Terms\<close>
 
-theorem OK_consistency: \<open>consistency {set G |G. \<not> (OK Falsity G)}\<close>
+theorem OK_consistency: \<open>consistency {set z | z. \<not> (OK Falsity z)}\<close>
   unfolding consistency_def
 proof (intro conjI allI impI notI)
   fix S
-  assume \<open>S \<in> {set G |G. \<not> (OK Falsity G)}\<close> (is \<open>S \<in> ?C\<close>)
-  then obtain G where *: \<open>S = set G\<close> and \<open>\<not> (OK Falsity G)\<close>
+  assume \<open>S \<in> {set z | z. \<not> (OK Falsity z)}\<close> (is \<open>S \<in> ?C\<close>)
+  then obtain z where *: \<open>S = set z\<close> and \<open>\<not> (OK Falsity z)\<close>
     by blast
 
   { fix i l
     assume \<open>Pre i l \<in> S \<and> Neg (Pre i l) \<in> S\<close>
-    then have \<open>OK (Pre i l) G\<close> and \<open>OK (Neg (Pre i l)) G\<close>
+    then have \<open>OK (Pre i l) z\<close> and \<open>OK (Neg (Pre i l)) z\<close>
       using Assume * by auto
-    then have \<open>OK Falsity G\<close>
+    then have \<open>OK Falsity z\<close>
       using Imp_E by blast
     then show False
-      using \<open>\<not> (OK Falsity G)\<close> by blast }
+      using \<open>\<not> (OK Falsity z)\<close> by blast }
 
   { assume \<open>Falsity \<in> S\<close>
-    then have \<open>OK Falsity G\<close>
+    then have \<open>OK Falsity z\<close>
       using Assume * by simp
     then show False
-      using \<open>\<not> (OK Falsity G)\<close> by blast }
+      using \<open>\<not> (OK Falsity z)\<close> by blast }
 
-  { fix Z
-    assume \<open>Neg (Neg Z) \<in> S\<close>
-    then have \<open>OK (Neg (Neg Z)) G\<close>
+  { fix p q
+    assume \<open>Con p q \<in> S\<close>
+    then have \<open>OK (Con p q) z\<close>
       using Assume * by simp
-
-    { assume \<open>OK Falsity (Z # G)\<close>
-      then have \<open>OK (Neg Z) G\<close>
-        using Imp_I by blast
-      then have \<open>OK Falsity G\<close>
-        using Imp_E \<open>OK (Neg (Neg Z)) G\<close> by blast
-      then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (Z # G))\<close>
-      by blast
-    moreover have \<open>S \<union> {Z} = set (Z # G)\<close>
-      using * by simp
-    ultimately show \<open>S \<union> {Z} \<in> ?C\<close>
-      by blast }
-
-  { fix A B
-    assume \<open>Con A B \<in> S\<close>
-    then have \<open>OK (Con A B) G\<close>
-      using Assume * by simp
-    then have \<open>OK A G\<close> and \<open>OK B G\<close>
+    then have \<open>OK p z\<close> and \<open>OK q z\<close>
       using Con_E1 Con_E2 by blast+
 
-    { assume \<open>OK Falsity (A # B # G)\<close>
-      then have \<open>OK (Neg A) (B # G)\<close>
+    { assume \<open>OK Falsity (p # q # z)\<close>
+      then have \<open>OK (Neg p) (q # z)\<close>
         using Imp_I by blast
-      then have \<open>OK (Neg A) G\<close>
-        using cut \<open>OK B G\<close> by blast
-      then have \<open>OK Falsity G\<close>
-        using Imp_E \<open>OK A G\<close> by blast
+      then have \<open>OK (Neg p) z\<close>
+        using cut \<open>OK q z\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using Imp_E \<open>OK p z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (A # B # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (p # q # z))\<close>
       by blast
-    moreover have \<open>S \<union> {A, B} = set (A # B # G)\<close>
+    moreover have \<open>S \<union> {p, q} = set (p # q # z)\<close>
       using * by simp
-    ultimately show \<open>S \<union> {A, B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {p, q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Dis A B) \<in> S\<close>
-    then have \<open>OK (Neg (Dis A B)) G\<close>
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> S\<close>
+    then have \<open>OK (Neg (Dis p q)) z\<close>
       using Assume * by simp
 
-    have \<open>OK A (A # Neg B # G)\<close>
+    have \<open>OK p (p # Neg q # z)\<close>
       using Assume by simp
-    then have \<open>OK (Dis A B) (A # Neg B # G)\<close>
+    then have \<open>OK (Dis p q) (p # Neg q # z)\<close>
       using Dis_I1 by blast
-    moreover have \<open>OK (Neg (Dis A B)) (A # Neg B # G)\<close>
-      using * \<open>Neg (Dis A B) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (A # Neg B # G)\<close>
-      using Imp_E \<open>OK (Neg (Dis A B)) (A # Neg B # G)\<close> by blast
-    then have \<open>OK (Neg A) (Neg B # G)\<close>
+    moreover have \<open>OK (Neg (Dis p q)) (p # Neg q # z)\<close>
+      using * \<open>Neg (Dis p q) \<in> S\<close> Assume by simp
+    ultimately have \<open>OK Falsity (p # Neg q # z)\<close>
+      using Imp_E \<open>OK (Neg (Dis p q)) (p # Neg q # z)\<close> by blast
+    then have \<open>OK (Neg p) (Neg q # z)\<close>
       using Imp_I by blast
 
-    have \<open>OK B (B # G)\<close>
+    have \<open>OK q (q # z)\<close>
       using Assume by simp
-    then have \<open>OK (Dis A B) (B # G)\<close>
+    then have \<open>OK (Dis p q) (q # z)\<close>
       using Dis_I2 by blast
-    moreover have \<open>OK (Neg (Dis A B)) (B # G)\<close>
-      using * \<open>Neg (Dis A B) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (B # G)\<close>
-      using Imp_E \<open>OK (Neg (Dis A B)) (B # G)\<close> by blast
-    then have \<open>OK (Neg B) G\<close>
+    moreover have \<open>OK (Neg (Dis p q)) (q # z)\<close>
+      using * \<open>Neg (Dis p q) \<in> S\<close> Assume by simp
+    ultimately have \<open>OK Falsity (q # z)\<close>
+      using Imp_E \<open>OK (Neg (Dis p q)) (q # z)\<close> by blast
+    then have \<open>OK (Neg q) z\<close>
       using Imp_I by blast
 
-    { assume \<open>OK Falsity (Neg A # Neg B # G)\<close>
-      then have \<open>OK (Neg (Neg A)) (Neg B # G)\<close>
+    { assume \<open>OK Falsity (Neg p # Neg q # z)\<close>
+      then have \<open>OK (Neg (Neg p)) (Neg q # z)\<close>
         using Imp_I by blast
-      then have \<open>OK Falsity (Neg B # G)\<close>
-        using Imp_E \<open>OK (Neg A) (Neg B # G)\<close> by blast
-      then have \<open>OK Falsity G\<close>
-        using cut \<open>OK (Neg B) G\<close> by blast
+      then have \<open>OK Falsity (Neg q # z)\<close>
+        using Imp_E \<open>OK (Neg p) (Neg q # z)\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using cut \<open>OK (Neg q) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (Neg A # Neg B # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (Neg p # Neg q # z))\<close>
       by blast
-    moreover have \<open>S \<union> {Neg A, Neg B} = set (Neg A # Neg B # G)\<close>
+    moreover have \<open>S \<union> {Neg p, Neg q} = set (Neg p # Neg q # z)\<close>
       using * by simp
-    ultimately show \<open>S \<union> {Neg A, Neg B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {Neg p, Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Imp A B) \<in> S\<close>
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> S\<close>
 
-    have \<open>OK A (A # Neg A # Neg B # G)\<close>
+    have \<open>OK p (p # Neg p # Neg q # z)\<close>
       using Assume by simp
-    moreover have \<open>OK (Neg A) (A # Neg A # Neg B # G)\<close>
+    moreover have \<open>OK (Neg p) (p # Neg p # Neg q # z)\<close>
       using Assume by simp
-    ultimately have \<open>OK Falsity (A # Neg A # Neg B # G)\<close>
+    ultimately have \<open>OK Falsity (p # Neg p # Neg q # z)\<close>
       using Imp_E by blast
-    then have \<open>OK B (A # Neg A # Neg B # G)\<close>
+    then have \<open>OK q (p # Neg p # Neg q # z)\<close>
       using Falsity_E by blast
-    then have \<open>OK (Imp A B) (Neg A # Neg B # G)\<close>
+    then have \<open>OK (Imp p q) (Neg p # Neg q # z)\<close>
       using Imp_I by blast
-    moreover have \<open>OK (Neg (Imp A B)) (Neg A # Neg B # G)\<close>
-      using * \<open>Neg (Imp A B) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (Neg A # Neg B # G)\<close>
+    moreover have \<open>OK (Neg (Imp p q)) (Neg p # Neg q # z)\<close>
+      using * \<open>Neg (Imp p q) \<in> S\<close> Assume by simp
+    ultimately have \<open>OK Falsity (Neg p # Neg q # z)\<close>
       using Imp_E by blast
-    then have \<open>OK A (Neg B # G)\<close>
+    then have \<open>OK p (Neg q # z)\<close>
       using Boole by blast
 
-    have \<open>OK B (A # B # G)\<close>
+    have \<open>OK q (p # q # z)\<close>
       using Assume by simp
-    then have \<open>OK (Imp A B) (B # G)\<close>
+    then have \<open>OK (Imp p q) (q # z)\<close>
       using Imp_I by blast
-    moreover have \<open>OK (Neg (Imp A B)) (B # G)\<close>
-      using * \<open>Neg (Imp A B) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (B # G)\<close>
+    moreover have \<open>OK (Neg (Imp p q)) (q # z)\<close>
+      using * \<open>Neg (Imp p q) \<in> S\<close> Assume by simp
+    ultimately have \<open>OK Falsity (q # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Neg B) G\<close>
+    then have \<open>OK (Neg q) z\<close>
       using Imp_I by blast
 
-    { assume \<open>OK Falsity (A # Neg B # G)\<close>
-      then have \<open>OK (Neg A) (Neg B # G)\<close>
+    { assume \<open>OK Falsity (p # Neg q # z)\<close>
+      then have \<open>OK (Neg p) (Neg q # z)\<close>
         using Imp_I by blast
-      then have \<open>OK Falsity (Neg B # G)\<close>
-        using Imp_E \<open>OK A (Neg B # G)\<close> by blast
-      then have \<open>OK Falsity G\<close>
-        using cut \<open>OK (Neg B) G\<close> by blast
+      then have \<open>OK Falsity (Neg q # z)\<close>
+        using Imp_E \<open>OK p (Neg q # z)\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using cut \<open>OK (Neg q) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (A # Neg B # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (p # Neg q # z))\<close>
       by blast
-    moreover have \<open>{A, Neg B} \<union> S = set (A # Neg B # G)\<close>
+    moreover have \<open>{p, Neg q} \<union> S = set (p # Neg q # z)\<close>
       using * by simp
-    ultimately show \<open>S \<union> {A, Neg B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {p, Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Dis A B \<in> S\<close>
-    then have \<open>OK (Dis A B) G\<close>
+  { fix p q
+    assume \<open>Dis p q \<in> S\<close>
+    then have \<open>OK (Dis p q) z\<close>
       using * Assume by simp
 
-    { assume \<open>(\<forall>G'. set G' = S \<union> {A} \<longrightarrow> OK Falsity G')\<close>
-        and \<open>(\<forall>G'. set G' = S \<union> {B} \<longrightarrow> OK Falsity G')\<close>
-      then have \<open>OK Falsity (A # G)\<close> and \<open>OK Falsity (B # G)\<close>
+    { assume \<open>(\<forall>G'. set G' = S \<union> {p} \<longrightarrow> OK Falsity G')\<close>
+        and \<open>(\<forall>G'. set G' = S \<union> {q} \<longrightarrow> OK Falsity G')\<close>
+      then have \<open>OK Falsity (p # z)\<close> and \<open>OK Falsity (q # z)\<close>
         using * by simp_all
-      then have \<open>OK Falsity G\<close>
-        using Dis_E \<open>OK (Dis A B) G\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using Dis_E \<open>OK (Dis p q) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then show \<open>S \<union> {A} \<in> ?C \<or> S \<union> {B} \<in> ?C\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then show \<open>S \<union> {p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Con A B) \<in> S\<close>
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> S\<close>
 
-    let ?x = \<open>Dis (Neg A) (Neg B)\<close>
+    let ?x = \<open>Dis (Neg p) (Neg q)\<close>
 
-    have \<open>OK A (B # A # Neg ?x # G)\<close> and \<open>OK B (B # A # Neg ?x # G)\<close>
+    have \<open>OK p (q # p # Neg ?x # z)\<close> and \<open>OK q (q # p # Neg ?x # z)\<close>
       using Assume by simp_all
-    then have \<open>OK (Con A B) (B # A # Neg ?x # G)\<close>
+    then have \<open>OK (Con p q) (q # p # Neg ?x # z)\<close>
       using Con_I by blast
-    moreover have \<open>OK (Neg (Con A B)) (B # A # Neg ?x # G)\<close>
-      using * \<open>Neg (Con A B) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (B # A # Neg ?x # G)\<close>
+    moreover have \<open>OK (Neg (Con p q)) (q # p # Neg ?x # z)\<close>
+      using * \<open>Neg (Con p q) \<in> S\<close> Assume by simp
+    ultimately have \<open>OK Falsity (q # p # Neg ?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Neg B) (A # Neg ?x # G)\<close>
+    then have \<open>OK (Neg q) (p # Neg ?x # z)\<close>
       using Imp_I by blast
-    then have \<open>OK ?x (A # Neg ?x # G)\<close>
+    then have \<open>OK ?x (p # Neg ?x # z)\<close>
       using Dis_I2 by blast
-    moreover have \<open>OK (Neg ?x) (A # Neg ?x # G)\<close>
+    moreover have \<open>OK (Neg ?x) (p # Neg ?x # z)\<close>
       using Assume by simp
-    ultimately have \<open>OK Falsity (A # Neg ?x # G)\<close>
+    ultimately have \<open>OK Falsity (p # Neg ?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Neg A) (Neg ?x # G)\<close>
+    then have \<open>OK (Neg p) (Neg ?x # z)\<close>
       using Imp_I by blast
-    then have \<open>OK ?x (Neg ?x # G)\<close>
+    then have \<open>OK ?x (Neg ?x # z)\<close>
       using Dis_I1 by blast
-    then have \<open>OK (Dis (Neg A) (Neg B)) G\<close>
+    then have \<open>OK (Dis (Neg p) (Neg q)) z\<close>
       using Boole' by blast
 
-    { assume \<open>(\<forall>G'. set G' = S \<union> {Neg A} \<longrightarrow> OK Falsity G')\<close>
-        and \<open>(\<forall>G'. set G' = S \<union> {Neg B} \<longrightarrow> OK Falsity G')\<close>
-      then have \<open>OK Falsity (Neg A # G )\<close> and \<open>OK Falsity (Neg B # G)\<close>
+    { assume \<open>(\<forall>G'. set G' = S \<union> {Neg p} \<longrightarrow> OK Falsity G')\<close>
+        and \<open>(\<forall>G'. set G' = S \<union> {Neg q} \<longrightarrow> OK Falsity G')\<close>
+      then have \<open>OK Falsity (Neg p # z )\<close> and \<open>OK Falsity (Neg q # z)\<close>
         using * by simp_all
-      then have \<open>OK Falsity G\<close>
-        using Dis_E \<open>OK (Dis (Neg A) (Neg B)) G\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using Dis_E \<open>OK (Dis (Neg p) (Neg q)) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then show \<open>S \<union> {Neg A} \<in> ?C \<or> S \<union> {Neg B} \<in> ?C\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Imp A B \<in> S\<close>
+  { fix p q
+    assume \<open>Imp p q \<in> S\<close>
 
-    let ?x = \<open>Dis (Neg A) B\<close>
+    let ?x = \<open>Dis (Neg p) q\<close>
 
-    have \<open>OK A (A # Neg ?x # G)\<close>
+    have \<open>OK p (p # Neg ?x # z)\<close>
       using Assume by simp
-    moreover have \<open>OK (Imp A B) (A # Neg ?x # G)\<close>
-      using * \<open>Imp A B \<in> S\<close> Assume by simp
-    ultimately have \<open>OK B (A # Neg ?x # G)\<close>
+    moreover have \<open>OK (Imp p q) (p # Neg ?x # z)\<close>
+      using * \<open>Imp p q \<in> S\<close> Assume by simp
+    ultimately have \<open>OK q (p # Neg ?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK ?x (A # Neg ?x # G)\<close>
+    then have \<open>OK ?x (p # Neg ?x # z)\<close>
       using Dis_I2 by blast
-    moreover have \<open>OK (Neg ?x) (A # Neg ?x # G)\<close>
+    moreover have \<open>OK (Neg ?x) (p # Neg ?x # z)\<close>
       using Assume by simp
-    ultimately have \<open>OK Falsity (A # Neg ?x # G)\<close>
+    ultimately have \<open>OK Falsity (p # Neg ?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Neg A) (Neg ?x # G)\<close>
+    then have \<open>OK (Neg p) (Neg ?x # z)\<close>
       using Imp_I by blast
-    then have \<open>OK ?x (Neg ?x # G)\<close>
+    then have \<open>OK ?x (Neg ?x # z)\<close>
       using Dis_I1 by blast
-    then have \<open>OK (Dis (Neg A) B) G\<close>
+    then have \<open>OK (Dis (Neg p) q) z\<close>
       using Boole' by blast
 
-    { assume \<open>(\<forall>G'. set G' = S \<union> {Neg A} \<longrightarrow> OK Falsity G')\<close>
-        and \<open>(\<forall>G'. set G' = S \<union> {B} \<longrightarrow> OK Falsity G')\<close>
-      then have \<open>OK Falsity (Neg A # G)\<close> and \<open>OK Falsity (B # G)\<close>
+    { assume \<open>(\<forall>G'. set G' = S \<union> {Neg p} \<longrightarrow> OK Falsity G')\<close>
+        and \<open>(\<forall>G'. set G' = S \<union> {q} \<longrightarrow> OK Falsity G')\<close>
+      then have \<open>OK Falsity (Neg p # z)\<close> and \<open>OK Falsity (q # z)\<close>
         using * by simp_all
-      then have \<open>OK Falsity G\<close>
-        using Dis_E \<open>OK (Dis (Neg A) B) G\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using Dis_E \<open>OK (Dis (Neg p) q) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then show \<open>S \<union> {Neg A} \<in> ?C \<or> S \<union> {B} \<in> ?C\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
       by blast }
 
   { fix P t
     assume \<open>closed_term 0 t\<close> and \<open>Uni P \<in> S\<close>
-    then have \<open>OK (Uni P) G\<close>
+    then have \<open>OK (Uni P) z\<close>
       using Assume * by simp
-    then have \<open>OK (sub 0 t P) G\<close>
+    then have \<open>OK (sub 0 t P) z\<close>
       using Uni_E by blast
 
-    { assume \<open>OK Falsity (sub 0 t P # G)\<close>
-      then have \<open>OK Falsity G\<close>
-        using cut \<open>OK (sub 0 t P) G\<close> by blast
+    { assume \<open>OK Falsity (sub 0 t P # z)\<close>
+      then have \<open>OK Falsity z\<close>
+        using cut \<open>OK (sub 0 t P) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (sub 0 t P # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (sub 0 t P # z))\<close>
       by blast
-    moreover have \<open>S \<union> {sub 0 t P} = set (sub 0 t P # G)\<close>
+    moreover have \<open>S \<union> {sub 0 t P} = set (sub 0 t P # z)\<close>
       using * by simp
     ultimately show \<open>S \<union> {sub 0 t P} \<in> ?C\<close>
       by blast }
 
   { fix P t
     assume \<open>closed_term 0 t\<close> and \<open>Neg (Exi P) \<in> S\<close>
-    then have \<open>OK (Neg (Exi P)) G\<close>
+    then have \<open>OK (Neg (Exi P)) z\<close>
       using Assume * by simp
-    then have \<open>OK (sub 0 t P) (sub 0 t P # G)\<close>
+    then have \<open>OK (sub 0 t P) (sub 0 t P # z)\<close>
       using Assume by simp
-    then have \<open>OK (Exi P) (sub 0 t P # G)\<close>
+    then have \<open>OK (Exi P) (sub 0 t P # z)\<close>
       using Exi_I by blast
-    moreover have \<open>OK (Neg (Exi P)) (sub 0 t P # G)\<close>
+    moreover have \<open>OK (Neg (Exi P)) (sub 0 t P # z)\<close>
       using * \<open>Neg (Exi P) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (sub 0 t P # G)\<close>
+    ultimately have \<open>OK Falsity (sub 0 t P # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Neg (sub 0 t P)) G\<close>
+    then have \<open>OK (Neg (sub 0 t P)) z\<close>
       using Imp_I by blast
 
-    { assume \<open>OK Falsity (Neg (sub 0 t P) # G)\<close>
-      then have \<open>OK Falsity G\<close>
-        using cut \<open>OK (Neg (sub 0 t P)) G\<close> by blast
+    { assume \<open>OK Falsity (Neg (sub 0 t P) # z)\<close>
+      then have \<open>OK Falsity z\<close>
+        using cut \<open>OK (Neg (sub 0 t P)) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (Neg (sub 0 t P) # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (Neg (sub 0 t P) # z))\<close>
       by blast
-    moreover have \<open>S \<union> {Neg (sub 0 t P)} = set (Neg (sub 0 t P) # G)\<close>
+    moreover have \<open>S \<union> {Neg (sub 0 t P)} = set (Neg (sub 0 t P) # z)\<close>
       using * by simp
     ultimately show \<open>S \<union> {Neg (sub 0 t P)} \<in> ?C\<close>
       by blast }
 
   { fix P
     assume \<open>Exi P \<in> S\<close>
-    then have \<open>OK (Exi P) G\<close>
+    then have \<open>OK (Exi P) z\<close>
       using * Assume by simp
 
-    have \<open>finite ((\<Union>p \<in> set G. params p) \<union> params P)\<close>
+    have \<open>finite ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
       by simp
-    then have \<open>infinite (- ((\<Union>p \<in> set G. params p) \<union> params P))\<close>
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
       using infinite_UNIV_listI Diff_infinite_finite finite_compl by blast
-    then have \<open>infinite (- ((\<Union>p \<in> set G. params p) \<union> params P))\<close>
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
       by (simp add: Compl_eq_Diff_UNIV)
-    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set G. params p) \<union> params P)\<close>
+    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
       using infinite_imp_nonempty by blast
 
-    { assume \<open>OK Falsity (sub 0 (Fun x []) P # G)\<close>
-      moreover have \<open>news x (P # Falsity # G)\<close>
+    { assume \<open>OK Falsity (sub 0 (Fun x []) P # z)\<close>
+      moreover have \<open>news x (P # Falsity # z)\<close>
         using ** by (simp add: list_all_iff)
-      ultimately have \<open>OK Falsity G\<close>
-        using Exi_E \<open>OK (Exi P) G\<close> by fast
+      ultimately have \<open>OK Falsity z\<close>
+        using Exi_E \<open>OK (Exi P) z\<close> by fast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast}
-    then have \<open>\<not> (OK Falsity (sub 0 (Fun x []) P # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast}
+    then have \<open>\<not> (OK Falsity (sub 0 (Fun x []) P # z))\<close>
       by blast
-    moreover have \<open>S \<union> {sub 0 (Fun x []) P} = set (sub 0 (Fun x []) P # G)\<close>
+    moreover have \<open>S \<union> {sub 0 (Fun x []) P} = set (sub 0 (Fun x []) P # z)\<close>
       using * by simp
     ultimately show \<open>\<exists>x. S \<union> {sub 0 (Fun x []) P} \<in> ?C\<close>
       by blast }
 
   { fix P
     assume \<open>Neg (Uni P) \<in> S\<close>
-    then have \<open>OK (Neg (Uni P)) G\<close>
+    then have \<open>OK (Neg (Uni P)) z\<close>
       using * Assume by simp
 
-    have \<open>finite ((\<Union>p \<in> set G. params p) \<union> params P)\<close>
+    have \<open>finite ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
       by simp
-    then have \<open>infinite (- ((\<Union>p \<in> set G. params p) \<union> params P))\<close>
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
       using infinite_UNIV_listI Diff_infinite_finite finite_compl by blast
-    then have \<open>infinite (- ((\<Union>p \<in> set G. params p) \<union> params P))\<close>
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
       by (simp add: Compl_eq_Diff_UNIV)
-    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set G. params p) \<union> params P)\<close>
+    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
       using infinite_imp_nonempty by blast
 
     let ?x = \<open>Neg (Exi (Neg P))\<close>
 
-    have \<open>OK (Neg (sub 0 (Fun x []) P)) (Neg (sub 0 (Fun x []) P) # ?x # G)\<close>
+    have \<open>OK (Neg (sub 0 (Fun x []) P)) (Neg (sub 0 (Fun x []) P) # ?x # z)\<close>
       using Assume by simp
-    then have \<open>OK (Exi (Neg P)) (Neg (sub 0 (Fun x []) P) # ?x # G)\<close>
+    then have \<open>OK (Exi (Neg P)) (Neg (sub 0 (Fun x []) P) # ?x # z)\<close>
       using Exi_I by simp
-    moreover have \<open>OK ?x (Neg (sub 0 (Fun x []) P) # ?x # G)\<close>
+    moreover have \<open>OK ?x (Neg (sub 0 (Fun x []) P) # ?x # z)\<close>
       using Assume by simp
-    ultimately have \<open>OK Falsity (Neg (sub 0 (Fun x []) P) # ?x # G)\<close>
+    ultimately have \<open>OK Falsity (Neg (sub 0 (Fun x []) P) # ?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (sub 0 (Fun x []) P) (?x # G)\<close>
+    then have \<open>OK (sub 0 (Fun x []) P) (?x # z)\<close>
       using Boole by blast
-    moreover have \<open>news x (P # ?x # G)\<close>
+    moreover have \<open>news x (P # ?x # z)\<close>
       using ** by (simp add: list_all_iff)
-    ultimately have \<open>OK (Uni P) (?x # G)\<close>
+    ultimately have \<open>OK (Uni P) (?x # z)\<close>
       using Uni_I by fast
-    moreover have \<open>OK (Neg (Uni P)) (?x # G)\<close>
+    moreover have \<open>OK (Neg (Uni P)) (?x # z)\<close>
       using * \<open>Neg (Uni P) \<in> S\<close> Assume by simp
-    ultimately have \<open>OK Falsity (?x # G)\<close>
+    ultimately have \<open>OK Falsity (?x # z)\<close>
       using Imp_E by blast
-    then have \<open>OK (Exi (Neg P)) G\<close>
+    then have \<open>OK (Exi (Neg P)) z\<close>
       using Boole by blast
 
-    { assume \<open>OK Falsity (Neg (sub 0 (Fun x []) P) # G)\<close>
-      then have \<open>OK (sub 0 (Fun x []) P) G\<close>
+    { assume \<open>OK Falsity (Neg (sub 0 (Fun x []) P) # z)\<close>
+      then have \<open>OK (sub 0 (Fun x []) P) z\<close>
         using Boole by blast
-      moreover have \<open>news x (P # G)\<close>
+      moreover have \<open>news x (P # z)\<close>
         using ** by (simp add: list_all_iff)
-      ultimately have \<open>OK (Uni P) G\<close>
+      ultimately have \<open>OK (Uni P) z\<close>
         using Uni_I by blast
-      then have \<open>OK Falsity G\<close>
-        using Imp_E \<open>OK (Neg (Uni P)) G\<close> by blast
+      then have \<open>OK Falsity z\<close>
+        using Imp_E \<open>OK (Neg (Uni P)) z\<close> by blast
       then have False
-        using \<open>\<not> (OK Falsity G)\<close> by blast }
-    then have \<open>\<not> (OK Falsity (Neg (sub 0 (Fun x []) P) # G))\<close>
+        using \<open>\<not> (OK Falsity z)\<close> by blast }
+    then have \<open>\<not> (OK Falsity (Neg (sub 0 (Fun x []) P) # z))\<close>
       by blast
-    moreover have \<open>S \<union> {Neg (sub 0 (Fun x []) P)} = set (Neg (sub 0 (Fun x []) P) # G)\<close>
+    moreover have \<open>S \<union> {Neg (sub 0 (Fun x []) P)} = set (Neg (sub 0 (Fun x []) P) # z)\<close>
       using * by simp
     ultimately show \<open>\<exists>x. S \<union> {Neg (sub 0 (Fun x []) P)} \<in> ?C\<close>
       by blast }
@@ -2619,14 +2556,14 @@ qed
 
 theorem natded_complete:
   assumes \<open>closed 0 p\<close> and \<open>list_all (closed 0) z\<close>
-    and mod: \<open>\<forall>(e :: nat \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+    and mod: \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
   shows \<open>OK p z\<close>
 proof (rule Boole, rule ccontr)
   fix e
   assume \<open>\<not> (OK Falsity (Neg p # z))\<close>
 
   let ?S = \<open>set (Neg p # z)\<close>
-  let ?C = \<open>{set G | G. \<not> (OK Falsity G)}\<close>
+  let ?C = \<open>{set z | z. \<not> (OK Falsity z)}\<close>
   let ?C' = \<open>mk_finite_char (mk_alt_consistency (close ?C))\<close>
   let ?H = \<open>Extend ?S ?C' from_nat\<close>
   let ?f = HFun
@@ -2680,73 +2617,64 @@ proof (intro allI impI conjI)
   show \<open>Falsity \<notin> S\<close>
     using * by fastforce
 
-  { fix Z
-    assume \<open>Neg (Neg Z) \<in> S\<close>
-    then have \<open>\<forall>x \<in> S \<union> {Z}. semantics e f g x\<close>
+  { fix p q
+    assume \<open>Con p q \<in> S\<close>
+    then have \<open>\<forall>x \<in> S \<union> {p, q}. semantics e f g x\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Z}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {p, q}. params p))\<close>
       using inf_params by (simp add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {Z} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {p, q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Con A B \<in> S\<close>
-    then have \<open>\<forall>x \<in> S \<union> {A, B}. semantics e f g x\<close>
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> S\<close>
+    then have \<open>\<forall>x \<in> S \<union> {Neg p, Neg q}. semantics e f g x\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {A, B}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg p, Neg q}. params p))\<close>
       using inf_params by (simp add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {A, B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {Neg p, Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Dis A B) \<in> S\<close>
-    then have \<open>\<forall>x \<in> S \<union> {Neg A, Neg B}. semantics e f g x\<close>
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> S\<close>
+    then have \<open>\<forall>x \<in> S \<union> {p, Neg q}. semantics e f g x\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg A, Neg B}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {p, Neg q}. params p))\<close>
       using inf_params by (simp add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {Neg A, Neg B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {p, Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Imp A B) \<in> S\<close>
-    then have \<open>\<forall>x \<in> S \<union> {A, Neg B}. semantics e f g x\<close>
+  { fix p q
+    assume \<open>Dis p q \<in> S\<close>
+    then have \<open>(\<forall>x \<in> S \<union> {p}. semantics e f g x) \<or>
+               (\<forall>x \<in> S \<union> {q}. semantics e f g x)\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {A, Neg B}. params p))\<close>
-      using inf_params by (simp add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {A, Neg B} \<in> ?C\<close>
-      by blast }
-
-  { fix A B
-    assume \<open>Dis A B \<in> S\<close>
-    then have \<open>(\<forall>x \<in> S \<union> {A}. semantics e f g x) \<or>
-               (\<forall>x \<in> S \<union> {B}. semantics e f g x)\<close>
-      using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {A}. params p))\<close>
-      and \<open>infinite (- (\<Union>p \<in> S \<union> {B}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {p}. params p))\<close>
+      and \<open>infinite (- (\<Union>p \<in> S \<union> {q}. params p))\<close>
       using inf_params by (simp_all add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {A} \<in> ?C \<or> S \<union> {B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Neg (Con A B) \<in> S\<close>
-    then have \<open>(\<forall>x \<in> S \<union> {Neg A}. semantics e f g x) \<or>
-               (\<forall>x \<in> S \<union> {Neg B}. semantics e f g x)\<close>
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> S\<close>
+    then have \<open>(\<forall>x \<in> S \<union> {Neg p}. semantics e f g x) \<or>
+               (\<forall>x \<in> S \<union> {Neg q}. semantics e f g x)\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg A}. params p))\<close>
-      and \<open>infinite (- (\<Union>p \<in> S \<union> {Neg B}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg p}. params p))\<close>
+      and \<open>infinite (- (\<Union>p \<in> S \<union> {Neg q}. params p))\<close>
       using inf_params by (simp_all add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {Neg A} \<in> ?C \<or> S \<union> {Neg B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {Neg q} \<in> ?C\<close>
       by blast }
 
-  { fix A B
-    assume \<open>Imp A B \<in> S\<close>
-    then have \<open>(\<forall>x \<in> S \<union> {Neg A}. semantics e f g x) \<or>
-               (\<forall>x \<in> S \<union> {B}. semantics e f g x)\<close>
+  { fix p q
+    assume \<open>Imp p q \<in> S\<close>
+    then have \<open>(\<forall>x \<in> S \<union> {Neg p}. semantics e f g x) \<or>
+               (\<forall>x \<in> S \<union> {q}. semantics e f g x)\<close>
       using * by auto
-    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg A}. params p))\<close>
-      and \<open>infinite (- (\<Union>p \<in> S \<union> {B}. params p))\<close>
+    moreover have \<open>infinite (- (\<Union>p \<in> S \<union> {Neg p}. params p))\<close>
+      and \<open>infinite (- (\<Union>p \<in> S \<union> {q}. params p))\<close>
       using inf_params by (simp_all add: set_inter_compl_diff)
-    ultimately show \<open>S \<union> {Neg A} \<in> ?C \<or> S \<union> {B} \<in> ?C\<close>
+    ultimately show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
       by blast }
 
   { fix P t
@@ -3007,17 +2935,20 @@ lemma denumerable_bij: \<open>denumerable S \<longleftrightarrow> (\<exists>f. b
 
 hide_fact denumerable_def
 
+lemma denumerable_htm: \<open>denumerable (UNIV :: htm set)\<close>
+  using infinite_htms htm denumerable_bij Schroeder_Bernstein infinite_iff_countable_subset
+    top_greatest by metis
+
 abbreviation \<open>sentence \<equiv> closed 0\<close>
 
 lemma sentence_completeness':
-  assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
     and \<open>sentence p\<close>
     and \<open>list_all sentence z\<close>
     and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
-  have \<open>\<forall>(e :: nat \<Rightarrow> htm) f g.
-    list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
   proof (intro allI)
     fix e :: \<open>nat \<Rightarrow> htm\<close>
       and f :: \<open>id \<Rightarrow> htm list \<Rightarrow> htm\<close>
@@ -3041,16 +2972,16 @@ proof -
 qed
 
 theorem sentence_completeness:
-  assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p\<close>
     and \<open>sentence p\<close>
     and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: sentence_completeness')
 
-corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
+corollary \<open>\<forall>(e :: _ \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> sentence p \<Longrightarrow> OK p []\<close>
   using sentence_completeness denumerable_bij by blast
 
-section \<open>Completeness for Open Formulas\<close>
+section \<open>Open Formulas\<close>
 
 subsection \<open>Renaming\<close>
 
@@ -3245,7 +3176,8 @@ lemma psubst_new_away' [simp]:
   \<open>new_list fresh l \<Longrightarrow> psubst_list (id(fresh := c)) (psubst_list (id(c := fresh)) l) = l\<close>
   by (induct t and l rule: psubst_term.induct psubst_list.induct) auto
 
-lemma psubst_new_away [simp]: \<open>new fresh p \<Longrightarrow> psubst (id(fresh := c)) (psubst (id(c := fresh)) p) = p\<close>
+lemma psubst_new_away [simp]: \<open>new fresh p \<Longrightarrow>
+    psubst (id(fresh := c)) (psubst (id(c := fresh)) p) = p\<close>
   by (induct p) simp_all
 
 lemma map_psubst_new_away:
@@ -3804,8 +3736,8 @@ lemma sub_put_unis [simp]: \<open>sub i (Fun c []) (put_unis k p) = put_unis k (
 lemma closed_put_unis [simp]: \<open>closed m (put_unis k p) = closed (m + k) p\<close>
   by (induct k arbitrary: m) simp_all
 
-lemma valid_put_unis: \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p \<Longrightarrow>
-    semantics (e :: nat \<Rightarrow> 'a) f g (put_unis m p)\<close>
+lemma valid_put_unis: \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p \<Longrightarrow>
+    semantics (e :: _ \<Rightarrow> 'a) f g (put_unis m p)\<close>
   by (induct m arbitrary: e) simp_all
 
 lemma put_unis_collapse: \<open>put_unis m (put_unis n p) = put_unis (m + n) p\<close>
@@ -3934,20 +3866,20 @@ proof -
     using vars_for_consts_for_unis * ** by simp
 qed
 
-subsection \<open>Completeness\<close>
+section \<open>Completeness\<close>
 
 theorem completeness':
-  assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
     and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p z\<close>
 proof -
   let ?p = \<open>put_imps p (rev z)\<close>
 
-  have *: \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g ?p\<close>
+  have *: \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g ?p\<close>
     using assms(1) semantics_put_imps by fastforce
   obtain m where **: \<open>sentence (put_unis m ?p)\<close>
     using ex_closure by blast
-  moreover have \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g (put_unis m ?p)\<close>
+  moreover have \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g (put_unis m ?p)\<close>
     using * valid_put_unis by blast
   ultimately have \<open>OK (put_unis m ?p) []\<close>
     using assms(2) sentence_completeness by blast
@@ -3957,18 +3889,23 @@ proof -
     using remove_imps by fastforce
 qed
 
+lemma completeness'':
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  shows \<open>OK p z\<close>
+  using assms completeness' denumerable_htm by fast
+
 theorem completeness:
-  assumes \<open>\<forall>(e :: nat \<Rightarrow> 'a) f g. semantics e f g p\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p\<close>
     and \<open>denumerable (UNIV :: 'a set)\<close>
   shows \<open>OK p []\<close>
   using assms by (simp add: completeness')
 
-corollary \<open>\<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
+corollary \<open>\<forall>(e :: _ \<Rightarrow> nat) f g. semantics e f g p \<Longrightarrow> OK p []\<close>
   using completeness denumerable_bij by blast
 
 section \<open>Main Result\<close> \<comment> \<open>NaDeA is sound and complete\<close>
 
-abbreviation \<open>valid p \<equiv> \<forall>(e :: nat \<Rightarrow> nat) f g. semantics e f g p\<close>
+abbreviation \<open>valid p \<equiv> \<forall>(e :: _ \<Rightarrow> nat) f g. semantics e f g p\<close>
 
 theorem main: \<open>valid p \<longleftrightarrow> OK p []\<close>
 proof
@@ -3981,7 +3918,7 @@ next
     by (intro allI)
 qed
 
-corollary \<open>valid p \<longrightarrow> semantics e f g p\<close>
+theorem valid_semantics: \<open>valid p \<longrightarrow> semantics e f g p\<close>
 proof
   assume \<open>valid p\<close>
   then have \<open>OK p []\<close>
@@ -3994,6 +3931,2107 @@ theorem any_unis: \<open>OK (put_unis k p) [] \<Longrightarrow> OK (put_unis m p
 
 corollary \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close> \<open>OK (put_unis m p) [] \<Longrightarrow> OK p []\<close>
   using any_unis put_unis.simps(1) by metis+
+
+section \<open>Tableau Calculus\<close> \<comment> \<open>NaDeA variant\<close>
+
+inductive TC :: \<open>fm list \<Rightarrow> bool\<close> (\<open>\<stileturn> _\<close> 0) where
+  Dummy: \<open>\<stileturn> Falsity # z\<close> |
+  Basic: \<open>\<stileturn> Pre i l # Neg (Pre i l) # z\<close> |
+  AlImp: \<open>\<stileturn> p # Neg q # z \<Longrightarrow> \<stileturn> Neg (Imp p q) # z\<close> |
+  AlDis: \<open>\<stileturn> Neg p # Neg q # z \<Longrightarrow> \<stileturn> Neg (Dis p q) # z\<close> |
+  AlCon: \<open>\<stileturn> p # q # z \<Longrightarrow> \<stileturn> Con p q # z\<close> |
+  BeImp: \<open>\<stileturn> Neg p # z \<Longrightarrow> \<stileturn> q # z \<Longrightarrow> \<stileturn> Imp p q # z\<close> |
+  BeDis: \<open>\<stileturn> p # z \<Longrightarrow> \<stileturn> q # z \<Longrightarrow> \<stileturn> Dis p q # z\<close> |
+  BeCon: \<open>\<stileturn> Neg p # z \<Longrightarrow> \<stileturn> Neg q # z \<Longrightarrow> \<stileturn> Neg (Con p q) # z\<close> |
+  GaExi: \<open>\<stileturn> Neg (sub 0 t p) # z \<Longrightarrow> \<stileturn> Neg (Exi p) # z\<close> |
+  GaUni: \<open>\<stileturn> sub 0 t p # z \<Longrightarrow> \<stileturn> Uni p # z\<close> |
+  DeExi: \<open>\<stileturn> sub 0 (Fun c []) p # z \<Longrightarrow> news c (p # z) \<Longrightarrow> \<stileturn> Exi p # z\<close> |
+  DeUni: \<open>\<stileturn> Neg (sub 0 (Fun c []) p) # z \<Longrightarrow> news c (p # z) \<Longrightarrow> \<stileturn> Neg (Uni p) # z\<close> |
+  Extra: \<open>\<stileturn> p # z \<Longrightarrow> member p z \<Longrightarrow> \<stileturn> z\<close>
+
+fun compl :: \<open>fm \<Rightarrow> fm\<close> where
+  \<open>compl (Neg p) = p\<close> |
+  \<open>compl p = Neg p\<close>
+
+definition tableauproof :: \<open>fm list \<Rightarrow> fm \<Rightarrow> bool\<close> where
+  \<open>tableauproof z p \<equiv> (\<stileturn> compl p # z)\<close>
+
+lemma compl: \<open>compl p = Neg p \<or> (\<exists>q. compl p = q \<and> p = Neg q)\<close>
+  by (induct p rule: compl.induct) simp_all
+
+lemma compl_compl: \<open>semantics e f g p \<longleftrightarrow> semantics e f g (compl (compl p))\<close>
+  using compl by (metis semantics.simps(1) semantics.simps(3))
+
+lemma new_compl: \<open>new n p \<Longrightarrow> new n (compl p)\<close>
+  by (cases p rule: compl.cases) simp_all
+
+lemma news_compl: \<open>news c z \<Longrightarrow> news c (map compl z)\<close>
+  using new_compl by (induct z) simp_all
+
+lemma closed_compl: \<open>closed m p \<Longrightarrow> closed m (compl p)\<close>
+proof (induct p arbitrary: m)
+  case (Imp p1 p2)
+  then show ?case
+    by (metis closed.simps(5) compl)
+qed simp_all
+
+lemma semantics_compl: \<open>\<not> (semantics e f g (compl p)) \<longleftrightarrow> semantics e f g p\<close>
+proof (induct p)
+  case (Imp p1 p2)
+  then show ?case
+    using compl_compl by (metis compl.simps(1) semantics.simps(1) semantics.simps(3))
+qed simp_all
+
+subsection \<open>Soundness\<close>
+
+theorem TC_soundness:
+  \<open>\<stileturn> z \<Longrightarrow> \<exists>p \<in> set z. \<not> semantics e f g p\<close>
+proof (induct arbitrary: f rule: TC.induct)
+  case (Extra p z)
+  then show ?case
+    by fastforce
+next
+  case (DeExi n p z)
+  show ?case
+  proof (rule ccontr)
+    assume \<open>\<not> (\<exists>p \<in> set (Exi p # z). \<not> semantics e f g p)\<close>
+    then have *: \<open>\<forall>p \<in> set (Exi p # z). semantics e f g p\<close>
+      by simp
+
+    then obtain x where \<open>semantics (put e 0 x) (f(n := \<lambda>w. x)) g p\<close>
+      using DeExi.hyps(3) by auto
+    then have **: \<open>semantics e (f(n := \<lambda>w. x)) g (sub 0 (Fun n []) p)\<close>
+      by simp
+
+    have \<open>\<exists>p \<in> set (sub 0 (Fun n []) p # z). \<not> semantics e (f(n := \<lambda>w. x)) g p\<close>
+      using DeExi by fast
+    then consider
+      \<open>\<not> semantics e (f(n := \<lambda>w. x)) g (sub 0 (Fun n []) p)\<close> |
+      \<open>\<exists>p \<in> set z. \<not> semantics e (f(n := \<lambda>w. x)) g p\<close>
+      by auto
+    then show False
+    proof cases
+      case 1
+      then show ?thesis
+        using ** by simp
+    next
+      case 2
+      then obtain p where \<open>\<not> semantics e (f(n := \<lambda>w. x)) g p\<close> \<open>p \<in> set z\<close>
+        by blast
+      then have \<open>\<not> semantics e f g p\<close>
+        using DeExi.hyps(3) by (metis Ball_set allnew map news.simps(2))
+      then show False
+        using * \<open>p \<in> set z\<close> by simp
+    qed
+  qed
+next
+  case (DeUni n p z)
+  show ?case
+  proof (rule ccontr)
+    assume \<open>\<not> (\<exists>p \<in> set (Neg (Uni p) # z). \<not> semantics e f g p)\<close>
+    then have *: \<open>\<forall>p \<in> set (Neg (Uni p) # z). semantics e f g p\<close>
+      by simp
+
+    then obtain x where \<open>semantics (put e 0 x) (f(n := \<lambda>w. x)) g (Neg p)\<close>
+      using DeUni.hyps(3) by auto
+    then have **: \<open>semantics e (f(n := \<lambda>w. x)) g (sub 0 (Fun n []) (Neg p))\<close>
+      by simp
+
+    have \<open>\<exists>p \<in> set (Neg (sub 0 (Fun n []) p) # z). \<not> semantics e (f(n := \<lambda>w. x)) g p\<close>
+      using DeUni by fast
+    then consider
+      \<open>\<not> semantics e (f(n := \<lambda>w. x)) g (Neg (sub 0 (Fun n []) p))\<close> |
+      \<open>\<exists>p \<in> set z. \<not> semantics e (f(n := \<lambda>w. x)) g p\<close>
+      by auto
+    then show False
+    proof cases
+      case 1
+      then show ?thesis
+        using ** by simp
+    next
+      case 2
+      then obtain p where \<open>\<not> semantics e (f(n := \<lambda>w. x)) g p\<close> \<open>p \<in> set z\<close>
+        by blast
+      then have \<open>\<not> semantics e f g p\<close>
+        using DeUni.hyps(3) by (metis Ball_set allnew map news.simps(2))
+      then show False
+        using * \<open>p \<in> set z\<close> by simp
+    qed
+  qed
+qed auto
+
+theorem tableau_soundness:
+  \<open>tableauproof z p \<Longrightarrow> list_all (semantics e f g) z \<Longrightarrow> semantics e f g p\<close>
+  unfolding tableauproof_def list_all_def using TC_soundness compl_compl
+  by (metis (no_types, hide_lams) compl.simps(1) semantics.simps(3) set_ConsD)
+
+theorem sound:
+  assumes \<open>\<stileturn> [Neg p]\<close>
+  shows \<open>semantics e f g p\<close>
+proof -
+  from assms consider \<open>\<stileturn> [compl p]\<close> | \<open>\<exists>q. p = Neg q \<and> (\<stileturn> [Neg (Neg q)])\<close>
+    using compl by metis
+  then show ?thesis
+  proof cases
+    case 1
+    then show ?thesis
+      using tableau_soundness unfolding tableauproof_def by fastforce
+  next
+    case 2
+    then obtain q where \<open>p = Neg q\<close> \<open>\<stileturn> [compl (Neg (Neg (Neg q)))]\<close>
+      by auto
+    then have \<open>semantics e f g (Neg (Neg (Neg q)))\<close>
+      using tableau_soundness unfolding tableauproof_def by fastforce
+    then show ?thesis
+      using \<open>p = Neg q\<close> by auto
+  qed
+qed
+
+subsection \<open>Completeness for Closed Formulas\<close>
+
+theorem infinite_nonempty: \<open>infinite p \<Longrightarrow> \<exists>x. x \<in> p\<close>
+  by (simp add: ex_in_conv infinite_imp_nonempty)
+
+theorem TCd_consistency:
+  assumes inf_param: \<open>infinite (UNIV::'a set)\<close>
+  shows \<open>consistency {S. \<exists>z. S = set z \<and> \<not> (\<stileturn> z)}\<close>
+  unfolding consistency_def
+proof (intro conjI allI impI notI)
+  fix S
+  assume \<open>S \<in> {set z | z. \<not> (\<stileturn> z)}\<close> (is \<open>S \<in> ?C\<close>)
+  then obtain z :: \<open>fm list\<close>
+    where *: \<open>S = set z\<close> and \<open>\<not> (\<stileturn> z)\<close>
+    by blast
+
+  { fix p ts
+    assume \<open>Pre p ts \<in> S \<and> Neg (Pre p ts) \<in> S\<close>
+    then show False
+      using * Basic \<open>\<not> (\<stileturn> z)\<close> Extra in_mono set_subset_Cons member_set by metis }
+
+  { assume \<open>Falsity \<in> S\<close>
+    then show False
+      using * Dummy \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast }
+
+  { fix p q
+    assume \<open>Con p q \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> p # q # z)\<close>
+      using * AlCon \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {p, q} = set (p # q # z)\<close>
+      using * by simp
+    ultimately show \<open>S \<union> {p, q} \<in> ?C\<close>
+      by blast }
+
+  { fix p q
+    assume \<open>Neg (Dis p q) \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> Neg p # Neg q # z)\<close>
+      using * AlDis \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {Neg p, Neg q} = set (Neg p # Neg q # z)\<close>
+      using * by simp
+    ultimately show \<open>S \<union> {Neg p, Neg q} \<in> ?C\<close>
+      by blast }
+
+  { fix p q
+    assume \<open>Neg (Imp p q) \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> p # Neg q # z)\<close>
+      using * AlImp \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>{p, Neg q} \<union> S = set (p # Neg q # z)\<close>
+      using * by simp
+    ultimately show \<open>S \<union> {p, Neg q} \<in> ?C\<close>
+      by blast }
+
+  { fix p q
+    assume \<open>Dis p q \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> p # z) \<or> \<not> (\<stileturn> q # z)\<close>
+      using * BeDis \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    then show \<open>S \<union> {p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
+      using * by auto }
+
+  { fix p q
+    assume \<open>Neg (Con p q) \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> Neg p # z) \<or> \<not> (\<stileturn> Neg q # z)\<close>
+      using * BeCon \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    then show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {Neg q} \<in> ?C\<close>
+      using * by auto }
+
+  { fix p q
+    assume \<open>Imp p q \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> Neg p # z) \<or> \<not> (\<stileturn> q # z)\<close>
+      using * BeImp \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    then show \<open>S \<union> {Neg p} \<in> ?C \<or> S \<union> {q} \<in> ?C\<close>
+      using * by auto }
+
+  { fix P t
+    assume \<open>closed_term 0 t\<close> and \<open>Uni P \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> sub 0 t P # z)\<close>
+      using * GaUni \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {sub 0 t P} = set (sub 0 t P # z)\<close>
+      using * by simp
+    ultimately show \<open>S \<union> {sub 0 t P} \<in> ?C\<close>
+      by blast }
+
+  { fix P t
+    assume \<open>closed_term 0 t\<close> and \<open>Neg (Exi P) \<in> S\<close>
+    then have \<open>\<not> (\<stileturn> Neg (sub 0 t P) # z)\<close>
+      using * GaExi \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {Neg (sub 0 t P)} = set (Neg (sub 0 t P) # z)\<close>
+      using * by simp
+    ultimately show \<open>S \<union> {Neg (sub 0 t P)} \<in> ?C\<close>
+      by blast }
+
+  { fix P
+    assume \<open>Exi P \<in> S\<close>
+    have \<open>finite ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
+      by simp
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
+      using inf_param Diff_infinite_finite finite_compl infinite_UNIV_listI by blast
+    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
+      using infinite_imp_nonempty by blast
+    then have \<open>news x (P # z)\<close>
+      using Ball_set_list_all by auto
+    then have \<open>\<not> (\<stileturn> sub 0 (Fun x []) P # z)\<close>
+      using * \<open>Exi P \<in> S\<close> DeExi \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {sub 0 (Fun x []) P} = set (sub 0 (Fun x []) P # z)\<close>
+      using * by simp
+    ultimately show \<open>\<exists>x. S \<union> {sub 0 (Fun x []) P} \<in> ?C\<close>
+      by blast }
+
+  { fix P
+    assume \<open>Neg (Uni P) \<in> S\<close>
+    have \<open>finite ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
+      by simp
+    then have \<open>infinite (- ((\<Union>p \<in> set z. params p) \<union> params P))\<close>
+      using inf_param Diff_infinite_finite finite_compl infinite_UNIV_listI by blast
+    then obtain x where **: \<open>x \<in> - ((\<Union>p \<in> set z. params p) \<union> params P)\<close>
+      using infinite_imp_nonempty by blast
+    then have \<open>news x (P # z)\<close>
+      using Ball_set_list_all by auto
+    then have \<open>\<not> (\<stileturn> Neg (sub 0 (Fun x []) P) # z)\<close>
+      using * \<open>Neg (Uni P) \<in> S\<close> DeUni \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast
+    moreover have \<open>S \<union> {Neg (sub 0 (Fun x []) P)} = set (Neg (sub 0 (Fun x []) P) # z)\<close>
+      using * by simp
+    ultimately show \<open>\<exists>x. S \<union> {Neg (sub 0 (Fun x []) P)} \<in> ?C\<close>
+      by blast }
+qed
+
+theorem tableau_completeness':
+  assumes \<open>closed 0 p\<close>
+    and \<open>list_all (closed 0) z\<close>
+    and mod: \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  shows \<open>tableauproof z p\<close>
+proof (rule ccontr)
+  fix e
+  assume \<open>\<not> tableauproof z p\<close>
+
+  let ?S = \<open>set (compl p # z)\<close>
+  let ?C = \<open>{set (z :: fm list) | z. \<not> (\<stileturn> z)}\<close>
+  let ?f = HFun
+  let ?g = \<open>(\<lambda>a ts. Pre a (tms_of_htms ts) \<in> Extend ?S
+              (mk_finite_char (mk_alt_consistency (close ?C))) from_nat)\<close>
+
+  from \<open>list_all (closed 0) z\<close>
+  have \<open>\<forall>p \<in> set z. closed 0 p\<close>
+    by (simp add: list_all_iff)
+
+  { fix x
+    assume \<open>x \<in> ?S\<close>
+    moreover have \<open>consistency ?C\<close>
+      using TCd_consistency by blast
+    moreover have \<open>?S \<in> ?C\<close>
+      using \<open>\<not> tableauproof z p\<close> unfolding tableauproof_def by blast
+    moreover have \<open>infinite (- (\<Union>p \<in> ?S. params p))\<close>
+      by (simp add: Compl_eq_Diff_UNIV infinite_UNIV_listI)
+    moreover note \<open>closed 0 p\<close> \<open>\<forall>p \<in> set z. closed 0 p\<close> \<open>x \<in> ?S\<close>
+    then have \<open>closed 0 x\<close>
+      using closed_compl by auto
+    ultimately have \<open>semantics e ?f ?g x\<close>
+      using model_existence by simp }
+  then have \<open>list_all (semantics e ?f ?g) (compl p # z)\<close>
+    by (simp add: list_all_iff)
+  moreover have \<open>semantics e ?f ?g (compl p)\<close>
+    using calculation by simp
+  moreover have \<open>list_all (semantics e ?f ?g) z\<close>
+    using calculation by simp
+  then have \<open>semantics e ?f ?g p\<close>
+    using mod by blast
+  ultimately show False
+    using semantics_compl by blast
+qed
+
+subsection \<open>Open Formulas\<close>
+
+lemma TC_psubst: \<open>\<stileturn> z \<Longrightarrow> \<stileturn> map (psubst f) z\<close>
+proof (induct arbitrary: f rule: TC.induct)
+  case (Extra p z)
+  then show ?case
+    by (metis TC.Extra list.simps(9) member_psubst)
+next
+  case (DeExi n p z)
+  let ?params = \<open>params p \<union>(\<Union>p \<in> set z. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain fresh where *: \<open>fresh \<notin> ?params \<union> {n} \<union> image f ?params\<close>
+    using ex_new_if_finite
+    by (metis finite.emptyI finite.insertI finite_UnI finite_imageI infinite_UNIV_listI)
+
+  let ?f = \<open>f(n := fresh)\<close>
+
+  have \<open>news n (p # z)\<close>
+    using DeExi by blast
+  then have \<open>new fresh (psubst ?f p)\<close> \<open>news fresh (map (psubst ?f) z)\<close>
+    using * new_psubst_image news_psubst by (fastforce simp add: image_Un)+
+  then have z: \<open>map (psubst ?f) z = map (psubst f) z\<close>
+    using DeExi allnew new_params
+    by (metis (mono_tags, lifting) Ball_set map_eq_conv news.simps(2) psubst_upd)
+
+  have \<open>\<stileturn> psubst ?f (sub 0 (Fun n []) p) # map (psubst ?f) z\<close>
+    using DeExi by (metis list.simps(9))
+  then have \<open>\<stileturn> sub 0 (Fun fresh []) (psubst ?f p) # map (psubst ?f) z\<close>
+    by simp
+  moreover have \<open>news fresh (map (psubst ?f) (p # z))\<close>
+    using \<open>new fresh (psubst ?f p)\<close> \<open>news fresh (map (psubst ?f) z)\<close> by simp
+  then have \<open>news fresh (psubst ?f p # map (psubst ?f) z)\<close>
+    by simp
+  ultimately have \<open>\<stileturn> map (psubst ?f) (Exi p # z)\<close>
+    using TC.DeExi by fastforce
+  then show ?case
+    using DeExi z by simp
+next
+  case (DeUni n p z)
+  let ?params = \<open>params p \<union>(\<Union>p \<in> set z. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain fresh where *: \<open>fresh \<notin> ?params \<union> {n} \<union> image f ?params\<close>
+    using ex_new_if_finite
+    by (metis finite.emptyI finite.insertI finite_UnI finite_imageI infinite_UNIV_listI)
+
+  let ?f = \<open>f(n := fresh)\<close>
+
+  have \<open>news n (p # z)\<close>
+    using DeUni by blast
+  then have \<open>new fresh (psubst ?f p)\<close> \<open>news fresh (map (psubst ?f) z)\<close>
+    using * new_psubst_image news_psubst by (fastforce simp add: image_Un)+
+  then have z: \<open>map (psubst ?f) z = map (psubst f) z\<close>
+    using DeUni allnew new_params
+    by (metis (mono_tags, lifting) Ball_set map_eq_conv news.simps(2) psubst_upd)
+
+  have \<open>\<stileturn> psubst ?f (Neg (sub 0 (Fun n []) p)) # map (psubst ?f) z\<close>
+    using DeUni by (metis list.simps(9))
+  then have \<open>\<stileturn> Neg (sub 0 (Fun fresh []) (psubst ?f p)) # map (psubst ?f) z\<close>
+    by simp
+  moreover have \<open>news fresh (map (psubst ?f) (p # z))\<close>
+    using \<open>new fresh (psubst ?f p)\<close> \<open>news fresh (map (psubst ?f) z)\<close> by simp
+  then have \<open>news fresh (psubst ?f p # map (psubst ?f) z)\<close>
+    by simp
+  ultimately have \<open>\<stileturn> map (psubst ?f) (Neg (Uni p) # z)\<close>
+    using TC.DeUni by fastforce
+  then show ?case
+    using DeUni z by simp
+qed (auto intro: TC.intros)
+
+lemma subcs_map: \<open>subcs c s z = map (subc c s) z\<close>
+  by (induct z) simp_all
+
+lemma TC_subcs: \<open>\<stileturn> z \<Longrightarrow> \<stileturn> subcs c s z\<close>
+proof (induct arbitrary: c s rule: TC.induct)
+  case (Extra p z)
+  then show ?case
+    by (metis TC.Extra member_subc subcs.simps(2))
+next
+  case (GaUni t p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> params_term t \<union> {c}\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain fresh where fresh: \<open>fresh \<notin> ?params\<close>
+    by (meson ex_new_if_finite infinite_UNIV_listI)
+
+  let ?f = \<open>id(c := fresh)\<close>
+  let ?g = \<open>id(fresh := c)\<close>
+  let ?s = \<open>psubst_term ?f s\<close>
+
+  have s: \<open>psubst_term ?g ?s = s\<close>
+    using fresh psubst_new_away' by simp
+
+  have \<open>\<forall>x \<in> (\<Union>p \<in> set (p # z). params p). x \<noteq> c \<longrightarrow> ?g x \<noteq> ?g c\<close>
+    using fresh by auto
+  moreover have \<open>map (psubst ?g) (Uni p # z) = Uni p # z\<close>
+    using fresh by (induct z) simp_all
+  ultimately have z: \<open>map (psubst ?g) (subcs c ?s (Uni p # z)) = subcs c s (Uni p # z)\<close>
+    using s by simp
+
+  have \<open>new_term c ?s\<close>
+    using fresh psubst_new_free' by simp
+  then have \<open>\<stileturn> subc c ?s (sub 0 (subc_term c ?s t) p) # subcs c ?s z\<close>
+    using GaUni new_subc_put by (metis subcs.simps(2))
+  moreover have \<open>new_term c (subc_term c ?s t)\<close>
+    using \<open>new_term c ?s\<close> new_subc_same' by blast
+  ultimately have \<open>\<stileturn> sub 0 (subc_term c ?s t) (subc c (inc_term ?s) p) # subcs c ?s z\<close>
+    by simp
+  moreover have \<open>Uni (subc c (inc_term ?s) p) \<in> set (subcs c ?s (Uni p # z))\<close>
+    by simp
+  ultimately have \<open>\<stileturn> subcs c ?s (Uni p # z)\<close>
+    using TC.GaUni by simp
+  then have \<open>\<stileturn> map (psubst ?g) (subcs c ?s (Uni p # z))\<close>
+    using TC_psubst by blast
+  then show \<open>\<stileturn> subcs c s (Uni p # z)\<close>
+    using z by simp
+next
+  case (GaExi t p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> params_term t \<union> {c}\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain fresh where fresh: \<open>fresh \<notin> ?params\<close>
+    by (meson ex_new_if_finite infinite_UNIV_listI)
+
+  let ?f = \<open>id(c := fresh)\<close>
+  let ?g = \<open>id(fresh := c)\<close>
+  let ?s = \<open>psubst_term ?f s\<close>
+
+  have s: \<open>psubst_term ?g ?s = s\<close>
+    using fresh psubst_new_away' by simp
+
+  have \<open>\<forall>x \<in> (\<Union>p \<in> set (p # z). params p). x \<noteq> c \<longrightarrow> ?g x \<noteq> ?g c\<close>
+    using fresh by auto
+  moreover have \<open>map (psubst ?g) (Neg (Exi p) # z) = Neg (Exi p) # z\<close>
+    using fresh by (induct z) simp_all
+  ultimately have z: \<open>map (psubst ?g) (subcs c ?s (Neg (Exi p) # z)) = subcs c s (Neg (Exi p) # z)\<close>
+    using s by simp
+
+  have \<open>new_term c ?s\<close>
+    using fresh psubst_new_free' by simp
+  then have \<open>\<stileturn> Neg (subc c ?s (sub 0 (subc_term c ?s t) p)) # subcs c ?s z\<close>
+    using GaExi new_subc_put by (metis subc.simps(1) subc.simps(3) subcs.simps(2))
+  moreover have \<open>new_term c (subc_term c ?s t)\<close>
+    using \<open>new_term c ?s\<close> new_subc_same' by blast
+  ultimately have \<open>\<stileturn> Neg (sub 0 (subc_term c ?s t) (subc c (inc_term ?s) p)) # subcs c ?s z\<close>
+    by simp
+  moreover have \<open>Neg (Exi (subc c (inc_term ?s) p)) \<in> set (subcs c ?s (Neg (Exi p) # z))\<close>
+    by simp
+  ultimately have \<open>\<stileturn> subcs c ?s (Neg (Exi p) # z)\<close>
+    using TC.GaExi by simp
+  then have \<open>\<stileturn> map (psubst ?g) (subcs c ?s (Neg (Exi p) # z))\<close>
+    using TC_psubst by blast
+  then show \<open>\<stileturn> subcs c s (Neg (Exi p) # z)\<close>
+    using z by simp
+next
+  case (DeExi n p z)
+  then show ?case
+  proof (cases \<open>c = n\<close>)
+    case True
+    then have \<open>\<stileturn> Exi p # z\<close>
+      using DeExi TC.DeExi by blast
+    moreover have \<open>new c p\<close> and \<open>news c z\<close>
+      using DeExi True by simp_all
+    ultimately show ?thesis
+      by simp
+  next
+    case False
+    let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> {c} \<union> {n}\<close>
+
+    have \<open>finite ?params\<close>
+      by simp
+    then obtain fresh where fresh: \<open>fresh \<notin> ?params\<close>
+      by (meson ex_new_if_finite infinite_UNIV_listI)
+
+    let ?s = \<open>psubst_term (id(n := fresh)) s\<close>
+    let ?f = \<open>id(n := fresh, fresh := n)\<close>
+
+    have f: \<open>\<forall>x \<in> ?params. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
+      using fresh by simp
+
+    have \<open>new_term n ?s\<close>
+      using fresh psubst_new_free' by simp
+    then have \<open>psubst_term ?f ?s = psubst_term (id(fresh := n)) ?s\<close>
+      using new_params' fun_upd_twist(1) psubst_upd'(1) by metis
+    then have psubst_s: \<open>psubst_term ?f ?s = s\<close>
+      using fresh psubst_new_away' by simp
+
+    have \<open>?f c = c\<close> and \<open>new_term c (Fun fresh [])\<close>
+      using False fresh by auto
+
+    have \<open>psubst ?f (subc c ?s (sub 0 (Fun n []) p)) =
+      subc (?f c) (psubst_term ?f ?s) (psubst ?f (sub 0 (Fun n []) p))\<close>
+      using subc_psubst by simp
+    also have \<open>\<dots> = subc c s (sub 0 (Fun fresh []) (psubst ?f p))\<close>
+      using \<open>?f c = c\<close> psubst_sub psubst_s by simp
+    also have \<open>\<dots> = subc c s (sub 0 (Fun fresh []) p)\<close>
+      using DeExi fresh by simp
+    finally have psubst_A: \<open>psubst ?f (subc c ?s (sub 0 (Fun n []) p)) =
+        sub 0 (Fun fresh []) (subc c (inc_term s) p)\<close>
+      using \<open>new_term c (Fun fresh [])\<close> by simp
+
+    have \<open>news n z\<close>
+      using DeExi by simp
+    moreover have \<open>news fresh z\<close>
+      using fresh by (induct z) simp_all
+    ultimately have \<open>map (psubst ?f) z = z\<close>
+      by (induct z) simp_all
+    moreover have \<open>\<forall>x \<in> \<Union>p \<in> set z. params p. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
+      by auto
+    ultimately have psubst_G: \<open>map (psubst ?f) (subcs c ?s z) = subcs c s z\<close>
+      using \<open>?f c = c\<close> psubst_s by simp
+
+    have \<open>\<stileturn> subc c ?s (sub 0 (Fun n []) p) # subcs c ?s z\<close>
+      using DeExi by simp
+    then have \<open>\<stileturn> psubst ?f (subc c ?s (sub 0 (Fun n []) p)) # map (psubst ?f) (subcs c ?s z)\<close>
+      using TC_psubst DeExi.hyps(3) by (metis map_eq_Cons_conv subcs.simps(2))
+    then have \<open>\<stileturn> psubst ?f (subc c ?s (sub 0 (Fun n []) p)) # subcs c s z\<close>
+      using psubst_G by simp
+    then have sub_A: \<open>\<stileturn> sub 0 (Fun fresh []) (subc c (inc_term s) p) # subcs c s z\<close>
+      using psubst_A by simp
+
+    have \<open>new_term fresh s\<close>
+      using fresh by simp
+    then have \<open>new_term fresh (inc_term s)\<close>
+      by simp
+    then have \<open>new fresh (subc c (inc_term s) p)\<close>
+      using fresh new_subc by simp
+    moreover have \<open>news fresh (subcs c s z)\<close>
+      using \<open>news fresh z\<close> \<open>new_term fresh s\<close> news_subcs by fast
+    ultimately show \<open>\<stileturn> subcs c s (Exi p # z)\<close>
+      using TC.DeExi sub_A by simp
+  qed
+next
+  case (DeUni n p z)
+  then show ?case
+  proof (cases \<open>c = n\<close>)
+    case True
+    then have \<open>\<stileturn> Neg (Uni p) # z\<close>
+      using DeUni TC.DeUni by blast
+    moreover have \<open>new c p\<close> and \<open>news c z\<close>
+      using DeUni True by simp_all
+    ultimately show ?thesis
+      by simp
+  next
+    case False
+    let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> params_term s \<union> {c} \<union> {n}\<close>
+
+    have \<open>finite ?params\<close>
+      by simp
+    then obtain fresh where fresh: \<open>fresh \<notin> ?params\<close>
+      by (meson ex_new_if_finite infinite_UNIV_listI)
+
+    let ?s = \<open>psubst_term (id(n := fresh)) s\<close>
+    let ?f = \<open>id(n := fresh, fresh := n)\<close>
+
+    have f: \<open>\<forall>x \<in> ?params. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
+      using fresh by simp
+
+    have \<open>new_term n ?s\<close>
+      using fresh psubst_new_free' by simp
+    then have \<open>psubst_term ?f ?s = psubst_term (id(fresh := n)) ?s\<close>
+      using new_params' fun_upd_twist(1) psubst_upd'(1) by metis
+    then have psubst_s: \<open>psubst_term ?f ?s = s\<close>
+      using fresh psubst_new_away' by simp
+
+    have \<open>?f c = c\<close> and \<open>new_term c (Fun fresh [])\<close>
+      using False fresh by auto
+
+    have \<open>psubst ?f (subc c ?s (Neg (sub 0 (Fun n []) p))) =
+      subc (?f c) (psubst_term ?f ?s) (psubst ?f (Neg (sub 0 (Fun n []) p)))\<close>
+      using subc_psubst by simp
+    also have \<open>\<dots> = subc c s (Neg (sub 0 (Fun fresh []) (psubst ?f p)))\<close>
+      using \<open>?f c = c\<close> psubst_sub psubst_s by simp
+    also have \<open>\<dots> = subc c s (Neg (sub 0 (Fun fresh []) p))\<close>
+      using DeUni fresh by simp
+    finally have psubst_A: \<open>psubst ?f (subc c ?s (Neg (sub 0 (Fun n []) p))) =
+        Neg (sub 0 (Fun fresh []) (subc c (inc_term s) p))\<close>
+      using \<open>new_term c (Fun fresh [])\<close> by simp
+
+    have \<open>news n z\<close>
+      using DeUni by simp
+    moreover have \<open>news fresh z\<close>
+      using fresh by (induct z) simp_all
+    ultimately have \<open>map (psubst ?f) z = z\<close>
+      by (induct z) simp_all
+    moreover have \<open>\<forall>x \<in> \<Union>p \<in> set z. params p. x \<noteq> c \<longrightarrow> ?f x \<noteq> ?f c\<close>
+      by auto
+    ultimately have psubst_G: \<open>map (psubst ?f) (subcs c ?s z) = subcs c s z\<close>
+      using \<open>?f c = c\<close> psubst_s by simp
+
+    have \<open>\<stileturn> subc c ?s (Neg (sub 0 (Fun n []) p)) # subcs c ?s z\<close>
+      using DeUni by simp
+    then have \<open>\<stileturn> psubst ?f (subc c ?s (Neg (sub 0 (Fun n []) p))) # map (psubst ?f) (subcs c ?s z)\<close>
+      using TC_psubst DeUni.hyps(3) by (metis map_eq_Cons_conv subcs.simps(2))
+    then have \<open>\<stileturn> psubst ?f (subc c ?s (Neg (sub 0 (Fun n []) p))) # subcs c s z\<close>
+      using psubst_G by simp
+    then have sub_A: \<open>\<stileturn> Neg (sub 0 (Fun fresh []) (subc c (inc_term s) p)) # subcs c s z\<close>
+      using psubst_A by simp
+
+    have \<open>new_term fresh s\<close>
+      using fresh by simp
+    then have \<open>new_term fresh (inc_term s)\<close>
+      by simp
+    then have \<open>new fresh (subc c (inc_term s) p)\<close>
+      using fresh new_subc by simp
+    moreover have \<open>news fresh (subcs c s z)\<close>
+      using \<open>news fresh z\<close> \<open>new_term fresh s\<close> news_subcs by fast
+    ultimately show \<open>\<stileturn> subcs c s (Neg (Uni p) # z)\<close>
+      using TC.DeUni sub_A by simp
+  qed
+qed (auto intro: TC.intros)
+
+lemma TC_map_subc: \<open>\<stileturn> z \<Longrightarrow> \<stileturn> map (subc c s) z\<close>
+  using subcs_map TC_subcs by simp
+
+lemma ex_all_closed: \<open>\<exists>m. list_all (closed m) z\<close>
+proof (induct z)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a z)
+  then show ?case
+    unfolding list_all_def
+    using ex_closed closed_mono
+    by (metis Ball_set list_all_simps(1) nat_le_linear)
+qed
+
+primrec sub_consts :: \<open>id list \<Rightarrow> fm => fm\<close> where
+  \<open>sub_consts [] p = p\<close> |
+  \<open>sub_consts (c # cs) p = sub_consts cs (sub (length cs) (Fun c []) p)\<close>
+
+lemma valid_sub_consts:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p\<close>
+  shows \<open>semantics (e :: _ => 'a) f g (sub_consts cs p)\<close>
+  using assms by (induct cs arbitrary: p) simp_all
+
+lemma closed_sub' [simp]:
+  assumes \<open>k \<le> m\<close>
+  shows
+    \<open>closed_term (Suc m) t = closed_term m (sub_term k (Fun c []) t)\<close>
+    \<open>closed_list (Suc m) l = closed_list m (sub_list k (Fun c []) l)\<close>
+  using assms by (induct t and l rule: closed_term.induct closed_list.induct) auto
+
+lemma closed_sub: \<open>k \<le> m \<Longrightarrow> closed (Suc m) p = closed m (sub k (Fun c []) p)\<close>
+  by (induct p arbitrary: m k) simp_all
+
+lemma closed_sub_consts: \<open>length cs = k \<Longrightarrow> closed m (sub_consts cs p) = closed (m + k) p\<close>
+  using closed_sub by (induct cs arbitrary: k p) auto
+
+lemma map_sub_consts_Nil: \<open>map (sub_consts []) z = z\<close>
+  by (induct z) simp_all
+
+primrec conjoin :: \<open>fm list \<Rightarrow> fm\<close> where
+  \<open>conjoin [] = Truth\<close> |
+  \<open>conjoin (p # z) = Con p (conjoin z)\<close>
+
+lemma semantics_conjoin: \<open>list_all (semantics e f g) z = semantics e f g (conjoin z)\<close>
+  by (induct z) simp_all
+
+lemma valid_sub:
+  fixes e :: \<open>nat \<Rightarrow> 'a\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p \<longrightarrow> semantics e f g q\<close>
+  shows \<open>semantics e f g (sub m t p) \<longrightarrow> semantics e f g (sub m t q)\<close>
+  using assms by simp
+
+lemma semantics_sub_consts:
+  fixes e :: \<open>nat \<Rightarrow> 'a\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p \<longrightarrow> semantics e f g q\<close>
+    and \<open>semantics e f g (sub_consts cs p)\<close>
+  shows \<open>semantics e f g (sub_consts cs q)\<close>
+  using assms
+proof (induct cs arbitrary: p q)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons c cs)
+  then show ?case
+    using substitute by (metis sub_consts.simps(2))
+qed
+
+lemma sub_consts_Con [simp]: \<open>sub_consts cs (Con p q) = Con (sub_consts cs p) (sub_consts cs q)\<close>
+  by (induct cs arbitrary: p q) simp_all
+
+lemma sub_consts_conjoin:
+  \<open>semantics e f g (sub_consts cs (conjoin z)) = semantics e f g (conjoin (map (sub_consts cs) z))\<close>
+proof (induct z)
+  case Nil
+  then show ?case
+    by (induct cs) simp_all
+next
+  case (Cons p z)
+  then show ?case
+    using sub_consts_Con by simp
+qed
+
+lemma all_sub_consts_conjoin:
+  \<open>list_all (semantics e f g) (map (sub_consts cs) z) = semantics e f g (sub_consts cs (conjoin z))\<close>
+  by (induct z) (simp_all add: valid_sub_consts)
+
+lemma valid_all_sub_consts:
+  fixes e :: \<open>nat \<Rightarrow> 'a\<close>
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  shows \<open>list_all (semantics e f g) (map (sub_consts cs) z) \<longrightarrow> semantics e f g (sub_consts cs p)\<close>
+  using assms semantics_conjoin semantics_sub_consts all_sub_consts_conjoin by metis
+
+lemma TC_vars_for_consts: \<open>\<stileturn> z \<Longrightarrow> \<stileturn> map (\<lambda>p. vars_for_consts p cs) z\<close>
+proof (induct cs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons c cs)
+  have \<open>(\<stileturn> map (\<lambda>p. vars_for_consts p (c # cs)) z) =
+      (\<stileturn> map (\<lambda>p. subc c (Var (length cs)) (vars_for_consts p cs)) z)\<close>
+    by simp
+  also have \<open>\<dots> = (\<stileturn> map (subc c (Var (length cs)) o (\<lambda>p. vars_for_consts p cs)) z)\<close>
+    unfolding comp_def by simp
+  also have \<open>\<dots> = (\<stileturn> map (subc c (Var (length cs))) (map (\<lambda>p. vars_for_consts p cs) z))\<close>
+    by simp
+  finally show ?case
+    using Cons TC_map_subc by blast
+qed
+
+lemma vars_for_consts_sub_consts:
+  \<open>closed (length cs) p \<Longrightarrow> list_all (\<lambda>c. new c p) cs \<Longrightarrow> distinct cs \<Longrightarrow>
+   vars_for_consts (sub_consts cs p) cs = p\<close>
+  using sub_new_all closed_sub
+  by (induct cs arbitrary: p) (auto simp: list_all_def)
+
+lemma all_vars_for_consts_sub_consts:
+  \<open>list_all (closed (length cs)) z \<Longrightarrow> list_all (\<lambda>c. list_all (new c) z) cs \<Longrightarrow> distinct cs \<Longrightarrow>
+   map (\<lambda>p. vars_for_consts p cs) (map (sub_consts cs) z) = z\<close>
+  using vars_for_consts_sub_consts unfolding list_all_def
+  by (induct z) simp_all
+
+lemma new_conjoin: \<open>new c (conjoin z) \<Longrightarrow> list_all (new c) z\<close>
+  by (induct z) simp_all
+
+lemma all_fresh_constants:
+  \<open>\<exists>cs. length cs = m \<and> list_all (\<lambda>c. list_all (new c) z) cs \<and> distinct cs\<close>
+proof -
+  obtain cs where \<open>length cs = m\<close> \<open>list_all (\<lambda>c. new c (conjoin z)) cs\<close> \<open>distinct cs\<close>
+    using fresh_constants by blast
+  then show ?thesis
+    using new_conjoin unfolding list_all_def by blast
+qed
+
+lemma sub_consts_Neg: \<open>sub_consts cs (Neg p) = Neg (sub_consts cs p)\<close>
+  by (induct cs arbitrary: p) simp_all
+
+lemma sub_compl: \<open>sub m t (compl p) = compl (sub m t p)\<close>
+proof (induct p arbitrary: m t)
+  case (Imp p1 p2)
+  then show ?case
+  proof (cases \<open>p2 = Falsity\<close>)
+    case True
+    then show ?thesis
+      using Imp by simp
+  next
+    case False
+    then have \<open>sub m t p2 \<noteq> Falsity\<close>
+      by (induct p2) simp_all
+    have \<open>sub m t (compl (Imp p1 p2)) = sub m t (Neg (Imp p1 p2))\<close>
+      using False compl by (metis fm.inject(2))
+    also have \<open>\<dots> = Neg (Imp (sub m t p1) (sub m t p2))\<close>
+      by simp
+    also have \<open>\<dots> = compl (Imp (sub m t p1) (sub m t p2))\<close>
+      using \<open>sub m t p2 \<noteq> Falsity\<close> compl by (metis fm.inject(2))
+    finally show ?thesis
+      by simp
+  qed
+qed simp_all
+
+lemma sub_consts_compl: \<open>sub_consts cs (compl p) = compl (sub_consts cs p)\<close>
+  by (induct cs arbitrary: p) (simp_all add: sub_compl)
+
+subsection \<open>Completeness\<close>
+
+theorem tableau_completeness:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  shows \<open>tableauproof z p\<close>
+proof -
+  obtain m where *: \<open>list_all (closed m) (p # z)\<close>
+    using ex_all_closed by blast
+  moreover obtain cs :: \<open>id list\<close> where **:
+    \<open>length cs = m\<close>
+    \<open>distinct cs\<close>
+    \<open>list_all (\<lambda>c. list_all (new c) (p # z)) cs\<close>
+    using all_fresh_constants by blast
+  ultimately have \<open>sentence (sub_consts cs p)\<close>
+    using closed_sub_consts by simp
+  moreover have \<open>list_all sentence (map (sub_consts cs) z)\<close>
+    using closed_sub_consts * \<open>length cs = m\<close> by (induct z) simp_all
+
+  moreover have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) (map (sub_consts cs) z) \<longrightarrow>
+    semantics e f g (sub_consts cs p)\<close>
+    using assms valid_all_sub_consts by blast
+  ultimately have \<open>\<stileturn> compl (sub_consts cs p) # map (sub_consts cs) z\<close>
+    using tableau_completeness' unfolding tableauproof_def by simp
+  then have \<open>\<stileturn> map (sub_consts cs) (compl p # z)\<close>
+    using sub_consts_compl by simp
+  then have \<open>\<stileturn> map (\<lambda>p. vars_for_consts p cs) (map (sub_consts cs) (compl p # z))\<close>
+    using TC_vars_for_consts by blast
+  moreover have \<open>list_all (closed (length cs)) (compl p # z)\<close>
+    using * ** closed_compl by auto
+  moreover have \<open>list_all (\<lambda>c. list_all (new c) (compl p # z)) cs\<close>
+    using ** new_compl unfolding list_all_def by simp
+  ultimately have \<open>\<stileturn> compl p # z\<close>
+    using all_vars_for_consts_sub_consts[where z=\<open>compl p # z\<close>] ** by simp
+  then show ?thesis
+    unfolding tableauproof_def .
+qed
+
+theorem complete:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. semantics e f g p\<close>
+  shows \<open>\<stileturn> [compl p]\<close>
+  using assms tableau_completeness unfolding tableauproof_def by simp
+
+lemma TC_compl_compl:
+  assumes \<open>\<stileturn> compl (compl p) # z\<close>
+  shows \<open>\<stileturn> p # z\<close>
+proof -
+  have \<open>\<exists>p \<in> set (compl (compl p) # z). \<not> semantics e f g p\<close> for e :: \<open>nat \<Rightarrow> htm\<close> and f g
+    using TC_soundness assms by blast
+  then have \<open>list_all (semantics e f g) z \<longrightarrow> semantics e f g (compl p)\<close>
+    for e :: \<open>nat \<Rightarrow> htm\<close> and f g
+    unfolding list_all_def using compl by (metis semantics.simps(3) set_ConsD)
+  then obtain q where
+    \<open>compl q = p\<close>
+    \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g q\<close>
+    using compl_compl by (metis compl.simps(1))
+  then have \<open>\<stileturn> compl q # z\<close>
+    using tableau_completeness unfolding tableauproof_def by blast
+  then show ?thesis
+    using \<open>compl q = p\<close> by blast
+qed
+
+lemma TC_Neg_Neg:
+  assumes \<open>\<stileturn> Neg (Neg p) # z\<close>
+  shows \<open>\<stileturn> p # z\<close>
+proof -
+  have \<open>\<exists>p \<in> set (Neg (Neg p) # z). \<not> semantics e f g p\<close> for e :: \<open>nat \<Rightarrow> htm\<close> and f g
+    using TC_soundness assms by blast
+  then have \<open>list_all (semantics e f g) z \<longrightarrow> semantics e f g (compl p)\<close>
+    for e :: \<open>nat \<Rightarrow> htm\<close> and f g
+    unfolding list_all_def using compl by (metis semantics.simps(3) set_ConsD)
+  then obtain q where
+    \<open>compl q = p\<close>
+    \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g q\<close>
+    using compl_compl by (metis compl.simps(1))
+  then have \<open>\<stileturn> compl q # z\<close>
+    using tableau_completeness unfolding tableauproof_def by blast
+  then show ?thesis
+    using \<open>compl q = p\<close> by blast
+qed
+
+lemma TC_complete:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set z. \<not> semantics e f g p\<close>
+  shows \<open>\<stileturn> z\<close>
+proof -
+  have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set z. semantics e f g (compl p)\<close>
+    using assms semantics_compl by fast
+  then obtain p where
+    \<open>p \<in> set z\<close>
+    \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. (\<forall>p \<in> set z. (semantics e f g) p) \<longrightarrow> semantics e f g (compl p)\<close>
+    using assms by blast
+  then have \<open>\<stileturn> compl (compl p) # z\<close>
+    using tableau_completeness Ball_set unfolding tableauproof_def by metis
+  then have \<open>\<stileturn> p # z\<close>
+    using TC_compl_compl by simp
+  with \<open>p \<in> set z\<close> show ?thesis
+    using TC.Extra member_set by simp
+qed
+
+lemma Order': \<open>\<stileturn> z \<Longrightarrow> set z \<subseteq> set G' \<Longrightarrow> \<stileturn> G'\<close>
+  using TC_soundness in_mono TC_complete by metis
+
+lemma Swap': \<open>\<stileturn> q # p # z \<Longrightarrow> \<stileturn> p # q # z\<close>
+  using Order' by (simp add: insert_commute)
+
+lemma AlNegNeg': \<open>\<stileturn> p # z \<Longrightarrow> \<stileturn> Neg (Neg p) # z\<close>
+  using AlImp Order' Swap' set_subset_Cons by metis
+
+section \<open>Sequent Calculus\<close> \<comment> \<open>NaDeA variant\<close>
+
+inductive SC :: \<open>fm list \<Rightarrow> bool\<close> (\<open>\<turnstile> _\<close> 0) where
+  Dummy: \<open>\<turnstile> Truth # z\<close> |
+  Basic: \<open>\<turnstile> Pre i l # Neg (Pre i l) # z\<close> |
+  AlImp: \<open>\<turnstile> Neg p # q # z \<Longrightarrow> \<turnstile> Imp p q # z\<close> |
+  AlDis: \<open>\<turnstile> p # q # z \<Longrightarrow> \<turnstile> Dis p q # z\<close> |
+  AlCon: \<open>\<turnstile> Neg p # Neg q # z \<Longrightarrow> \<turnstile> Neg (Con p q) # z\<close> |
+  BeImp: \<open>\<turnstile> p # z \<Longrightarrow> \<turnstile> Neg q # z \<Longrightarrow> \<turnstile> Neg (Imp p q) # z\<close> |
+  BeDis: \<open>\<turnstile> Neg p # z \<Longrightarrow> \<turnstile> Neg q # z \<Longrightarrow> \<turnstile> Neg (Dis p q) # z\<close> |
+  BeCon: \<open>\<turnstile> p # z \<Longrightarrow> \<turnstile> q # z \<Longrightarrow> \<turnstile> Con p q # z\<close> |
+  GaExi: \<open>\<turnstile> sub 0 t p # z \<Longrightarrow> \<turnstile> Exi p # z\<close> |
+  GaUni: \<open>\<turnstile> Neg (sub 0 t p) # z \<Longrightarrow> \<turnstile> Neg (Uni p) # z\<close> |
+  DeExi: \<open>\<turnstile> Neg (sub 0 (Fun c []) p) # z \<Longrightarrow> news c (p # z) \<Longrightarrow> \<turnstile> Neg (Exi p) # z\<close> |
+  DeUni: \<open>\<turnstile> sub 0 (Fun c []) p # z \<Longrightarrow> news c (p # z) \<Longrightarrow> \<turnstile> Uni p # z\<close> |
+  Extra: \<open>\<turnstile> p # z \<Longrightarrow> member p z \<Longrightarrow> \<turnstile> z\<close>
+
+lemma AlNegNeg: \<open>\<turnstile> p # z \<Longrightarrow> \<turnstile> Neg (Neg p) # z\<close>
+proof -
+  assume \<open>\<turnstile> p # z\<close>
+  with BeImp show ?thesis
+    using Dummy .
+qed
+
+lemma psubst_new_sub':
+  \<open>new_term n t \<Longrightarrow> psubst_term (id(n := m)) (sub_term k (Fun n []) t) = sub_term k (Fun m []) t\<close>
+  \<open>new_list n l \<Longrightarrow> psubst_list (id(n := m)) (sub_list k (Fun n []) l) = sub_list k (Fun m []) l\<close>
+  by (induct t and l rule: sub_term.induct sub_list.induct) auto
+
+lemma psubst_new_sub: \<open>new n p \<Longrightarrow> psubst (id(n := m)) (sub k (Fun n []) p) = sub k (Fun m []) p\<close>
+  using psubst_new_sub' by (induct p) simp_all
+
+lemma SC_psubst: \<open>\<turnstile> z \<Longrightarrow> \<turnstile> map (psubst f) z\<close>
+proof (induct arbitrary: f rule: SC.induct)
+  case (DeUni n p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n} \<union> image f ?params\<close>
+    using ex_new_if_finite
+    by (metis finite.emptyI finite.insertI finite_UnI finite_imageI infinite_UNIV_listI)
+
+  let ?f = \<open>f(n := m)\<close>
+  let ?G = \<open>map (psubst ?f) z\<close>
+
+  have z: \<open>?G = map (psubst f) z\<close>
+    using \<open>news n (p # z)\<close> by (induct z) simp_all
+
+  have \<open>\<turnstile> psubst ?f (sub 0 (Fun n []) p) # ?G\<close>
+    using DeUni by (metis Cons_eq_map_conv)
+  then have \<open>\<turnstile> sub 0 (Fun m []) (psubst f p) # ?G\<close>
+    using \<open>news n (p # z)\<close> by simp
+  moreover have \<open>news m (psubst f p # ?G)\<close>
+    using DeUni * Un_iff image_Un new_params news.simps(2) news_psubst psubst_image by metis
+  ultimately have \<open>\<turnstile> psubst f (Uni p) # ?G\<close>
+    using SC.DeUni by simp
+  then show ?case
+    using z by simp
+next
+  case (DeExi n p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n} \<union> image f ?params\<close>
+    using ex_new_if_finite
+    by (metis finite.emptyI finite.insertI finite_UnI finite_imageI infinite_UNIV_listI)
+
+  let ?f = \<open>f(n := m)\<close>
+  let ?G = \<open>map (psubst ?f) z\<close>
+
+  have z: \<open>?G = map (psubst f) z\<close>
+    using \<open>news n (p # z)\<close> by (induct z) simp_all
+
+  have \<open>\<turnstile> psubst ?f (Neg (sub 0 (Fun n []) p)) # ?G\<close>
+    using DeExi by (metis Cons_eq_map_conv)
+  then have \<open>\<turnstile> Neg (sub 0 (Fun m []) (psubst f p)) # ?G\<close>
+    using \<open>news n (p # z)\<close> by simp
+  moreover have \<open>news m (psubst f p # ?G)\<close>
+    using DeExi * Un_iff image_Un new_params news.simps(2) news_psubst psubst_image by metis
+  ultimately have \<open>\<turnstile> psubst f (Neg (Exi p)) # ?G\<close>
+    using SC.DeExi by simp
+  then show ?case
+    using z by simp
+next
+  case (Extra p z)
+  then show ?case
+    using SC.Extra member_psubst by fastforce
+qed (auto intro: SC.intros)
+
+lemma psubst_swap_twice':
+  \<open>psubst_term (id(n := m, m := n)) (psubst_term (id(n := m, m := n)) t) = t\<close>
+  \<open>psubst_list (id(n := m, m := n)) (psubst_list (id(n := m, m := n)) l) = l\<close>
+  by (induct t and l rule: psubst_term.induct psubst_list.induct) simp_all
+
+lemma psubst_swap_twice:
+  \<open>psubst (id(n := m, m := n)) (psubst (id(n := m, m := n)) p) = p\<close>
+  using psubst_swap_twice' by (induct p arbitrary: m n) simp_all
+
+lemma Order: \<open>\<turnstile> z \<Longrightarrow> set z \<subseteq> set G' \<Longrightarrow> \<turnstile> G'\<close>
+proof (induct arbitrary: G' rule: SC.induct)
+  case (Basic i l z)
+  then show ?case
+    using SC.Basic Extra member_set
+    by (metis list.set_intros(1) set_subset_Cons subsetCE)
+next
+  case (Dummy z)
+  then show ?case
+    using SC.Dummy Extra member_set
+    by (metis list.set_intros(1) subsetCE)
+next
+  case (AlCon p q z)
+  then have \<open>\<turnstile> Neg p # Neg q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)
+  then have \<open>\<turnstile> Neg (Con p q) # G'\<close>
+    using SC.AlCon by simp
+  then show ?case
+    using Extra AlCon
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (AlDis p q z)
+  then have \<open>\<turnstile> p # q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)
+  then have \<open>\<turnstile> Dis p q # G'\<close>
+    using SC.AlDis by simp
+  then show ?case
+    using Extra AlDis
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (AlImp p q z)
+  then have \<open>\<turnstile> Neg p # q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)
+  then have \<open>\<turnstile> Imp p q # G'\<close>
+    using SC.AlImp by simp
+  then show ?case
+    using Extra AlImp
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (BeCon p z q)
+  then have \<open>\<turnstile> p # G'\<close> \<open>\<turnstile> q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)+
+  then have \<open>\<turnstile> Con p q # G'\<close>
+    using SC.BeCon by simp
+  then show ?case
+    using Extra BeCon
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (BeDis p z q)
+  then have \<open>\<turnstile> Neg p # G'\<close> \<open>\<turnstile> Neg q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)+
+  then have \<open>\<turnstile> Neg (Dis p q) # G'\<close>
+    using SC.BeDis by simp
+  then show ?case
+    using Extra BeDis
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (BeImp p z q)
+  then have \<open>\<turnstile> p # G'\<close> \<open>\<turnstile> Neg q # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)+
+  then have \<open>\<turnstile> Neg (Imp p q) # G'\<close>
+    using SC.BeImp by simp
+  then show ?case
+    using Extra BeImp
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (GaExi t p z)
+  then have \<open>\<turnstile> sub 0 t p # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)
+  then have \<open>\<turnstile> Exi p # G'\<close>
+    using SC.GaExi by simp
+  then show ?case
+    using Extra GaExi
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (GaUni t p z)
+  then have \<open>\<turnstile> Neg (sub 0 t p) # G'\<close>
+    by (metis order_trans set_subset_Cons subset_cons)
+  then have \<open>\<turnstile> Neg (Uni p) # G'\<close>
+    using SC.GaUni by simp
+  then show ?case
+    using Extra GaUni
+    by (metis list.set_intros(1) member_set subsetCE)
+next
+  case (DeUni n p z)
+  then obtain m where \<open>news m (p # G')\<close>
+    using allnew fresh_constant new_conjoin by blast
+  then have \<open>news m (p # z)\<close>
+    using DeUni Ball_set allnew news.simps(2) subset_code(1) set_subset_Cons by metis
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>psubst ?f (sub 0 (Fun n []) p)\<close>
+  have p: \<open>?A = sub 0 (Fun m []) p\<close>
+    using \<open>news n (p # z)\<close> \<open>news m (p # G')\<close> psubst_new_sub by simp
+
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') (simp, metis list.simps(9))
+
+  have \<open>set z \<subseteq> set G'\<close>
+    using DeUni by simp
+  then have \<open>set z \<subseteq> set ?G'\<close>
+    using \<open>news n (p # z)\<close> \<open>news m (p # z)\<close>
+  proof (induct z)
+    case (Cons a z)
+    then have \<open>psubst ?f a = a\<close>
+      by simp
+    then show ?case
+      using Cons by (metis image_eqI insert_subset list.set(2) news.simps(2) set_map)
+  qed simp
+
+  have \<open>\<turnstile> sub 0 (Fun n []) p # ?G'\<close>
+    using \<open>set z \<subseteq> set ?G'\<close> DeUni by (metis subset_cons)
+  then have \<open>\<turnstile> ?A # map (psubst ?f) ?G'\<close>
+    using SC_psubst by (metis map_eq_Cons_conv)
+  then have \<open>\<turnstile> sub 0 (Fun m []) p # G'\<close>
+    using p G' by simp
+  then have \<open>\<turnstile> Uni p # G'\<close>
+    using SC.DeUni \<open>news m (p # G')\<close> by blast
+  then show ?case
+    using Extra \<open>set (Uni p # z) \<subseteq> set G'\<close> by simp
+next
+  case (DeExi n p z)
+  then obtain m where \<open>news m (p # G')\<close>
+    using allnew fresh_constant new_conjoin by blast
+  then have \<open>news m (p # z)\<close>
+    using DeExi Ball_set allnew news.simps(2) subset_code(1) set_subset_Cons by metis
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>psubst ?f (Neg (sub 0 (Fun n []) p))\<close>
+  have p: \<open>?A = Neg (sub 0 (Fun m []) p)\<close>
+    using \<open>news n (p # z)\<close> \<open>news m (p # G')\<close> psubst_new_sub by simp
+
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') (simp, metis list.simps(9))
+
+  have \<open>set z \<subseteq> set G'\<close>
+    using DeExi by simp
+  then have \<open>set z \<subseteq> set ?G'\<close>
+    using \<open>news n (p # z)\<close> \<open>news m (p # z)\<close>
+  proof (induct z)
+    case (Cons a z)
+    then have \<open>psubst ?f a = a\<close>
+      by simp
+    then show ?case
+      using Cons by (metis image_eqI insert_subset list.set(2) news.simps(2) set_map)
+  qed simp
+
+  have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # ?G'\<close>
+    using \<open>set z \<subseteq> set ?G'\<close> DeExi by (metis subset_cons)
+  then have \<open>\<turnstile> ?A # map (psubst ?f) ?G'\<close>
+    using SC_psubst by (metis Cons_eq_map_conv)
+  then have \<open>\<turnstile> Neg (sub 0 (Fun m []) p) # G'\<close>
+    using p G' by simp
+  then have \<open>\<turnstile> Neg (Exi p) # G'\<close>
+    using SC.DeExi \<open>news m (p # G')\<close> by blast
+  then show ?case
+    using Extra \<open>set (Neg (Exi p) # z) \<subseteq> set G'\<close> by simp
+next
+  case (Extra p z)
+  then show ?case
+    using SC.Extra member_set
+    by (metis set_rev_mp subset_cons)
+qed
+
+corollary \<open>\<turnstile> z \<Longrightarrow> set z = set G' \<Longrightarrow> \<turnstile> G'\<close>
+  using Order by simp
+
+lemma Shift: \<open>\<turnstile> rotate1 z \<Longrightarrow> \<turnstile> z\<close>
+  using Order by simp
+
+lemma Swap: \<open>\<turnstile> q # p # z \<Longrightarrow> \<turnstile> p # q # z\<close>
+  using Order by (simp add: insert_commute)
+
+lemma \<open>\<turnstile> [Neg (Pre ''A'' []) , Pre ''A'' []]\<close>
+  by (rule Shift, simp) (rule Basic)
+
+lemma \<open>\<turnstile> [Con (Pre ''A'' []) (Pre ''B'' []), Neg (Con (Pre ''B'' []) (Pre ''A'' []))]\<close>
+  apply (rule BeCon)
+   apply (rule Swap)
+   apply (rule AlCon)
+   apply (rule Shift, simp, rule Swap)
+   apply (rule Basic)
+  apply (rule Swap)
+  apply (rule AlCon)
+  apply (rule Shift, rule Shift, simp)
+  apply (rule Basic)
+  done
+
+subsection \<open>Soundness\<close>
+
+lemma SC_soundness: \<open>\<turnstile> z \<Longrightarrow> \<exists>p \<in> set z. semantics e f g p\<close>
+proof (induct arbitrary: f rule: SC.induct)
+  case (Extra p z)
+  then show ?case
+    by fastforce
+next
+  case (DeUni n p z)
+  then consider
+    \<open>\<forall>x. semantics e (f(n := \<lambda>w. x)) g (sub 0 (Fun n []) p)\<close> |
+    \<open>\<exists>x. \<exists>p \<in> set (Uni p # z). semantics e (f(n := \<lambda>w. x)) g p\<close>
+    by fastforce
+  then show ?case
+  proof cases
+    case 1
+    then have \<open>\<forall>x. semantics (put e 0 x) (f(n := \<lambda>w. x)) g p\<close>
+      by simp
+    then have \<open>\<forall>x. semantics (put e 0 x) f g p\<close>
+      using \<open>news n (p # z)\<close> by simp
+    then show ?thesis
+      by simp
+  next
+    case 2
+    then show ?thesis
+      using \<open>news n (p # z)\<close>
+      by (metis Ball_set allnew map new.simps(7) news.simps(2))
+  qed
+next
+  case (DeExi n p z)
+  then consider
+    \<open>\<forall>x. semantics e (f(n := \<lambda>w. x)) g (Neg (sub 0 (Fun n []) p))\<close> |
+    \<open>\<exists>x. \<exists>p \<in> set (Neg (Exi p) # z). semantics e (f(n := \<lambda>w. x)) g p\<close>
+    by fastforce
+  then show ?case
+  proof cases
+    case 1
+    then have \<open>\<forall>x. semantics (put e 0 x) (f(n := \<lambda>w. x)) g (Neg p)\<close>
+      by simp
+    then have \<open>\<forall>x. semantics (put e 0 x) f g (Neg p)\<close>
+      using \<open>news n (p # z)\<close> by simp
+    then show ?thesis
+      by simp
+  next
+    case 2
+    then show ?thesis
+      using \<open>news n (p # z)\<close>
+      by (metis Ball_set allnew map new.simps(1,3,6) news.simps(2))
+  qed
+qed auto
+
+subsection \<open>Tableau Equivalence\<close>
+
+lemma SC_remove_Falsity: \<open>\<turnstile> z \<Longrightarrow> set z - {Falsity} \<subseteq> set G' \<Longrightarrow> \<turnstile> G'\<close>
+proof (induct z arbitrary: G' rule: SC.induct)
+  case (Basic i l z)
+  then have \<open>{Pre i l, Neg (Pre i l)} \<union> (set z - {Falsity}) \<subseteq> set G'\<close>
+    using subset_insert_iff by auto
+  then show ?case
+    using SC.Basic Order by fastforce
+next
+  case (Dummy z)
+  then have \<open>{Truth} \<union> (set z - {Falsity}) \<subseteq> set G'\<close>
+    using subset_insert_iff by auto
+  then show ?case
+    using SC.Dummy Order by fastforce
+next
+  case (AlCon p q z)
+  then have *: \<open>Neg (Con p q) \<in> set G'\<close>
+    by auto
+
+  have \<open>set (Neg p # Neg q # z) - {Falsity} \<subseteq> set (Neg p # Neg q # G')\<close>
+    using AlCon by auto
+  then have \<open>\<turnstile> Neg p # Neg q # G'\<close>
+    using AlCon by simp
+  then have \<open>\<turnstile> Neg (Con p q) # G'\<close>
+    using SC.AlCon by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (AlDis p q z)
+  then have *: \<open>Dis p q \<in> set G'\<close>
+    by auto
+
+  have \<open>set (p # q # z) - {Falsity} \<subseteq> set (p # q # G')\<close>
+    using AlDis by auto
+  then have \<open>\<turnstile> p # q # G'\<close>
+    using AlDis by simp
+  then have \<open>\<turnstile> Dis p q # G'\<close>
+    using SC.AlDis by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (AlImp p q z)
+  then have *: \<open>Imp p q \<in> set G'\<close>
+    by auto
+
+  have \<open>set (Neg p # q # z) - {Falsity} \<subseteq> set (Neg p # q # G')\<close>
+    using AlImp by auto
+  then have \<open>\<turnstile> Neg p # q # G'\<close>
+    using AlImp by simp
+  then have \<open>\<turnstile> Imp p q # G'\<close>
+    using SC.AlImp by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (BeCon p z q)
+  then have *: \<open>Con p q \<in> set G'\<close>
+    by auto
+
+  have \<open>set (p # z) - {Falsity} \<subseteq> set (p # G')\<close> \<open>set (q # z) - {Falsity} \<subseteq> set (q # G')\<close>
+    using BeCon by auto
+  then have \<open>\<turnstile> p # G'\<close> \<open>\<turnstile> q # G'\<close>
+    using BeCon by simp_all
+  then have \<open>\<turnstile> Con p q # G'\<close>
+    using SC.BeCon by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (BeDis p z q)
+  then have *: \<open>Neg (Dis p q) \<in> set G'\<close>
+    by auto
+
+  have
+    \<open>set (Neg p # z) - {Falsity} \<subseteq> set (Neg p # G')\<close>
+    \<open>set (Neg q # z) - {Falsity} \<subseteq> set (Neg q # G')\<close>
+    using BeDis by auto
+  then have \<open>\<turnstile> Neg p # G'\<close> \<open>\<turnstile> Neg q # G'\<close>
+    using BeDis by simp_all
+  then have \<open>\<turnstile> Neg (Dis p q) # G'\<close>
+    using SC.BeDis by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (BeImp p z q)
+  then have *: \<open>Neg (Imp p q) \<in> set G'\<close>
+    by auto
+
+  have \<open>set (p # z) - {Falsity} \<subseteq> set (p # G')\<close> \<open>set (Neg q # z) - {Falsity} \<subseteq> set (Neg q # G')\<close>
+    using BeImp by auto
+  then have \<open>\<turnstile> p # G'\<close> \<open>\<turnstile> Neg q # G'\<close>
+    using BeImp by simp_all
+  then have \<open>\<turnstile> Neg (Imp p q) # G'\<close>
+    using SC.BeImp by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (GaExi t p z)
+  then have *: \<open>Exi p \<in> set G'\<close>
+    by auto
+
+  have \<open>set (sub 0 t p # z) - {Falsity} \<subseteq> set (sub 0 t p # G')\<close>
+    using GaExi by auto
+  then have \<open>\<turnstile> sub 0 t p # G'\<close>
+    using GaExi by simp
+  then have \<open>\<turnstile> Exi p # G'\<close>
+    using SC.GaExi by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (GaUni t p z)
+  then have *: \<open>Neg (Uni p) \<in> set G'\<close>
+    by auto
+
+  have \<open>set (Neg (sub 0 t p) # z) - {Falsity} \<subseteq> set (Neg (sub 0 t p) # G')\<close>
+    using GaUni by auto
+  then have \<open>\<turnstile> Neg (sub 0 t p) # G'\<close>
+    using GaUni by simp
+  then have \<open>\<turnstile> Neg (Uni p) # G'\<close>
+    using SC.GaUni by blast
+  then show ?case
+    using * Extra by simp
+next
+  case (DeUni n p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> (\<Union>p \<in> set G'. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n}\<close>
+    using ex_new_if_finite by (metis finite.emptyI finite.insertI finite_UnI infinite_UNIV_listI)
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>sub 0 (Fun m []) p\<close>
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+
+  have p: \<open>psubst ?f (sub 0 (Fun n []) p) = ?A\<close>
+    using \<open>news n (p # z)\<close> * by simp
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') simp_all
+
+  have \<open>set z - {Falsity} \<subseteq> set G'\<close>
+    using DeUni by auto
+  then have \<open>set (map (psubst ?f) z) - {Falsity} \<subseteq> set ?G'\<close>
+    by auto
+  moreover have \<open>map (psubst ?f) z = z\<close>
+    using \<open>news n (p # z)\<close> * by (induct z) simp_all
+  ultimately have \<open>set z - {Falsity} \<subseteq> set ?G'\<close>
+    by simp
+
+  then have \<open>set (sub 0 (Fun n []) p # z) - {Falsity} \<subseteq> set (sub 0 (Fun n []) p # ?G')\<close>
+    by auto
+  then have \<open>\<turnstile> sub 0 (Fun n []) p # ?G'\<close>
+    using * DeUni by simp
+  then have \<open>\<turnstile> sub 0 (Fun n []) p # ?G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> map (psubst ?f) (sub 0 (Fun n []) p # ?G')\<close>
+    using SC_psubst by blast
+  then have \<open>\<turnstile> sub 0 (Fun m []) p # G'\<close>
+    using p G' by simp
+  moreover have \<open>news m (p # G')\<close>
+    using * by (induct G') simp_all
+  ultimately have \<open>\<turnstile> Uni p # G'\<close>
+    using SC.DeUni by blast
+  moreover have \<open>Uni p \<in> set G'\<close>
+    using DeUni by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (DeExi n p z)
+  let ?params = \<open>params p \<union> (\<Union>p \<in> set z. params p) \<union> (\<Union>p \<in> set G'. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n}\<close>
+    using ex_new_if_finite by (metis finite.emptyI finite.insertI finite_UnI infinite_UNIV_listI)
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>sub 0 (Fun m []) p\<close>
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+
+  have p: \<open>psubst ?f (sub 0 (Fun n []) p) = ?A\<close>
+    using \<open>news n (p # z)\<close> * by simp
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') simp_all
+
+  have \<open>set z - {Falsity} \<subseteq> set G'\<close>
+    using DeExi by auto
+  then have \<open>set (map (psubst ?f) z) - {Falsity} \<subseteq> set ?G'\<close>
+    by auto
+  moreover have \<open>map (psubst ?f) z = z\<close>
+    using \<open>news n (p # z)\<close> * by (induct z) simp_all
+  ultimately have \<open>set z - {Falsity} \<subseteq> set ?G'\<close>
+    by simp
+
+  then have \<open>set (Neg (sub 0 (Fun n []) p) # z) - {Falsity} \<subseteq> set (Neg (sub 0 (Fun n []) p) # ?G')\<close>
+    by auto
+  then have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # ?G'\<close>
+    using * DeExi by simp
+  then have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # ?G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> map (psubst ?f) (Neg (sub 0 (Fun n []) p) # ?G')\<close>
+    using SC_psubst by blast
+  then have \<open>\<turnstile> Neg (sub 0 (Fun m []) p) # G'\<close>
+    using p G' by simp
+  moreover have \<open>news m (p # G')\<close>
+    using * by (induct G') simp_all
+  ultimately have \<open>\<turnstile> Neg (Exi p) # G'\<close>
+    using SC.DeExi by blast
+  moreover have \<open>Neg (Exi p) \<in> set G'\<close>
+    using DeExi by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (Extra p z)
+  then show ?case
+    by fastforce
+qed
+
+lemma special: \<open>\<turnstile> z \<Longrightarrow> Neg (Neg X) \<in> set z \<Longrightarrow> set z - {Neg (Neg X)} \<subseteq> set G' \<Longrightarrow> \<turnstile> X # G'\<close>
+proof (induct z arbitrary: G' rule: SC.induct)
+  case (Basic i l z)
+  then obtain G'' where *: \<open>set G' = set (Pre i l # Neg (Pre i l) # G'')\<close>
+    by auto
+  then have \<open>\<turnstile> Pre i l # Neg (Pre i l) # G''\<close>
+    using SC.Basic by simp
+  then show ?case
+    using Order * by (metis set_subset_Cons)
+next
+  case (Dummy z)
+  then obtain G'' where *: \<open>set G' = set (Truth # G'')\<close>
+    by auto
+  then have \<open>\<turnstile> Truth # G''\<close>
+    using SC.Dummy by simp
+  then show ?case
+    using Order * by (metis set_subset_Cons)
+next
+  case (AlCon p q z)
+  then have *: \<open>Neg (Neg X) \<in> set (Neg p # Neg q # z)\<close>
+    by auto
+  then have \<open>set (Neg p # Neg q # z) - {Neg (Neg X)} \<subseteq> set (Neg p # Neg q # G')\<close>
+    using AlCon by auto
+  then have \<open>\<turnstile> X # Neg p # Neg q # G'\<close>
+    using * AlCon by blast
+  then have \<open>\<turnstile> Neg p # Neg q # X # G'\<close>
+    using Order by (simp add: insert_commute)
+  then have \<open>\<turnstile> Neg (Con p q) # X # G'\<close>
+    using SC.AlCon by blast
+  moreover have \<open>Neg (Con p q) \<in> set G'\<close>
+    using AlCon by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (AlDis p q z)
+  then have *: \<open>Neg (Neg X) \<in> set (p # q # z)\<close>
+    by auto
+  then have \<open>set (p # q # z) - {Neg (Neg X)} \<subseteq> set (p # q # G')\<close>
+    using AlDis by auto
+  then have \<open>\<turnstile> X # p # q # G'\<close>
+    using * AlDis by blast
+  then have \<open>\<turnstile> p # q # X # G'\<close>
+    using Order by (simp add: insert_commute)
+  then have \<open>\<turnstile> Dis p q # X # G'\<close>
+    using SC.AlDis by blast
+  moreover have \<open>Dis p q \<in> set G'\<close>
+    using AlDis by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (AlImp p q z)
+  then have *: \<open>Neg (Neg X) \<in> set (Neg p # q # z)\<close>
+    by auto
+  show ?case
+  proof (cases \<open>Imp p q = Neg (Neg X)\<close>)
+    case True
+    then have \<open>set (Neg p # q # z) - {Neg (Neg X)} \<subseteq> set (Falsity # G')\<close>
+      using AlImp by auto
+    then have \<open>\<turnstile> X # Falsity # G'\<close>
+      using AlImp * by blast
+    then show ?thesis
+      using SC_remove_Falsity Swap
+      by (metis eq_refl list.set_intros(1) list.simps(15) subset_insert_iff)
+  next
+    case False
+    then have \<open>set (Neg p # q # z) - {Neg (Neg X)} \<subseteq> set (Neg p # q # G')\<close>
+      using AlImp by auto
+    then have \<open>\<turnstile> X # Neg p # q # G'\<close>
+      using * AlImp by blast
+    then have \<open>\<turnstile> Neg p # q # X # G'\<close>
+      using Order by (simp add: insert_commute)
+    then have \<open>\<turnstile> Imp p q # X # G'\<close>
+      using SC.AlImp by blast
+    moreover have \<open>Imp p q \<in> set G'\<close>
+      using False AlImp by auto
+    ultimately show ?thesis
+      using Extra by simp
+  qed
+next
+  case (BeCon p z q)
+  then have \<open>Neg (Neg X) \<in> set (p # z)\<close> \<open>Neg (Neg X) \<in> set (q # z)\<close>
+    by auto
+  moreover have
+    \<open>set (p # z) - {Neg (Neg X)} \<subseteq> set (p # G')\<close>
+    \<open>set (q # z) - {Neg (Neg X)} \<subseteq> set (q # G')\<close>
+    using BeCon by auto
+  ultimately have \<open>\<turnstile> X # p # G'\<close> \<open>\<turnstile> X # q # G'\<close>
+    using BeCon by blast+
+  then have \<open>\<turnstile> p # X # G'\<close> \<open>\<turnstile> q # X # G'\<close>
+    by (simp_all add: Swap)
+  then have \<open>\<turnstile> Con p q # X # G'\<close>
+    using SC.BeCon by blast
+  moreover have \<open>Con p q \<in> set G'\<close>
+    using BeCon by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (BeDis p z q)
+  then have \<open>Neg (Neg X) \<in> set (Neg p # z)\<close> \<open>Neg (Neg X) \<in> set (Neg q # z)\<close>
+    using BeImp by auto
+  moreover have
+    \<open>set (Neg p # z) - {Neg (Neg X)} \<subseteq> set (Neg p # G')\<close>
+    \<open>set (Neg q # z) - {Neg (Neg X)} \<subseteq> set (Neg q # G')\<close>
+    using BeDis by auto
+  ultimately have \<open>\<turnstile> X # Neg p # G'\<close> \<open>\<turnstile> X # Neg q # G'\<close>
+    using BeDis by blast+
+  then have \<open>\<turnstile> Neg p # X # G'\<close> \<open>\<turnstile> Neg q # X # G'\<close>
+    by (simp_all add: Swap)
+  then have \<open>\<turnstile> Neg (Dis p q) # X # G'\<close>
+    using SC.BeDis by blast
+  moreover have \<open>Neg (Dis p q) \<in> set G'\<close>
+    using BeDis by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (BeImp p z q)
+  show ?case
+  proof (cases \<open>Neg X = Imp p q\<close>)
+    case true: True
+    then have \<open>\<turnstile> X # z\<close>
+      using BeImp by blast
+    then show ?thesis
+    proof (cases \<open>Neg (Neg X) \<in> set z\<close>)
+      case True
+      then show ?thesis
+      proof -
+        have \<open>set (p # z) - {Neg (Neg X)} \<subseteq> insert X (set G')\<close>
+          using BeImp.prems(2) true by fastforce
+        then have \<open>\<turnstile> X # X # G'\<close>
+          using BeImp.hyps(2) True by simp
+        then show ?thesis
+          using SC.Extra by simp
+      qed
+    next
+      case False
+      then have \<open>set (X # z) \<subseteq> set (X # G')\<close>
+        using BeImp true by auto
+      then show ?thesis
+        using \<open>\<turnstile> X # z\<close> Order by blast
+    qed
+  next
+    case False
+    then have \<open>Neg (Neg X) \<in> set (p # z)\<close> \<open>Neg (Neg X) \<in> set (Neg q # z)\<close>
+      using BeImp by auto
+    moreover have
+      \<open>set (p # z) - {Neg (Neg X)} \<subseteq> set (p # G')\<close>
+      \<open>set (Neg q # z) - {Neg (Neg X)} \<subseteq> set (Neg q # G')\<close>
+      using False BeImp by auto
+    ultimately have \<open>\<turnstile> X # p # G'\<close> \<open>\<turnstile> X # Neg q # G'\<close>
+      using BeImp by blast+
+    then have \<open>\<turnstile> p # X # G'\<close> \<open>\<turnstile> Neg q # X # G'\<close>
+      by (simp_all add: Swap)
+    then have \<open>\<turnstile> Neg (Imp p q) # X # G'\<close>
+      using SC.BeImp by blast
+    moreover have \<open>Neg (Imp p q) \<in> set G'\<close>
+      using False BeImp by auto
+    ultimately show ?thesis
+      using Extra by simp
+  qed
+next
+  case (GaExi t p z)
+  then have *: \<open>Neg (Neg X) \<in> set (sub 0 t p # z)\<close>
+    by auto
+  then have \<open>set (sub 0 t p # z) - {Neg (Neg X)} \<subseteq> set (sub 0 t p # G')\<close>
+    using GaExi by auto
+  then have \<open>\<turnstile> X # sub 0 t p # G'\<close>
+    using * GaExi by blast
+  then have \<open>\<turnstile> sub 0 t p # X # G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> Exi p # X # G'\<close>
+    using SC.GaExi by blast
+  moreover have \<open>Exi p \<in> set G'\<close>
+    using GaExi by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (GaUni t p z)
+  then have *: \<open>Neg (Neg X) \<in> set (Neg (sub 0 t p) # z)\<close>
+    by auto
+  then have \<open>set (Neg (sub 0 t p) # z) - {Neg (Neg X)} \<subseteq> set (Neg (sub 0 t p) # G')\<close>
+    using GaUni by auto
+  then have \<open>\<turnstile> X # Neg (sub 0 t p) # G'\<close>
+    using * GaUni by blast
+  then have \<open>\<turnstile> Neg (sub 0 t p) # X # G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> Neg (Uni p) # X # G'\<close>
+    using SC.GaUni by blast
+  moreover have \<open>Neg (Uni p) \<in> set G'\<close>
+    using GaUni by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (DeUni n p z)
+  then have *: \<open>Neg (Neg X) \<in> set (sub 0 (Fun n []) p # z)\<close>
+    by auto
+
+  have \<open>Neg (Neg X) \<in> set z\<close>
+    using DeUni by simp
+  then have \<open>new n (Neg (Neg X))\<close>
+    using \<open>news n (p # z)\<close> by (induct z) auto
+  then have \<open>news n (p # X # z)\<close>
+    using \<open>news n (p # z)\<close> by simp
+
+  let ?params = \<open>params p \<union> params X \<union> (\<Union>p \<in> set z. params p) \<union> (\<Union>p \<in> set G'. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n}\<close>
+    using ex_new_if_finite by (metis finite.emptyI finite.insertI finite_UnI infinite_UNIV_listI)
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>sub 0 (Fun m []) p\<close>
+  let ?X = \<open>psubst ?f X\<close>
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+
+  have p: \<open>psubst ?f (sub 0 (Fun n []) p) = ?A\<close>
+    using \<open>news n (p # z)\<close> * by simp
+  have X: \<open>psubst ?f X = X\<close>
+    using \<open>new n (Neg (Neg X))\<close> * by simp
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') simp_all
+
+  have \<open>set z - {Neg (Neg X)} \<subseteq> set G'\<close>
+    using DeUni by auto
+  then have \<open>set (map (psubst ?f) z) - {psubst ?f (Neg (Neg X))} \<subseteq> set ?G'\<close>
+    by auto
+  moreover have \<open>map (psubst ?f) z = z\<close>
+    using \<open>news n (p # z)\<close> * by (induct z) simp_all
+  ultimately have \<open>set z - {Neg (Neg X)} \<subseteq> set ?G'\<close>
+    using X by simp
+
+  then have \<open>set (sub 0 (Fun n []) p # z) - {Neg (Neg X)} \<subseteq> set (sub 0 (Fun n []) p # ?G')\<close>
+    using DeUni by auto
+  then have \<open>\<turnstile> X # sub 0 (Fun n []) p # ?G'\<close>
+    using * DeUni by simp
+  then have \<open>\<turnstile> sub 0 (Fun n []) p # X # ?G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> map (psubst ?f) (sub 0 (Fun n []) p # X # ?G')\<close>
+    using SC_psubst by blast
+  then have \<open>\<turnstile> sub 0 (Fun m []) p # X # G'\<close>
+    using p X G' by simp
+  moreover have \<open>news m (p # X # G')\<close>
+    using * by (induct G') simp_all
+  ultimately have \<open>\<turnstile> Uni p # X # G'\<close>
+    using SC.DeUni by blast
+  moreover have \<open>Uni p \<in> set G'\<close>
+    using DeUni by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (DeExi n p z)
+  then have *: \<open>Neg (Neg X) \<in> set (Neg (sub 0 (Fun n []) p) # z)\<close>
+    by auto
+
+  have \<open>Neg (Neg X) \<in> set z\<close>
+    using DeExi by simp
+  then have \<open>new n (Neg (Neg X))\<close>
+    using \<open>news n (p # z)\<close> by (induct z) auto
+  then have \<open>news n (p # X # z)\<close>
+    using \<open>news n (p # z)\<close> by simp
+
+  let ?params = \<open>params p \<union> params X \<union> (\<Union>p \<in> set z. params p) \<union> (\<Union>p \<in> set G'. params p)\<close>
+
+  have \<open>finite ?params\<close>
+    by simp
+  then obtain m where *: \<open>m \<notin> ?params \<union> {n}\<close>
+    using ex_new_if_finite by (metis finite.emptyI finite.insertI finite_UnI infinite_UNIV_listI)
+
+  let ?f = \<open>id(n := m, m := n)\<close>
+  let ?A = \<open>sub 0 (Fun m []) p\<close>
+  let ?X = \<open>psubst ?f X\<close>
+  let ?G' = \<open>map (psubst ?f) G'\<close>
+
+  have p: \<open>psubst ?f (sub 0 (Fun n []) p) = ?A\<close>
+    using \<open>news n (p # z)\<close> * by simp
+  have X: \<open>psubst ?f X = X\<close>
+    using \<open>new n (Neg (Neg X))\<close> * by simp
+  have G': \<open>map (psubst ?f) ?G' = G'\<close>
+    using psubst_swap_twice by (induct G') simp_all
+
+  have \<open>set z - {Neg (Neg X)} \<subseteq> set G'\<close>
+    using DeExi by auto
+  then have \<open>set (map (psubst ?f) z) - {psubst ?f (Neg (Neg X))} \<subseteq> set ?G'\<close>
+    by auto
+  moreover have \<open>map (psubst ?f) z = z\<close>
+    using \<open>news n (p # z)\<close> * by (induct z) simp_all
+  ultimately have \<open>set z - {Neg (Neg X)} \<subseteq> set ?G'\<close>
+    using X by simp
+
+  then have \<open>set (Neg (sub 0 (Fun n []) p) # z) - {Neg (Neg X)} \<subseteq>
+      set (Neg (sub 0 (Fun n []) p) # ?G')\<close>
+    using DeExi by auto
+  then have \<open>\<turnstile> X # Neg (sub 0 (Fun n []) p) # ?G'\<close>
+    using * DeExi by simp
+  then have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # X # ?G'\<close>
+    using Swap by simp
+  then have \<open>\<turnstile> map (psubst ?f) (Neg (sub 0 (Fun n []) p) # X # ?G')\<close>
+    using SC_psubst by blast
+  then have \<open>\<turnstile> Neg (sub 0 (Fun m []) p) # X # G'\<close>
+    using p X G' by simp
+  moreover have \<open>news m (p # X # G')\<close>
+    using * by (induct G') simp_all
+  ultimately have \<open>\<turnstile> Neg (Exi p) # X # G'\<close>
+    using SC.DeExi by blast
+  moreover have \<open>Neg (Exi p) \<in> set G'\<close>
+    using DeExi by auto
+  ultimately show ?case
+    using Extra by simp
+next
+  case (Extra p z)
+  then show ?case
+    by (simp add: insert_absorb)
+qed
+
+lemma SC_Neg_Neg: \<open>\<turnstile> Neg (Neg p) # z \<Longrightarrow> \<turnstile> p # z\<close>
+  using special by simp
+
+theorem TC_SC: \<open>\<stileturn> z \<Longrightarrow> \<turnstile> map compl z\<close>
+proof (induct rule: TC.induct)
+  case (Extra p z)
+  then show ?case
+    by (metis SC.Extra image_eqI list.set_map list.simps(9) member_set)
+next
+  case (Basic i l z)
+  then show ?case
+  proof -
+    have \<open>\<turnstile> compl (Pre i l) # Pre i l # map compl z\<close>
+      by (metis member_set SC.Basic Extra compl.simps(3) list.set_intros)
+    then show ?thesis
+      by simp
+  qed
+next
+  case (AlCon p q z)
+  then have \<open>\<turnstile> compl p # compl q # map compl z\<close>
+    by simp
+  then have \<open>\<turnstile> Neg p # Neg q # map compl z\<close>
+    using compl Swap Dummy BeImp by metis
+  then show ?case
+    using SC.AlCon by simp
+next
+  case (AlImp p q z)
+  then have \<open>\<turnstile> compl p # q # map compl z\<close>
+    by simp
+  then have \<open>\<turnstile> Neg p # q # map compl z\<close>
+    using compl Dummy BeImp by metis
+  then show ?case
+    using SC.AlImp by simp
+next
+  case (BeDis p z q)
+  then have \<open>\<turnstile> compl p # map compl z\<close> \<open>\<turnstile> compl q # map compl z\<close>
+    by simp_all
+  then have \<open>\<turnstile> Neg p # map compl z\<close> \<open>\<turnstile> Neg q # map compl z\<close>
+    using compl Dummy BeImp by metis+
+  then show ?case
+    using SC.BeDis by simp
+next
+  case (BeImp p z q)
+  then have \<open>\<turnstile> p # map compl z\<close> \<open>\<turnstile> compl q # map compl z\<close>
+    by simp_all
+  then have \<open>\<turnstile> p # map compl z\<close> \<open>\<turnstile> Neg q # map compl z\<close>
+    using compl Dummy SC.BeImp by metis+
+  then have \<open>\<turnstile> Neg (Imp p q) # map compl z\<close>
+    using SC.BeImp by simp
+  then have \<open>\<turnstile> compl (Imp p q) # map compl z\<close>
+    using \<open>\<turnstile> p # map compl z\<close> compl by (metis fm.inject(2))
+  then show ?case
+    by simp
+next
+  case (GaUni t p z)
+  then have \<open>\<turnstile> compl (sub 0 t p) # map compl z\<close>
+    by simp
+  then have \<open>\<turnstile> Neg (sub 0 t p) # map compl z\<close>
+    using compl Dummy BeImp by metis
+  then show ?case
+    using SC.GaUni by simp
+next
+  case (DeExi n p z)
+  then have \<open>\<turnstile> compl (sub 0 (Fun n []) p) # map compl z\<close>
+    by simp
+  then have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # map compl z\<close>
+    using compl Dummy BeImp by metis
+  moreover have \<open>news n (p # map compl z)\<close>
+    using DeExi news_compl by simp
+  ultimately show ?case
+    using SC.DeExi by simp
+next
+  case (DeUni n p z)
+  then have \<open>\<turnstile> sub 0 (Fun n []) p # map compl z\<close>
+    by simp
+  moreover have \<open>news n (p # map compl z)\<close>
+    using DeUni news_compl by simp
+  ultimately show ?case
+    using SC.DeUni by simp
+qed (auto intro: SC.intros)
+
+subsection \<open>Completeness\<close>
+
+theorem SC_completeness:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+  shows \<open>\<turnstile> p # map compl z\<close>
+proof -
+  have \<open>\<stileturn> compl p # z\<close>
+    using assms tableau_completeness compl_compl unfolding tableauproof_def by simp
+  then show ?thesis
+    using TC_SC compl AlNegNeg compl.simps(1) list.simps(9) by (metis (full_types))
+qed
+
+corollary
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. semantics e f g p\<close>
+  shows \<open>\<turnstile> [p]\<close>
+  using assms SC_completeness list.map(1) by metis
+
+abbreviation herbrand_valid (\<open>\<then> _\<close> 0) where
+  \<open>(\<then> p) \<equiv> \<forall>(e :: _ \<Rightarrow> htm) f g. semantics e f g p\<close>
+
+theorem herbrand_completeness_soundness: \<open>\<then> p \<Longrightarrow> \<turnstile> [p]\<close> \<open>\<turnstile> [p] \<Longrightarrow> semantics e f g p\<close>
+  by (use SC_completeness list.map(1) in metis) (use SC_soundness in fastforce)
+
+corollary \<open>(\<then> p) = (\<turnstile> [p])\<close>
+  using herbrand_completeness_soundness by fast
+
+lemma map_compl_Neg: \<open>map compl (map Neg z) = z\<close>
+  by (induct z) simp_all
+
+theorem SC_complete:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set z. semantics e f g p\<close>
+  shows \<open>\<turnstile> z\<close>
+proof -
+  have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<not> (\<forall>p \<in> set (map Neg z). semantics e f g p)\<close>
+    using assms by fastforce
+  then obtain p where
+    \<open>p \<in> set z\<close>
+    \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. (\<forall>p \<in> set (map Neg z). semantics e f g p) \<longrightarrow> semantics e f g p\<close>
+    using assms by blast
+  then have \<open>\<turnstile> p # map compl (map Neg z)\<close>
+    using SC_completeness Ball_set by metis
+  then have \<open>\<turnstile> p # z\<close>
+    using map_compl_Neg by simp
+  with \<open>p \<in> set z\<close> show ?thesis
+    using SC.Extra member_set by simp
+qed
+
+theorem SC_TC: \<open>\<turnstile> z \<Longrightarrow> \<stileturn> map compl z\<close>
+proof (induct rule: SC.induct)
+  case (Basic i l z)
+  then show ?case
+  proof -
+    have \<open>\<stileturn> compl (Pre i l) # Pre i l # map compl z\<close>
+      using tableau_completeness tableauproof_def by fastforce
+    then show ?thesis
+      by simp
+  qed
+next
+  case (Dummy z)
+  then show ?case
+    by (simp add: TC.Dummy)
+next
+  case (AlCon p q z)
+  then show ?case
+    using AlCon
+    by (simp add: TC.AlCon)
+next
+  case (AlDis p q z)
+  then have \<open>\<stileturn> compl p # compl q # map compl z\<close>
+    by simp
+  then have \<open>\<stileturn> Neg p # Neg q # map compl z\<close>
+    using compl Swap' AlNegNeg' by metis
+  then show ?case
+    using TC.AlDis by simp
+next
+  case (AlImp p q z)
+  then have \<open>\<stileturn> p # compl q # map compl z\<close>
+    by simp
+  then have \<open>\<stileturn> p # Neg q # map compl z\<close>
+    using compl Swap' AlNegNeg' by metis
+  then show ?case
+    by (metis TC.AlImp compl list.simps(9) TC_Neg_Neg)
+next
+  case (BeCon p z q)
+  then have \<open>\<stileturn> compl p # map compl z\<close> \<open>\<stileturn> compl q # map compl z\<close>
+    by simp_all
+  then have \<open>\<stileturn> Neg p # map compl z\<close> \<open>\<stileturn> Neg q # map compl z\<close>
+    using compl AlNegNeg' by metis+
+  then show ?case
+    using TC.BeCon by simp
+next
+  case (BeDis p z q)
+  then show ?case
+    by (simp add: TC.BeDis)
+next
+  case (BeImp p z q)
+  then show ?case
+    using TC.BeImp compl compl.simps(1) list.simps(9) AlNegNeg' by metis
+next
+  case (GaExi t p z)
+  then show ?case
+    using TC.GaExi compl compl.simps(12) list.simps(9) AlNegNeg' by (metis (no_types))
+next
+  case (GaUni t p z)
+  then show ?case
+    by (simp add: TC.GaUni)
+next
+  case (DeUni n p z)
+  then have \<open>\<stileturn> compl (sub 0 (Fun n []) p) # map compl z\<close>
+    by simp
+  then have \<open>\<stileturn> Neg (sub 0 (Fun n []) p) # map compl z\<close>
+    using compl AlNegNeg' by metis
+  moreover have \<open>news n (p # map compl z)\<close>
+    using DeUni news_compl by simp
+  ultimately show ?case
+    using TC.DeUni by simp
+next
+  case (DeExi n p z)
+  then show ?case
+    using TC.DeExi news_compl by auto
+next
+  case (Extra p z)
+  then show ?case
+    by (metis TC.Extra image_eqI list.set_map list.simps(9) member_set)
+qed
+
+lemma TC_neg_compl: \<open>(\<stileturn> [Neg p]) \<longleftrightarrow> (\<stileturn> [compl p])\<close>
+  by (metis compl compl.simps(1) TC_Neg_Neg TC_compl_compl)
+
+lemma supra:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
+  shows \<open>\<turnstile> p # map compl z\<close>
+  using SC_completeness soundness' completeness' assms by blast
+
+lemma super:
+  assumes \<open>\<turnstile> p # map compl z\<close>
+  shows \<open>\<forall>e f g. list_all (semantics e f g) z \<longrightarrow> semantics e f g p\<close>
+proof -
+  have \<open>\<forall>e f g. \<not> (\<forall>p \<in> set z. semantics e f g p) \<or> semantics e f g p\<close>
+    using assms SC_soundness semantics_compl by fastforce
+  then show ?thesis
+    using Ball_set by metis
+qed
+
+lemma SC_compl_Neg: \<open>(\<turnstile> compl p # z) \<longleftrightarrow> (\<turnstile> Neg p # z)\<close>
+  by (metis AlNegNeg compl SC_Neg_Neg)
+
+lemma TC_compl_Neg: \<open>(\<stileturn> compl p # z) \<longleftrightarrow> (\<stileturn> Neg p # z)\<close>
+  by (metis AlNegNeg' compl TC_Neg_Neg)
+
+lemma TC_map_compl:
+  assumes \<open>\<stileturn> map compl z\<close>
+  shows \<open>\<turnstile> z\<close>
+proof -
+  have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set (map compl z). \<not> semantics e f g p\<close>
+    using assms TC_soundness by blast
+  then have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set z. \<not> semantics e f g (compl p)\<close>
+    by fastforce
+  then show ?thesis
+    using SC_complete semantics_compl by metis
+qed
+
+lemma SC_map_compl:
+  assumes \<open>\<turnstile> map compl z\<close>
+  shows \<open>\<stileturn> z\<close>
+proof -
+  have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set (map compl z). semantics e f g p\<close>
+    using assms SC_soundness by blast
+  then have \<open>\<forall>(e :: _ \<Rightarrow> htm) f g. \<exists>p \<in> set z. semantics e f g (compl p)\<close>
+    by fastforce
+  then show ?thesis
+    using TC_complete semantics_compl by metis
+qed
+
+section \<open>The Sequent Calculus is Sound and Complete\<close>
+
+theorem sound_complete: \<open>valid p \<longleftrightarrow> (\<turnstile> [p])\<close>
+proof
+  assume \<open>valid p\<close>
+  then show \<open>\<turnstile> [p]\<close>
+    using herbrand_completeness_soundness(1) valid_semantics by fast
+next
+  assume \<open>\<turnstile> [p]\<close>
+  then show \<open>valid p\<close>
+    using herbrand_completeness_soundness(2) by fast
+qed
+
+lemma 1: \<open>OK p z \<Longrightarrow> \<turnstile> p # map compl z\<close>
+  by (simp add: SC_completeness soundness')
+
+lemma 2: \<open>\<turnstile> p # map compl z \<Longrightarrow> OK p z\<close>
+  using completeness'' by (simp add: super)
+
+lemma 3:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
+  shows \<open>\<turnstile> [p]\<close>
+  using assms completeness 1 by fastforce
+
+lemma helper: \<open>\<turnstile> [p] \<Longrightarrow> \<stileturn> [Neg p]\<close>
+  using TC_compl_Neg complete herbrand_completeness_soundness(2) by blast
+
+lemma 4:
+  assumes \<open>\<forall>(e :: _ \<Rightarrow> 'a) f g. semantics e f g p\<close>
+    and \<open>denumerable (UNIV :: 'a set)\<close>
+  shows \<open>\<stileturn> [Neg p]\<close>
+  using assms 3 helper by fastforce
+
+theorem OK_TC: \<open>OK p z \<longleftrightarrow> (\<stileturn> compl p # z)\<close>
+  using 1 2 SC_map_compl TC_compl_Neg TC_SC compl.simps list.simps(9) by metis
+  
+theorem OK_SC: \<open>OK p z \<longleftrightarrow> (\<turnstile> p # map compl z)\<close>
+  using 1 2 by fast
+
+theorem TC: \<open>(\<stileturn> z) \<longleftrightarrow> (\<turnstile> map compl z)\<close>
+  using SC_map_compl TC_SC by fast
+
+theorem SC: \<open>(\<turnstile> z) \<longleftrightarrow> (\<stileturn> map compl z)\<close>
+  using TC_map_compl SC_TC by fast
+
+corollary \<open>OK p z \<longleftrightarrow> (\<stileturn> Neg p # z)\<close>
+  using TC OK_SC map_compl_Neg by simp
+
+corollary \<open>OK p z \<longleftrightarrow> (\<turnstile> p # map Neg z)\<close>
+  using SC OK_TC map_compl_Neg by simp
+
+corollary \<open>(\<stileturn> z) \<longleftrightarrow> (\<turnstile> map Neg z)\<close>
+  using SC map_compl_Neg by simp
+
+corollary \<open>(\<turnstile> z) \<longleftrightarrow> (\<stileturn> map Neg z)\<close>
+  using TC map_compl_Neg by simp
 
 section \<open>Acknowledgements\<close>
 
