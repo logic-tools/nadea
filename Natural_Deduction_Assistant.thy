@@ -1,6 +1,8 @@
 section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
 text \<open>
+Project: Natural_Deduction_Assistant (NaDeA) https://nadea.compute.dtu.dk/
+
 Authors: Andreas Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
 
 License: https://www.isa-afp.org/LICENSE
