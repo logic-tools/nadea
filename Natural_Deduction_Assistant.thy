@@ -3,7 +3,7 @@ section \<open>Natural Deduction Assistant (NaDeA)\<close>
 text \<open>
 Project: Natural_Deduction_Assistant (NaDeA) https://nadea.compute.dtu.dk/
 
-Authors: Andreas Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
+Authors: Asta Halkjær From, Anders Schlichtkrull & Jørgen Villadsen
 
 License: https://www.isa-afp.org/LICENSE
 
@@ -3937,8 +3937,8 @@ corollary \<open>OK p [] \<Longrightarrow> OK (put_unis m p) []\<close> \<open>O
 section \<open>Tableau Calculus\<close> \<comment> \<open>NaDeA variant\<close>
 
 inductive TC :: \<open>fm list \<Rightarrow> bool\<close> (\<open>\<stileturn> _\<close> 0) where
-  Dummy: \<open>\<stileturn> Falsity # z\<close> |
-  Basic: \<open>\<stileturn> Pre i l # Neg (Pre i l) # z\<close> |
+  Plain: \<open>\<stileturn> Falsity # _\<close> |
+  Basic: \<open>\<stileturn> Pre i l # Neg (Pre i l) # _\<close> |
   AlImp: \<open>\<stileturn> p # Neg q # z \<Longrightarrow> \<stileturn> Neg (Imp p q) # z\<close> |
   AlDis: \<open>\<stileturn> Neg p # Neg q # z \<Longrightarrow> \<stileturn> Neg (Dis p q) # z\<close> |
   AlCon: \<open>\<stileturn> p # q # z \<Longrightarrow> \<stileturn> Con p q # z\<close> |
@@ -4112,7 +4112,7 @@ proof (intro conjI allI impI notI)
 
   { assume \<open>Falsity \<in> S\<close>
     then show False
-      using * Dummy \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast }
+      using * Plain \<open>\<not> (\<stileturn> z)\<close> Extra member_set by blast }
 
   { fix p q
     assume \<open>Con p q \<in> S\<close>
@@ -4852,8 +4852,8 @@ lemma AlNegNeg': \<open>\<stileturn> p # z \<Longrightarrow> \<stileturn> Neg (N
 section \<open>Sequent Calculus\<close> \<comment> \<open>NaDeA variant\<close>
 
 inductive SC :: \<open>fm list \<Rightarrow> bool\<close> (\<open>\<turnstile> _\<close> 0) where
-  Dummy: \<open>\<turnstile> Truth # z\<close> |
-  Basic: \<open>\<turnstile> Pre i l # Neg (Pre i l) # z\<close> |
+  Plain: \<open>\<turnstile> Truth # _\<close> |
+  Basic: \<open>\<turnstile> Pre i l # Neg (Pre i l) # _\<close> |
   AlImp: \<open>\<turnstile> Neg p # q # z \<Longrightarrow> \<turnstile> Imp p q # z\<close> |
   AlDis: \<open>\<turnstile> p # q # z \<Longrightarrow> \<turnstile> Dis p q # z\<close> |
   AlCon: \<open>\<turnstile> Neg p # Neg q # z \<Longrightarrow> \<turnstile> Neg (Con p q) # z\<close> |
@@ -4870,7 +4870,7 @@ lemma AlNegNeg: \<open>\<turnstile> p # z \<Longrightarrow> \<turnstile> Neg (Ne
 proof -
   assume \<open>\<turnstile> p # z\<close>
   with BeImp show ?thesis
-    using Dummy .
+    using Plain .
 qed
 
 lemma psubst_new_sub':
@@ -4956,9 +4956,9 @@ proof (induct arbitrary: G' rule: SC.induct)
     using SC.Basic Extra member_set
     by (metis list.set_intros(1) set_subset_Cons subsetCE)
 next
-  case (Dummy z)
+  case (Plain z)
   then show ?case
-    using SC.Dummy Extra member_set
+    using SC.Plain Extra member_set
     by (metis list.set_intros(1) subsetCE)
 next
   case (AlCon p q z)
@@ -5200,11 +5200,11 @@ proof (induct z arbitrary: G' rule: SC.induct)
   then show ?case
     using SC.Basic Order by fastforce
 next
-  case (Dummy z)
+  case (Plain z)
   then have \<open>{Truth} \<union> (set z - {Falsity}) \<subseteq> set G'\<close>
     using subset_insert_iff by auto
   then show ?case
-    using SC.Dummy Order by fastforce
+    using SC.Plain Order by fastforce
 next
   case (AlCon p q z)
   then have *: \<open>Neg (Con p q) \<in> set G'\<close>
@@ -5417,11 +5417,11 @@ proof (induct z arbitrary: G' rule: SC.induct)
   then show ?case
     using Order * by (metis set_subset_Cons)
 next
-  case (Dummy z)
+  case (Plain z)
   then obtain G'' where *: \<open>set G' = set (Truth # G'')\<close>
     by auto
   then have \<open>\<turnstile> Truth # G''\<close>
-    using SC.Dummy by simp
+    using SC.Plain by simp
   then show ?case
     using Order * by (metis set_subset_Cons)
 next
@@ -5743,7 +5743,7 @@ next
   then have \<open>\<turnstile> compl p # compl q # map compl z\<close>
     by simp
   then have \<open>\<turnstile> Neg p # Neg q # map compl z\<close>
-    using compl Swap Dummy BeImp by metis
+    using compl Swap Plain BeImp by metis
   then show ?case
     using SC.AlCon by simp
 next
@@ -5751,7 +5751,7 @@ next
   then have \<open>\<turnstile> compl p # q # map compl z\<close>
     by simp
   then have \<open>\<turnstile> Neg p # q # map compl z\<close>
-    using compl Dummy BeImp by metis
+    using compl Plain BeImp by metis
   then show ?case
     using SC.AlImp by simp
 next
@@ -5759,7 +5759,7 @@ next
   then have \<open>\<turnstile> compl p # map compl z\<close> \<open>\<turnstile> compl q # map compl z\<close>
     by simp_all
   then have \<open>\<turnstile> Neg p # map compl z\<close> \<open>\<turnstile> Neg q # map compl z\<close>
-    using compl Dummy BeImp by metis+
+    using compl Plain BeImp by metis+
   then show ?case
     using SC.BeDis by simp
 next
@@ -5767,7 +5767,7 @@ next
   then have \<open>\<turnstile> p # map compl z\<close> \<open>\<turnstile> compl q # map compl z\<close>
     by simp_all
   then have \<open>\<turnstile> p # map compl z\<close> \<open>\<turnstile> Neg q # map compl z\<close>
-    using compl Dummy SC.BeImp by metis+
+    using compl Plain SC.BeImp by metis+
   then have \<open>\<turnstile> Neg (Imp p q) # map compl z\<close>
     using SC.BeImp by simp
   then have \<open>\<turnstile> compl (Imp p q) # map compl z\<close>
@@ -5779,7 +5779,7 @@ next
   then have \<open>\<turnstile> compl (sub 0 t p) # map compl z\<close>
     by simp
   then have \<open>\<turnstile> Neg (sub 0 t p) # map compl z\<close>
-    using compl Dummy BeImp by metis
+    using compl Plain BeImp by metis
   then show ?case
     using SC.GaUni by simp
 next
@@ -5787,7 +5787,7 @@ next
   then have \<open>\<turnstile> compl (sub 0 (Fun n []) p) # map compl z\<close>
     by simp
   then have \<open>\<turnstile> Neg (sub 0 (Fun n []) p) # map compl z\<close>
-    using compl Dummy BeImp by metis
+    using compl Plain BeImp by metis
   moreover have \<open>news n (p # map compl z)\<close>
     using DeExi news_compl by simp
   ultimately show ?case
@@ -5860,9 +5860,9 @@ proof (induct rule: SC.induct)
       by simp
   qed
 next
-  case (Dummy z)
+  case (Plain z)
   then show ?case
-    by (simp add: TC.Dummy)
+    by (simp add: TC.Plain)
 next
   case (AlCon p q z)
   then show ?case
@@ -6013,7 +6013,7 @@ lemma 4:
 
 theorem OK_TC: \<open>OK p z \<longleftrightarrow> (\<stileturn> compl p # z)\<close>
   using 1 2 SC_map_compl TC_compl_Neg TC_SC compl.simps list.simps(9) by metis
-  
+
 theorem OK_SC: \<open>OK p z \<longleftrightarrow> (\<turnstile> p # map compl z)\<close>
   using 1 2 by fast
 
@@ -6035,6 +6035,447 @@ corollary \<open>(\<stileturn> z) \<longleftrightarrow> (\<turnstile> map Neg z)
 corollary \<open>(\<turnstile> z) \<longleftrightarrow> (\<stileturn> map Neg z)\<close>
   using TC map_compl_Neg by simp
 
+section \<open>Appendix - By Jørgen Villadsen & Asta Halkjær From\<close>
+
+\<comment> \<open>A Concise Sequent Calculus for Teaching First-Order Logic\<close>
+
+inductive sequent_calculus (\<open>\<tturnstile> _\<close> 0) where
+  Basic: \<open>\<tturnstile> p # z\<close> if \<open>member (Neg p) z\<close> |
+  AlDis: \<open>\<tturnstile> Dis p q # z\<close> if \<open>\<tturnstile> p # q # z\<close> |
+  AlImp: \<open>\<tturnstile> Imp p q # z\<close> if \<open>\<tturnstile> Neg p # q # z\<close> |
+  AlCon: \<open>\<tturnstile> Neg (Con p q) # z\<close> if \<open>\<tturnstile> Neg p # Neg q # z\<close> |
+  BeCon: \<open>\<tturnstile> Con p q # z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>\<tturnstile> q # z\<close> |
+  BeImp: \<open>\<tturnstile> Neg (Imp p q) # z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>\<tturnstile> Neg q # z\<close> |
+  BeDis: \<open>\<tturnstile> Neg (Dis p q) # z\<close> if \<open>\<tturnstile> Neg p # z\<close> and \<open>\<tturnstile> Neg q # z\<close> |
+  GaExi: \<open>\<tturnstile> Exi p # z\<close> if \<open>\<tturnstile> sub 0 t p # z\<close> |
+  GaUni: \<open>\<tturnstile> Neg (Uni p) # z\<close> if \<open>\<tturnstile> Neg (sub 0 t p) # z\<close> |
+  DeUni: \<open>\<tturnstile> Uni p # z\<close> if \<open>\<tturnstile> sub 0 (Fun c []) p # z\<close> and \<open>news c (p # z)\<close> |
+  DeExi: \<open>\<tturnstile> Neg (Exi p) # z\<close> if \<open>\<tturnstile> Neg (sub 0 (Fun c []) p) # z\<close> and \<open>news c (p # z)\<close> |
+  Extra: \<open>\<tturnstile> z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>member p z\<close>
+
+\<comment> \<open>Mimic the Sequent Calculus Verifier (SeCaV)\<close>
+
+lemmas Basic = sequent_calculus.intros(1)
+
+lemmas AlphaDis = sequent_calculus.intros(2)
+lemmas AlphaImp = sequent_calculus.intros(3)
+lemmas AlphaCon = sequent_calculus.intros(4)
+
+lemmas BetaCon = sequent_calculus.intros(5)
+lemmas BetaImp = sequent_calculus.intros(6)
+lemmas BetaDis = sequent_calculus.intros(7)
+
+lemmas GammaExi = sequent_calculus.intros(8)
+lemmas GammaUni = sequent_calculus.intros(9)
+
+lemmas DeltaUni = sequent_calculus.intros(10)
+lemmas DeltaExi = sequent_calculus.intros(11)
+
+lemmas Extra = sequent_calculus.intros(12)
+
+theorem \<open>\<tturnstile> p # z\<close> if \<open>member (Neg p) z\<close>
+  using Basic that .
+
+theorem \<open>\<tturnstile> Dis p q # z\<close> if \<open>\<tturnstile> p # q # z\<close>
+  using AlphaDis that .
+
+theorem \<open>\<tturnstile> Imp p q # z\<close> if \<open>\<tturnstile> Neg p # q # z\<close>
+  using AlphaImp that .
+
+theorem \<open>\<tturnstile> Neg (Con p q) # z\<close> if \<open>\<tturnstile> Neg p # Neg q # z\<close>
+  using AlphaCon that .
+
+theorem \<open>\<tturnstile> Con p q # z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>\<tturnstile> q # z\<close>
+  using BetaCon that .
+
+theorem \<open>\<tturnstile> Neg (Imp p q) # z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>\<tturnstile> Neg q # z\<close>
+  using BetaImp that .
+
+theorem \<open>\<tturnstile> Neg (Dis p q) # z\<close> if \<open>\<tturnstile> Neg p # z\<close> and \<open>\<tturnstile> Neg q # z\<close>
+  using BetaDis that .
+
+theorem \<open>\<tturnstile> Exi p # z\<close> if \<open>\<tturnstile> sub 0 t p # z\<close>
+  using GammaExi that .
+
+theorem \<open>\<tturnstile> Neg (Uni p) # z\<close> if \<open>\<tturnstile> Neg (sub 0 t p) # z\<close>
+  using GammaUni that .
+
+theorem \<open>\<tturnstile> Uni p # z\<close> if \<open>\<tturnstile> sub 0 (Fun c []) p # z\<close> and \<open>news c (p # z)\<close>
+  using DeltaUni that .
+
+theorem \<open>\<tturnstile> Neg (Exi p) # z\<close> if \<open>\<tturnstile> Neg (sub 0 (Fun c []) p) # z\<close> and \<open>news c (p # z)\<close>
+  using DeltaExi that .
+
+theorem \<open>\<tturnstile> z\<close> if \<open>\<tturnstile> p # z\<close> and \<open>member p z\<close>
+  using Extra that .
+
+declare member_set [simp del]
+
+primrec ext where
+  \<open>ext y [] = True\<close> |
+  \<open>ext y (p # z) = (if member p y then ext y z else False)\<close>
+
+lemma member [simp]: \<open>member p z \<longleftrightarrow> p \<in> set z\<close>
+  by (induct z) simp_all
+
+lemma ext [simp]: \<open>ext y z \<longleftrightarrow> set z \<subseteq> set y\<close>
+  by (induct z) simp_all
+
+theorem Truth: \<open>\<tturnstile> Truth # z\<close>
+  using member.simps AlphaImp Basic Extra by metis
+
+theorem Neg: \<open>\<tturnstile> Neg (Neg p) # z\<close> if \<open>\<tturnstile> p # z\<close>
+  using that Truth BetaImp by simp
+
+lemma A0: \<open>member (Neg p) z \<Longrightarrow> \<turnstile> p # z\<close>
+  using 1 member.simps OK.intros(1) SC.Extra list.map(2) map_compl_Neg by metis
+
+lemma A1: \<open>\<tturnstile> z \<Longrightarrow> \<turnstile> z\<close>
+  by (induct rule: sequent_calculus.induct) (auto simp add: A0 intro: SC.intros(3-13))
+
+lemma A2: \<open>\<turnstile> z \<Longrightarrow> \<tturnstile> z\<close>
+  by (induct rule: SC.induct) (auto simp add: Truth intro: sequent_calculus.intros)
+
+theorem A: \<open>(\<tturnstile> z) \<longleftrightarrow> (\<turnstile> z)\<close>
+  using A1 A2 by fast
+
+theorem Ext: \<open>\<tturnstile> y\<close> if \<open>\<tturnstile> z\<close> and \<open>ext y z\<close>
+  using that A ext Order by metis
+
+theorem OK_sequent_calculus: \<open>OK p z \<longleftrightarrow> (\<tturnstile> p # map Neg z)\<close>
+  unfolding A SC using OK_TC map_compl_Neg by simp
+
+corollary \<open>OK p [] \<longleftrightarrow> (\<tturnstile> [p])\<close>
+  unfolding OK_sequent_calculus by simp
+
+\<comment> \<open>A Tiny Test\<close>
+
+lemma \<open>\<tturnstile> [Imp (Pre '''' []) (Pre '''' [])]\<close>
+proof -
+  from AlphaImp have ?thesis if \<open>\<tturnstile> [Neg (Pre '''' []), Pre '''' []]\<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile> [Pre '''' [], Neg (Pre '''' [])]\<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
+subsection \<open>Example 1\<close>
+
+proposition \<open>p a \<longrightarrow> p a\<close> by metis
+
+lemma \<open>\<tturnstile>
+  [
+    Imp (Pre ''p'' [Fun ''a'' []]) (Pre ''p'' [Fun ''a'' []])
+  ]
+  \<close>
+proof -
+  from AlphaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Pre ''p'' [Fun ''a'' []]
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
+subsection \<open>Example 2\<close>
+
+proposition \<open>p \<longrightarrow> \<not> \<not> p\<close> by metis
+
+lemma \<open>\<tturnstile>
+  [
+    Imp (Pre ''p'' []) (Neg (Neg (Pre ''p'' [])))
+  ]
+  \<close>
+proof -
+  from AlphaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Pre ''p'' []),
+      Neg (Neg (Pre ''p'' []))
+    ]
+    \<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
+subsection \<open>Example 3\<close>
+
+proposition \<open>(\<forall>x. p x) \<longrightarrow> p a \<and> p b\<close> by metis
+
+lemma \<open>\<tturnstile>
+  [
+    Imp (Uni (Pre ''p'' [Var 0])) (Con (Pre ''p'' [Fun ''a'' []]) (Pre ''p'' [Fun ''b'' []]))
+  ]
+  \<close>
+proof -
+  from AlphaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Uni (Pre ''p'' [Var 0])),
+      Con (Pre ''p'' [Fun ''a'' []]) (Pre ''p'' [Fun ''b'' []])
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Con (Pre ''p'' [Fun ''a'' []]) (Pre ''p'' [Fun ''b'' []]),
+      Neg (Uni (Pre ''p'' [Var 0]))
+    ]
+    \<close>
+    using that by simp
+  with BetaCon have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''a'' []],
+      Neg (Uni (Pre ''p'' [Var 0]))
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''b'' []],
+      Neg (Uni (Pre ''p'' [Var 0]))
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Uni (Pre ''p'' [Var 0])),
+      Pre ''p'' [Fun ''a'' []]
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Neg (Uni (Pre ''p'' [Var 0])),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with GammaUni have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Pre ''p'' [Fun ''a'' []]
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Neg (Pre ''p'' [Fun ''b'' []]),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''b'' []],
+      Neg (Pre ''p'' [Fun ''b'' []])
+    ]
+    \<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
+subsection \<open>Example 4\<close>
+
+proposition \<open>(\<forall>x. p x \<longrightarrow> q x) \<longrightarrow> (\<exists>x. p x) \<longrightarrow> (\<exists>x. q x)\<close> by metis
+
+lemma \<open>\<tturnstile>
+  [
+    Imp
+      (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0])))
+      (Imp (Exi (Pre ''p'' [Var 0])) (Exi (Pre ''q'' [Var 0])))
+  ]
+  \<close>
+proof -
+  from AlphaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0]))),
+      Imp (Exi (Pre ''p'' [Var 0])) (Exi (Pre ''q'' [Var 0]))
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Imp (Exi (Pre ''p'' [Var 0])) (Exi (Pre ''q'' [Var 0])),
+      Neg (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0])))
+    ]
+    \<close>
+    using that by simp
+  with AlphaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Exi (Pre ''p'' [Var 0])),
+      Exi (Pre ''q'' [Var 0]),
+      Neg (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0])))
+    ]
+    \<close>
+    using that by simp
+  with DeltaExi have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Exi (Pre ''q'' [Var 0]),
+      Neg (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0])))
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Uni (Imp (Pre ''p'' [Var 0]) (Pre ''q'' [Var 0]))),
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Exi (Pre ''q'' [Var 0])
+    ]
+    \<close>
+    using that by simp
+  with GammaUni have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Imp (Pre ''p'' [Fun ''a'' []]) (Pre ''q'' [Fun ''a'' []])),
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Exi (Pre ''q'' [Var 0])
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Exi (Pre ''q'' [Var 0]),
+      Neg (Imp (Pre ''p'' [Fun ''a'' []]) (Pre ''q'' [Fun ''a'' []])),
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with GammaExi have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''q'' [Fun ''a'' []],
+      Neg (Imp (Pre ''p'' [Fun ''a'' []]) (Pre ''q'' [Fun ''a'' []])),
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Neg (Imp (Pre ''p'' [Fun ''a'' []]) (Pre ''q'' [Fun ''a'' []])),
+      Pre ''q'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with BetaImp have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''a'' []],
+      Pre ''q'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Neg (Pre ''q'' [Fun ''a'' []]),
+      Pre ''q'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''a'' []],
+      Neg (Pre ''p'' [Fun ''a'' []])
+    ]
+    \<close> and \<open>\<tturnstile>
+    [
+      Pre ''q'' [Fun ''a'' []],
+      Neg (Pre ''q'' [Fun ''a'' []])
+    ]
+    \<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
+subsection \<open>Example 5\<close>
+
+proposition \<open>\<exists>x. \<forall>y. p y \<or> \<not> p x\<close> by metis
+
+lemma \<open>\<tturnstile>
+  [
+    Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1]))))
+  ]
+  \<close>
+proof -
+  from Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1])))),
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1]))))
+    ]
+    \<close>
+    using that by simp
+  with GammaExi[where t=\<open>Fun ''a'' []\<close>] have ?thesis if \<open>\<tturnstile>
+    [
+      Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Fun ''a'' []]))),
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1]))))
+    ]
+    \<close>
+    using that by simp
+  with DeltaUni have ?thesis if \<open>\<tturnstile>
+    [
+      Dis (Pre ''p'' [Fun ''b'' []]) (Neg (Pre ''p'' [Fun ''a'' []])),
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1]))))
+    ]
+    \<close>
+    using that by simp
+  with AlphaDis have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''b'' []],
+      Neg (Pre ''p'' [Fun ''a'' []]),
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1]))))
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Exi (Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Var 1])))),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with GammaExi[where t=\<open>Fun ''b'' []\<close>] have ?thesis if \<open>\<tturnstile>
+    [
+      Uni (Dis (Pre ''p'' [Var 0]) (Neg (Pre ''p'' [Fun ''b'' []]))),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with DeltaUni have ?thesis if \<open>\<tturnstile>
+    [
+      Dis (Pre ''p'' [Fun ''c'' []]) (Neg (Pre ''p'' [Fun ''b'' []])),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with AlphaDis have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''c'' []],
+      Neg (Pre ''p'' [Fun ''b'' []]),
+      Pre ''p'' [Fun ''b'' []]
+    ]
+    \<close>
+    using that by simp
+  with Ext have ?thesis if \<open>\<tturnstile>
+    [
+      Pre ''p'' [Fun ''b'' []],
+      Neg (Pre ''p'' [Fun ''b'' []])
+    ]
+    \<close>
+    using that by simp
+  with Basic show ?thesis
+    by simp
+qed
+
 section \<open>Acknowledgements\<close>
 
 text \<open>
@@ -6048,7 +6489,7 @@ Based on:
   The Resolution Calculus for First-Order Logic.
   \<^url>\<open>https://www.isa-afp.org/entries/Resolution_FOL.shtml\<close>
 
-  \<^item> Jørgen Villadsen, Andreas Halkjær From, Alexander Birch Jensen & Anders Schlichtkrull:
+  \<^item> Jørgen Villadsen, Asta Halkjær From, Alexander Birch Jensen & Anders Schlichtkrull:
   NaDeA - Natural Deduction Assistant.
   \<^url>\<open>https://github.com/logic-tools/nadea\<close>
 \<close>
