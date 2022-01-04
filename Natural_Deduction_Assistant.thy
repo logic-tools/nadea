@@ -4064,8 +4064,7 @@ qed auto
 
 theorem tableau_soundness:
   \<open>tableauproof z p \<Longrightarrow> list_all (semantics e f g) z \<Longrightarrow> semantics e f g p\<close>
-  unfolding tableauproof_def list_all_def using TC_soundness compl_compl
-  by (metis (no_types, hide_lams) compl.simps(1) semantics.simps(3) set_ConsD)
+  unfolding tableauproof_def list_all_def using TC_soundness semantics_compl set_ConsD by metis
 
 theorem sound:
   assumes \<open>\<stileturn> [Neg p]\<close>
