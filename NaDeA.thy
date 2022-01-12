@@ -1,4 +1,4 @@
-theory NaDeA imports Main begin                                                                     (*  Isabelle theory file (Isabelle2021-1)                                       *)
+theory NaDeA imports Main begin                                                                     (*  Isabelle theory file (Isabelle2021-1)                                     *)
                                                                                                     (*                                                                            *)
 type_synonym id = "char list"                                                                       (*  A function/predicate identifier is a list of characters.                  *)
                                                                                                     (*                                                                            *)
