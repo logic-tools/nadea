@@ -1,4 +1,4 @@
-(* Isabelle2021-1 *)
+(* Isabelle2022 *)
 
 section \<open>Natural Deduction Assistant (NaDeA)\<close>
 
